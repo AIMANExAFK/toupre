@@ -1,0 +1,244 @@
+{
+  "theme_and_archetype": {
+    "theme": "Light",
+    "archetype": "Archetype 3 (Pastel & Soft) infused with Archetype 4 (Swiss/High-Contrast)",
+    "description": "A modern, premium, and approachable design tailored for young French urbanites. Relies on a crisp white backdrop, bold deep violet accents, and generous negative space to make the products the hero. Rejects typical 'tech-bro' darkness in favor of a tactile, welcoming, and high-trust environment."
+  },
+  "color_palette": {
+    "primary": {
+      "default": "#7C3AED",
+      "light": "#A78BFA",
+      "dark": "#5B21B6",
+      "transparent": "rgba(124, 58, 237, 0.12)"
+    },
+    "secondary": {
+      "default": "#FF6B6B",
+      "description": "Warm coral accent used sparingly for notifications, badges, or high-urgency CTAs (like 'Only 1 left')."
+    },
+    "neutral": {
+      "background": "#F9FAFB",
+      "surface": "#FFFFFF",
+      "surface_secondary": "#F3F4F6",
+      "border": "#E5E7EB",
+      "border_focus": "#D1D5DB"
+    },
+    "text": {
+      "primary": "#111827",
+      "secondary": "#4B5563",
+      "tertiary": "#9CA3AF",
+      "inverse": "#FFFFFF",
+      "brand": "#6D28D9"
+    },
+    "status": {
+      "success": "#10B981",
+      "success_bg": "#D1FAE5",
+      "error": "#EF4444",
+      "error_bg": "#FEE2E2",
+      "warning": "#F59E0B"
+    }
+  },
+  "typography": {
+    "font_families": {
+      "heading": "Outfit",
+      "body": "DM Sans",
+      "mono": "JetBrains Mono"
+    },
+    "scale": {
+      "h1": {
+        "size": "36px",
+        "line_height": "40px",
+        "weight": "700",
+        "tracking": "-0.5px"
+      },
+      "h2": {
+        "size": "28px",
+        "line_height": "34px",
+        "weight": "700",
+        "tracking": "-0.3px"
+      },
+      "h3": {
+        "size": "22px",
+        "line_height": "28px",
+        "weight": "600",
+        "tracking": "-0.2px"
+      },
+      "h4": {
+        "size": "18px",
+        "line_height": "24px",
+        "weight": "600",
+        "tracking": "0px"
+      },
+      "body_large": {
+        "size": "16px",
+        "line_height": "24px",
+        "weight": "400",
+        "tracking": "0px"
+      },
+      "body": {
+        "size": "14px",
+        "line_height": "20px",
+        "weight": "400",
+        "tracking": "0px"
+      },
+      "caption": {
+        "size": "12px",
+        "line_height": "16px",
+        "weight": "500",
+        "tracking": "0.5px",
+        "text_transform": "uppercase"
+      }
+    }
+  },
+  "spacing": {
+    "base_unit": 4,
+    "scale": {
+      "xs": "4px",
+      "sm": "8px",
+      "md": "16px",
+      "lg": "24px",
+      "xl": "32px",
+      "2xl": "48px",
+      "3xl": "64px"
+    },
+    "container_padding": "16px"
+  },
+  "component_styling": {
+    "buttons": {
+      "primary": {
+        "background": "#7C3AED",
+        "text": "#FFFFFF",
+        "border_radius": "12px",
+        "padding": "16px 24px",
+        "typography": "body_large (600 weight)",
+        "shadow": "0 4px 14px rgba(124, 58, 237, 0.3)"
+      },
+      "secondary": {
+        "background": "#F3F4F6",
+        "text": "#111827",
+        "border_radius": "12px",
+        "padding": "16px 24px"
+      },
+      "outline": {
+        "background": "transparent",
+        "border": "1.5px solid #E5E7EB",
+        "text": "#111827",
+        "border_radius": "12px"
+      }
+    },
+    "cards": {
+      "default": {
+        "background": "#FFFFFF",
+        "border_radius": "16px",
+        "padding": "16px",
+        "shadow": "0 2px 8px rgba(0, 0, 0, 0.04)",
+        "border": "1px solid #F3F4F6"
+      },
+      "image_container": {
+        "border_radius": "12px",
+        "overflow": "hidden"
+      }
+    },
+    "inputs": {
+      "default": {
+        "background": "#FAFAFA",
+        "border": "1px solid #E5E7EB",
+        "border_radius": "10px",
+        "padding": "14px 16px",
+        "text": "#111827",
+        "placeholder": "#9CA3AF"
+      },
+      "focus": {
+        "border": "1px solid #7C3AED",
+        "background": "#FFFFFF"
+      }
+    },
+    "bottom_tabs": {
+      "background": "#FFFFFF",
+      "border_top": "1px solid #E5E7EB",
+      "active_tint": "#7C3AED",
+      "inactive_tint": "#9CA3AF",
+      "padding_bottom": "safe-area-inset",
+      "height": "60px"
+    },
+    "headers": {
+      "background": "rgba(255, 255, 255, 0.9)",
+      "blur": "10px",
+      "border_bottom": "1px solid rgba(229, 231, 235, 0.5)",
+      "title_typography": "h4"
+    }
+  },
+  "layouts": {
+    "search_map_screen": {
+      "structure": "React Native Map occupying 100% of background. A floating absolute search bar at top (SafeArea + 16px). A floating horizontal FlatList of categories (Cars, Bikes, Tools, Tech) below search. A bottom sheet (using @gorhom/bottom-sheet) presenting the list view of visible items on the map.",
+      "map_markers": "Custom markers with white background, #7C3AED text (price), subtle drop shadow, rounded pill shape.",
+      "bottom_sheet_cards": "Horizontal row layout. Image left (80x80), Details right (Title, Category, Price/day, Rating). No heavy shadows, 1px border."
+    },
+    "listing_detail": {
+      "structure": "ScrollView. Hero image slider (height: 300px) extending to top edge. Absolute back button and 'Favorite' heart in top corners (glassmorphism circles). Below image: Title, Rating, Location. Owner profile row (avatar + name). Description. Features grid. Fixed bottom bar for Booking CTA.",
+      "bottom_cta_bar": "Fixed at bottom, white background, shadow-top. Left: Price/day bold text. Right: Primary button 'Book Now'."
+    },
+    "booking_flow": {
+      "structure": "Step 1: Calendar Selection (React Native Calendars, primary color #7C3AED for selected range). Step 2: Order Summary (Dates, Item, Total calculation, Service Fee). Step 3: Stripe Payment Integration via @stripe/stripe-react-native (PaymentSheet).",
+      "design_feel": "Clean, highly trustworthy, lots of whitespace. Focus purely on numbers and dates."
+    },
+    "create_listing": {
+      "structure": "Multi-step wizard or long ScrollView. Image upload area is prominent (dashed border, #7C3AED icon). Native inputs for Title, Price. Dropdown for Category. Location uses MapView to pin exact address.",
+      "owner_mode": "Distinct toggle in profile to switch to 'Owner Mode'. App accent color could subtly shift or use a 'Hosting' badge to clarify mode."
+    },
+    "profile": {
+      "structure": "Header with User Avatar, Name, Member Since. Grid of stats (Rentals, Listings, Rating). Two main sections: 'My Rentals' (upcoming/past) and 'My Listings' (manage inventory). Settings, Payments, Support links."
+    }
+  },
+  "navigation_structure": {
+    "tabs": [
+      { "name": "Explore", "icon": "magnifying-glass", "component": "SearchMapScreen" },
+      { "name": "Bookings", "icon": "calendar", "component": "MyBookingsScreen" },
+      { "name": "Add", "icon": "plus-circle", "component": "CreateListingScreen", "style": "Prominent central button, potentially #7C3AED filled" },
+      { "name": "My Items", "icon": "cube", "component": "MyListingsScreen" },
+      { "name": "Profile", "icon": "user", "component": "ProfileScreen" }
+    ]
+  },
+  "motion_and_microinteractions": {
+    "engine": "react-native-reanimated",
+    "patterns": {
+      "button_press": "Scale down to 0.96, opacity 0.9, duration 150ms spring.",
+      "list_enter": "FadeInUp staggered. Y offset 20px, duration 400ms.",
+      "map_to_list": "Smooth snapping using BottomSheet. As sheet moves up, map markers subtly fade or map zooms out slightly.",
+      "tab_switch": "Active icon bounces slightly, inactive icons scale down to 0.9."
+    }
+  },
+  "media": {
+    "hero_onboarding": {
+      "url": "https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg",
+      "description": "Young woman with curly hair talks on her smartphone in an urban outdoor setting. Conveys modern city living."
+    },
+    "sample_listings": {
+      "car": {
+        "url": "https://images.pexels.com/photos/24376862/pexels-photo-24376862.jpeg",
+        "description": "White electric car charging on an urban city street"
+      },
+      "bike": {
+        "url": "https://images.pexels.com/photos/90454/pexels-photo-90454.jpeg",
+        "description": "Mountain bike in outdoor setting"
+      },
+      "drill": {
+        "url": "https://images.pexels.com/photos/30413428/pexels-photo-30413428.jpeg",
+        "description": "Cordless power drill on workbench"
+      },
+      "tent": {
+        "url": "https://images.unsplash.com/photo-1624923686627-514dd5e57bae",
+        "description": "Blue and orange camping tent"
+      },
+      "camera": {
+        "url": "https://images.pexels.com/photos/51383/photo-camera-subject-photographer-51383.jpeg",
+        "description": "DSLR camera close-up"
+      }
+    },
+    "category_icons": {
+      "instructions": "Use lucide-react-native icons: 'Car' for vehicles, 'Bike' for bikes, 'Wrench' or 'Hammer' for tools, 'Camera' for tech/photo, 'Tent' for camping."
+    }
+  },
+  "testing": {
+    "instructions": "All interactive elements (buttons, inputs, tab items) and key text fields MUST include a `data-testid` attribute (or `testID` for React Native) to facilitate robust automated testing. Example: `testID='explore-tab-button'` or `testID='book-now-button'`."
+  }
+}
