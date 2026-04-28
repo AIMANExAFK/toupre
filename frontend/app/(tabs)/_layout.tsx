@@ -1,31 +1,43 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../src/theme";
 import { Platform, View, StyleSheet } from "react-native";
+import { useColors, shadowStyle } from "../../src/theme";
+import { Glass } from "../../src/Glass";
 
 export default function TabsLayout() {
+  const colors = useColors();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
+        sceneStyle: { backgroundColor: colors.bg } as any,
+        tabBarBackground: () => (
+          <Glass
+            borderRadius={0}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ),
         tabBarStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: "transparent",
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 88 : 64,
+          height: Platform.OS === "ios" ? 90 : 68,
           paddingTop: 8,
-          paddingBottom: Platform.OS === "ios" ? 28 : 8,
+          paddingBottom: Platform.OS === "ios" ? 30 : 10,
+          position: "absolute",
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "700", marginTop: 2 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Explorer",
-          tabBarIcon: ({ color, size }) => <Ionicons name="search" size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "compass" : "compass-outline"} size={22} color={color} />
+          ),
           tabBarTestID: "tab-explore",
         }}
       />
@@ -33,8 +45,8 @@ export default function TabsLayout() {
         name="bookings"
         options={{
           title: "Locations",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar" size={size} color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={22} color={color} />
           ),
           tabBarTestID: "tab-bookings",
         }}
@@ -43,9 +55,15 @@ export default function TabsLayout() {
         name="create"
         options={{
           title: "Publier",
-          tabBarIcon: ({ color }) => (
-            <View style={styles.fab}>
-              <Ionicons name="add" size={28} color={colors.surface} />
+          tabBarIcon: () => (
+            <View
+              style={[
+                styles.fab,
+                { backgroundColor: colors.primary },
+                shadowStyle({ color: colors.primary, opacity: 0.55, radius: 16, offsetY: 6 }),
+              ]}
+            >
+              <Ionicons name="add" size={28} color={colors.textInverse} />
             </View>
           ),
           tabBarLabel: () => null,
@@ -56,7 +74,9 @@ export default function TabsLayout() {
         name="myitems"
         options={{
           title: "Mes biens",
-          tabBarIcon: ({ color, size }) => <Ionicons name="cube" size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "cube" : "cube-outline"} size={22} color={color} />
+          ),
           tabBarTestID: "tab-myitems",
         }}
       />
@@ -64,7 +84,9 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
+          ),
           tabBarTestID: "tab-profile",
         }}
       />
@@ -74,17 +96,11 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   fab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
-    marginTop: -8,
+    marginTop: -14,
   },
 });

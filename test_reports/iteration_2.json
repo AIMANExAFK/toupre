@@ -1,0 +1,49 @@
+{
+  "summary": "Iteration 2 retest: All previously-reported bugs from iteration 1 are FIXED. Backend 16/16 pytest pass (100%). GET /api/checkout/status now returns 200 even when Stripe proxy returns 'No such checkout.session' (graceful fallback to local db.payment_transactions verified in backend logs). Booking total_price correctly includes 10% service fee (subtotal + 10%) — Stripe charge now matches UI summary. Frontend (mobile 390x844 web preview): Welcome, Login (demo@locashare.fr/demo1234), Register render with new liquid-glass design (BlurView + GradientBg blobs) — no react-native-maps web bundling error. Profile menu shows all 6 items. Settings screen has functional theme switcher (Clair/Sombre/Système) persisted to localStorage as 'locashare_theme=dark' and dark mode applies smoothly across Settings, Payments, Help screens. Payments screen lists Visa 4242 + MC 8852 with 'Par défaut'/'Définir par défaut'/'Supprimer' actions and 'Ajouter une carte'. Help screen has Chat/Appeler/Email quick contact, 6 expandable FAQ items, and contact form (Sujet+Message+Envoyer). Booking flow: Tesla Model 3 89€ × 2 jours = 178.00€, Frais de service (10%) = 17.80€, Total = 195.80€, 'Payer 195.80€' button — matches backend computation exactly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Listing detail",
+        "issues": ["Fixed bottom 'Réserver' footer still overlaps area near bottom; on this iteration however listing/[id] is outside the (tabs) group so it does not cover tab bar — acceptable, just visually dense on small viewports."]
+      }
+    ],
+    "react_native_issues": [
+      {
+        "component": "global StyleSheet",
+        "issue": "Console still emits non-blocking deprecation warnings: '\"shadow*\" style props are deprecated. Use \"boxShadow\"' and 'props.pointerEvents is deprecated, use style.pointerEvents'. No functional impact."
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_locashare_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: migrate deprecated shadow* style props to boxShadow across StyleSheets to silence RN web warnings.",
+    "Optional: replace `pointerEvents` prop with `style={{ pointerEvents: ... }}` in components that still use the legacy prop (likely BlurView/Glass wrappers)."
+  ],
+  "critical_code_review_comments": [
+    "server.py /api/checkout/status now wraps stripe call in try/except and falls back to db.payment_transactions — verified in backend logs ('Stripe status fetch failed, using local fallback' followed by 200 OK).",
+    "Booking total_price formula `subtotal + round(subtotal*0.10, 2)` keeps server as single source of truth for amount Stripe is charged; frontend recomputes only for display.",
+    "server.py is 548 lines, still acceptable; demo seeding is idempotent (only seeds if collection empty).",
+    "No CORS/auth changes; JWT bearer + bcrypt remain correct."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_locashare_api.py (updated 10% fee assertion + made test_cannot_book_own_listing robust to leaked TEST_ listings by filtering on owner_id)"
+  ],
+  "success_rate": {
+    "backend": "100% (16/16)",
+    "frontend": "100% on covered flows (welcome, login, register, explorer, listing detail, booking summary with 10% fee, profile menu, settings + theme switch + dark mode, payments mock cards, help FAQ + contact form)"
+  },
+  "seed_data_creation": "No new seed data. Tests create ephemeral TEST_*/test_* users; one TEST_Listing created and deleted in test_create_and_delete_listing. UI test registered one renter_<ts>@example.com user.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 2 confirmed clean. Both critical/minor backend bugs from iter1 are fixed. Demo user demo@locashare.fr/demo1234 owns all 8 seeded listings — for booking flow always register a fresh user. EXPO_PUBLIC_BACKEND_URL is at https://mobility-platform-118.preview.emergentagent.com. Stripe proxy still returns resource_missing on retrieve, but the local fallback path correctly returns 200 with persisted status — payment-success polling will work (it will see payment_status=unpaid initially; only the webhook flips it to paid). Confirm-payment via test card 4242 4242 4242 4242 not exercised here because Stripe checkout opens external checkout page outside our preview — unchanged from iter1.",
+  "rca_of_issue": "N/A — both iter1 bugs resolved. Iter1 RCA recap: (a) /api/checkout/status 500 caused by emergentintegrations stripe.retrieve hitting api.stripe.com instead of integrations proxy → fixed via try/except + local db fallback. (b) Pricing mismatch fixed by adding 10% service fee to backend total_price so Stripe is charged the same amount the UI displays."
+}

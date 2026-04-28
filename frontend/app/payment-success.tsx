@@ -4,130 +4,107 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch } from "../src/auth";
-import { colors, spacing, radius, shadows } from "../src/theme";
+import { useColors, spacing, radius, shadowStyle } from "../src/theme";
+import { Glass, GradientBg } from "../src/Glass";
 
 export default function PaymentSuccess() {
   const { session_id } = useLocalSearchParams<{ session_id: string }>();
   const router = useRouter();
+  const colors = useColors();
   const [status, setStatus] = useState<"checking" | "paid" | "pending" | "failed">("checking");
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!session_id) {
-      setStatus("failed");
-      return;
-    }
+    if (!session_id) { setStatus("failed"); return; }
     let cancelled = false;
     let count = 0;
 
     const poll = async () => {
       if (cancelled) return;
-      count++;
-      setAttempt(count);
+      count++; setAttempt(count);
       try {
         const res = await apiFetch(`/api/checkout/status/${session_id}`);
         if (cancelled) return;
-        if (res.payment_status === "paid") {
-          setStatus("paid");
-          return;
-        }
-        if (res.status === "expired" || count > 8) {
-          setStatus("pending");
-          return;
-        }
+        if (res.payment_status === "paid") { setStatus("paid"); return; }
+        if (res.status === "expired" || count > 8) { setStatus("pending"); return; }
         setTimeout(poll, 2500);
-      } catch (e) {
+      } catch {
         if (count > 8) setStatus("failed");
         else setTimeout(poll, 2500);
       }
     };
-
     poll();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [session_id]);
 
   return (
-    <SafeAreaView style={styles.container} testID="payment-success-screen">
-      <View style={styles.content}>
-        {status === "checking" && (
-          <>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.title}>Vérification du paiement…</Text>
-            <Text style={styles.sub}>Tentative {attempt}/8</Text>
-          </>
-        )}
-
-        {status === "paid" && (
-          <>
-            <View style={[styles.iconCircle, { backgroundColor: colors.successBg }]}>
-              <Ionicons name="checkmark" size={48} color={colors.success} />
-            </View>
-            <Text style={styles.title}>Réservation confirmée !</Text>
-            <Text style={styles.sub}>Votre paiement a bien été reçu. Nous vous avons envoyé un email récapitulatif.</Text>
-            <TouchableOpacity
-              style={styles.btn}
-              onPress={() => router.replace("/(tabs)/bookings")}
-              testID="see-bookings-btn"
-            >
-              <Text style={styles.btnText}>Voir mes locations</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {status === "pending" && (
-          <>
-            <View style={[styles.iconCircle, { backgroundColor: "#FEF3C7" }]}>
-              <Ionicons name="time-outline" size={48} color={colors.warning} />
-            </View>
-            <Text style={styles.title}>Paiement en attente</Text>
-            <Text style={styles.sub}>Le paiement n'est pas encore confirmé. Consultez vos locations pour suivre le statut.</Text>
-            <TouchableOpacity
-              style={styles.btn}
-              onPress={() => router.replace("/(tabs)/bookings")}
-            >
-              <Text style={styles.btnText}>Voir mes locations</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {status === "failed" && (
-          <>
-            <View style={[styles.iconCircle, { backgroundColor: colors.errorBg }]}>
-              <Ionicons name="close" size={48} color={colors.error} />
-            </View>
-            <Text style={styles.title}>Une erreur est survenue</Text>
-            <Text style={styles.sub}>Veuillez réessayer ou contacter le support.</Text>
-            <TouchableOpacity style={styles.btn} onPress={() => router.replace("/(tabs)")}>
-              <Text style={styles.btnText}>Retour à l'accueil</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </SafeAreaView>
+    <View style={{ flex: 1, backgroundColor: colors.bg }} testID="payment-success-screen">
+      <GradientBg>
+        <SafeAreaView style={styles.content}>
+          {status === "checking" && (
+            <>
+              <Glass borderRadius={50} style={styles.iconCircle}>
+                <ActivityIndicator size="large" color={colors.primary} />
+              </Glass>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Vérification du paiement…</Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>Tentative {attempt}/8</Text>
+            </>
+          )}
+          {status === "paid" && (
+            <>
+              <Glass borderRadius={50} style={[styles.iconCircle, { backgroundColor: colors.successBg }]}>
+                <Ionicons name="checkmark" size={48} color={colors.success} />
+              </Glass>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Réservation confirmée !</Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>
+                Votre paiement a bien été reçu. Vous trouverez les détails dans Mes locations.
+              </Text>
+              <TouchableOpacity
+                style={[styles.btn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 })]}
+                onPress={() => router.replace("/(tabs)/bookings")}
+                testID="see-bookings-btn"
+              >
+                <Text style={[styles.btnText, { color: colors.textInverse }]}>Voir mes locations</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          {status === "pending" && (
+            <>
+              <Glass borderRadius={50} style={[styles.iconCircle, { backgroundColor: colors.warningBg }]}>
+                <Ionicons name="time-outline" size={48} color={colors.warning} />
+              </Glass>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Paiement en attente</Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>
+                Le paiement n'est pas encore confirmé. Consultez Mes locations pour suivre le statut.
+              </Text>
+              <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => router.replace("/(tabs)/bookings")}>
+                <Text style={[styles.btnText, { color: colors.textInverse }]}>Voir mes locations</Text>
+              </TouchableOpacity>
+            </>
+          )}
+          {status === "failed" && (
+            <>
+              <Glass borderRadius={50} style={[styles.iconCircle, { backgroundColor: colors.errorBg }]}>
+                <Ionicons name="close" size={48} color={colors.error} />
+              </Glass>
+              <Text style={[styles.title, { color: colors.textPrimary }]}>Une erreur est survenue</Text>
+              <Text style={[styles.sub, { color: colors.textSecondary }]}>Veuillez réessayer ou contacter le support.</Text>
+              <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => router.replace("/(tabs)")}>
+                <Text style={[styles.btnText, { color: colors.textInverse }]}>Retour à l'accueil</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </SafeAreaView>
+      </GradientBg>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
   content: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: 16 },
-  iconCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: { fontSize: 24, fontWeight: "700", color: colors.textPrimary, textAlign: "center", marginTop: 8 },
-  sub: { fontSize: 15, color: colors.textSecondary, textAlign: "center", lineHeight: 22, paddingHorizontal: 20 },
-  btn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    marginTop: 16,
-    ...shadows.primary,
-  },
-  btnText: { color: colors.surface, fontWeight: "700", fontSize: 15 },
+  iconCircle: { width: 110, height: 110, alignItems: "center", justifyContent: "center" },
+  title: { fontSize: 26, fontWeight: "800", textAlign: "center", marginTop: 8, letterSpacing: -0.5 },
+  sub: { fontSize: 15, textAlign: "center", lineHeight: 22, paddingHorizontal: 20 },
+  btn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: radius.md, marginTop: 16 },
+  btnText: { fontWeight: "800", fontSize: 15 },
 });
