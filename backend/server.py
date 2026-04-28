@@ -267,7 +267,9 @@ async def create_booking(
     start = datetime.fromisoformat(payload.start_date)
     end = datetime.fromisoformat(payload.end_date)
     days = max(1, (end - start).days + 1)
-    total = round(days * float(listing["price_per_day"]), 2)
+    subtotal = days * float(listing["price_per_day"])
+    service_fee = round(subtotal * 0.10, 2)
+    total = round(subtotal + service_fee, 2)
 
     booking = Booking(
         listing_id=payload.listing_id,
@@ -350,24 +352,38 @@ async def checkout_status(session_id: str, request: Request):
     host_url = str(request.base_url)
     webhook_url = f"{host_url}api/webhook/stripe"
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-    status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
 
+    try:
+        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+        if status:
+            tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+            if tx and tx["payment_status"] != "paid":
+                await db.payment_transactions.update_one(
+                    {"session_id": session_id},
+                    {"$set": {"status": status.status, "payment_status": status.payment_status}},
+                )
+                if status.payment_status == "paid":
+                    await db.bookings.update_one(
+                        {"payment_session_id": session_id}, {"$set": {"status": "paid"}}
+                    )
+            return {
+                "status": status.status,
+                "payment_status": status.payment_status,
+                "amount_total": status.amount_total,
+                "currency": status.currency,
+            }
+    except Exception as e:
+        logger.warning(f"Stripe status fetch failed, using local fallback: {e}")
+
+    # Fallback to local transaction record
     tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
-    if tx and tx["payment_status"] != "paid":
-        await db.payment_transactions.update_one(
-            {"session_id": session_id},
-            {"$set": {"status": status.status, "payment_status": status.payment_status}},
-        )
-        if status.payment_status == "paid":
-            await db.bookings.update_one(
-                {"payment_session_id": session_id}, {"$set": {"status": "paid"}}
-            )
-
+    if not tx:
+        raise HTTPException(status_code=404, detail="Session not found")
     return {
-        "status": status.status,
-        "payment_status": status.payment_status,
-        "amount_total": status.amount_total,
-        "currency": status.currency,
+        "status": tx.get("status", "open"),
+        "payment_status": tx.get("payment_status", "unpaid"),
+        "amount_total": int(round(float(tx.get("amount", 0)) * 100)),
+        "currency": tx.get("currency", "eur"),
     }
 
 

@@ -178,7 +178,10 @@ class TestBookings:
         b = r.json()
         # days = (end-start).days + 1 = 3
         assert b["days"] == 3
-        assert b["total_price"] == round(3 * listing["price_per_day"], 2)
+        # total_price now includes 10% service fee
+        subtotal = 3 * float(listing["price_per_day"])
+        expected = round(subtotal + round(subtotal * 0.10, 2), 2)
+        assert b["total_price"] == expected, f"Expected {expected} got {b['total_price']}"
         assert b["status"] == "pending"
         booking_id = b["id"]
 
@@ -210,8 +213,11 @@ class TestBookings:
 
     def test_cannot_book_own_listing(self, session, demo_token):
         h = {"Authorization": f"Bearer {demo_token}"}
+        # find a demo-owned listing (skip any leaked test listings)
+        me = session.get(f"{API}/auth/me", headers=h).json()
         listings = session.get(f"{API}/listings").json()
-        own = listings[0]  # owned by demo user
+        own = next((l for l in listings if l["owner_id"] == me["id"]), None)
+        assert own is not None, "Demo user should own at least one seeded listing"
         r = session.post(
             f"{API}/bookings",
             json={"listing_id": own["id"], "start_date": "2026-03-01", "end_date": "2026-03-02"},
