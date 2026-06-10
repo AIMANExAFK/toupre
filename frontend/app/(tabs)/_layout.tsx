@@ -23,12 +23,16 @@ export default function TabsLayout() {
           backgroundColor: "transparent",
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 90 : 68,
-          paddingTop: 8,
+          height: Platform.OS === "ios" ? 86 : 66,
+          paddingTop: 7,
           paddingBottom: Platform.OS === "ios" ? 30 : 10,
           position: "absolute",
+          overflow: "visible",
+          zIndex: 1000,
+          elevation: 1000,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "700", marginTop: 2 },
+        tabBarItemStyle: { overflow: "visible" },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "800", marginTop: 2 },
       }}
     >
       <Tabs.Screen
@@ -38,7 +42,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "compass" : "compass-outline"} size={22} color={color} />
           ),
-          tabBarTestID: "tab-explore",
         }}
       />
       <Tabs.Screen
@@ -48,7 +51,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "calendar" : "calendar-outline"} size={22} color={color} />
           ),
-          tabBarTestID: "tab-bookings",
         }}
       />
       <Tabs.Screen
@@ -60,14 +62,13 @@ export default function TabsLayout() {
               style={[
                 styles.fab,
                 { backgroundColor: colors.primary },
-                shadowStyle({ color: colors.primary, opacity: 0.55, radius: 16, offsetY: 6 }),
+                shadowStyle({ color: colors.primary, opacity: 0.34, radius: 12, offsetY: 5 }),
               ]}
             >
               <Ionicons name="add" size={28} color={colors.textInverse} />
             </View>
           ),
           tabBarLabel: () => null,
-          tabBarTestID: "tab-create",
         }}
       />
       <Tabs.Screen
@@ -77,7 +78,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "cube" : "cube-outline"} size={22} color={color} />
           ),
-          tabBarTestID: "tab-myitems",
         }}
       />
       <Tabs.Screen
@@ -87,7 +87,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
           ),
-          tabBarTestID: "tab-profile",
         }}
       />
     </Tabs>
@@ -96,11 +95,13 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   fab: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: -14,
+    marginTop: -12,
+    zIndex: 1001,
+    elevation: 1001,
   },
 });

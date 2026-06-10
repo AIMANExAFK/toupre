@@ -27,6 +27,7 @@ export default function Bookings() {
   const load = useCallback(async () => {
     if (!token) {
       setLoading(false);
+      setRefreshing(false);
       return;
     }
     try {

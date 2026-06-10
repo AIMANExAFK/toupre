@@ -1,21 +1,129 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from "react-native";
+import { useState } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useColors, spacing, radius, ThemeMode } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
 
+type DetailKey = "privacy" | "terms" | "data" | "rate";
+
+const DETAILS: Record<DetailKey, { title: string; icon: string; body: string[]; action?: string }> = {
+  privacy: {
+    title: "Confidentialité",
+    icon: "shield-outline",
+    body: [
+      "LocaShare utilise vos informations uniquement pour sécuriser les locations, afficher les annonces et faciliter les échanges entre utilisateurs.",
+      "Les données sensibles ne sont pas revendues. Les informations de paiement restent traitées par un prestataire sécurisé.",
+      "Vous pouvez demander l'export ou la suppression de vos données depuis la section Gérer mes données.",
+    ],
+  },
+  terms: {
+    title: "Conditions d'utilisation",
+    icon: "document-text-outline",
+    body: [
+      "Chaque utilisateur s'engage à publier des annonces honnêtes, avec des photos claires, un prix réel et un lieu de retrait précis.",
+      "Le locataire doit restituer le bien dans l'état initial. Le propriétaire doit fournir un objet conforme à l'annonce.",
+      "En cas de litige, LocaShare peut suspendre une annonce ou un compte le temps de vérifier la situation.",
+    ],
+  },
+  data: {
+    title: "Mes données",
+    icon: "lock-closed-outline",
+    body: [
+      "Vous pouvez préparer une demande d'export, de correction ou de suppression de compte.",
+      "Pour une application de test, cette action affiche le parcours prévu. En production, elle déclenchera une demande sécurisée côté serveur.",
+    ],
+    action: "Demander un export",
+  },
+  rate: {
+    title: "Évaluer LocaShare",
+    icon: "star-outline",
+    body: [
+      "Merci de tester LocaShare. Votre retour aide à améliorer la recherche, les réservations et la publication d'annonce.",
+      "Choisissez une note rapide ci-dessous. En production, ce bouton ouvrira aussi la page App Store ou Play Store.",
+    ],
+    action: "Envoyer un avis",
+  },
+};
+
 export default function Settings() {
   const router = useRouter();
   const colors = useColors();
-  const { mode, setMode, isDark } = useTheme();
+  const { mode, setMode } = useTheme();
+  const [detail, setDetail] = useState<DetailKey | null>(null);
+  const [rating, setRating] = useState(0);
+
+  if (detail) {
+    const current = DETAILS[detail];
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg }} testID={`settings-detail-${detail}`}>
+        <GradientBg>
+          <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => setDetail(null)} testID="settings-detail-back">
+                <Glass borderRadius={22} style={styles.backBtn}>
+                  <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+                </Glass>
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{current.title}</Text>
+              <View style={{ width: 44 }} />
+            </View>
+
+            <ScrollView contentContainerStyle={styles.detailScroll} showsVerticalScrollIndicator={false}>
+              <Glass borderRadius={radius.lg} style={styles.detailCard}>
+                <View style={[styles.detailIcon, { backgroundColor: colors.primaryTint }]}>
+                  <Ionicons name={current.icon as any} size={28} color={colors.primary} />
+                </View>
+                <Text style={[styles.detailTitle, { color: colors.textPrimary }]}>{current.title}</Text>
+                {current.body.map((paragraph) => (
+                  <Text key={paragraph} style={[styles.detailText, { color: colors.textSecondary }]}>
+                    {paragraph}
+                  </Text>
+                ))}
+
+                {detail === "rate" && (
+                  <View style={styles.stars}>
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <TouchableOpacity key={value} onPress={() => setRating(value)} testID={`rate-${value}`}>
+                        <Ionicons
+                          name={value <= rating ? "star" : "star-outline"}
+                          size={30}
+                          color={colors.primary}
+                        />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {!!current.action && (
+                  <TouchableOpacity
+                    style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+                    onPress={() => {
+                      if (detail === "data") setDetail("privacy");
+                      if (detail === "rate") setRating(rating || 5);
+                    }}
+                    testID={`settings-action-${detail}`}
+                  >
+                    <Text style={[styles.primaryBtnText, { color: colors.textInverse }]}>
+                      {detail === "rate" && rating ? "Merci pour votre note" : current.action}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </Glass>
+            </ScrollView>
+          </SafeAreaView>
+        </GradientBg>
+      </View>
+    );
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="settings-screen">
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} testID="settings-back">
+            <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")} testID="settings-back">
               <Glass borderRadius={22} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
@@ -45,18 +153,18 @@ export default function Settings() {
 
             <Text style={[styles.section, { color: colors.textSecondary }]}>CONFIDENTIALITÉ</Text>
             <Glass borderRadius={radius.lg}>
-              <LinkRow label="Politique de confidentialité" icon="shield-outline" colors={colors} onPress={() => Alert.alert("Confidentialité", "Vos données sont chiffrées et ne sont jamais revendues.")} />
+              <LinkRow label="Politique de confidentialité" icon="shield-outline" colors={colors} onPress={() => setDetail("privacy")} />
               <Divider colors={colors} />
-              <LinkRow label="Conditions d'utilisation" icon="document-text-outline" colors={colors} onPress={() => Alert.alert("Conditions", "Consultez les CGU sur locashare.fr/cgu")} />
+              <LinkRow label="Conditions d'utilisation" icon="document-text-outline" colors={colors} onPress={() => setDetail("terms")} />
               <Divider colors={colors} />
-              <LinkRow label="Gérer mes données" icon="lock-closed-outline" colors={colors} onPress={() => Alert.alert("Données", "Téléchargement de données disponible sur demande.")} />
+              <LinkRow label="Gérer mes données" icon="lock-closed-outline" colors={colors} onPress={() => setDetail("data")} />
             </Glass>
 
             <Text style={[styles.section, { color: colors.textSecondary }]}>À PROPOS</Text>
             <Glass borderRadius={radius.lg}>
               <LinkRow label="Version" icon="information-circle-outline" colors={colors} value="1.0.0" />
               <Divider colors={colors} />
-              <LinkRow label="Évaluer LocaShare" icon="star-outline" colors={colors} onPress={() => Alert.alert("Merci !", "Votre avis compte beaucoup pour nous.")} />
+              <LinkRow label="Évaluer LocaShare" icon="star-outline" colors={colors} onPress={() => setDetail("rate")} />
             </Glass>
           </ScrollView>
         </SafeAreaView>
@@ -83,7 +191,7 @@ function ThemeRow({ label, value, current, onSelect, icon, colors }: any) {
 }
 
 function ToggleRow({ label, icon, defaultOn, colors }: any) {
-  const [on, setOn] = require("react").useState(defaultOn);
+  const [on, setOn] = useState(defaultOn);
   return (
     <View style={styles.row}>
       <View style={[styles.iconBox, { backgroundColor: colors.primaryTint }]}>
@@ -124,4 +232,19 @@ const styles = StyleSheet.create({
   iconBox: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
   radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2 },
+  detailScroll: { padding: spacing.lg, paddingBottom: 80 },
+  detailCard: { padding: spacing.lg, alignItems: "flex-start", gap: spacing.md },
+  detailIcon: { width: 58, height: 58, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  detailTitle: { fontSize: 24, fontWeight: "900" },
+  detailText: { fontSize: 14, lineHeight: 22 },
+  stars: { flexDirection: "row", gap: 10, paddingVertical: spacing.sm },
+  primaryBtn: {
+    width: "100%",
+    minHeight: 48,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm,
+  },
+  primaryBtnText: { fontSize: 15, fontWeight: "900" },
 });

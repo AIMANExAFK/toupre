@@ -46,6 +46,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+    referral_code: Optional[str] = None
 
 
 class UserLogin(BaseModel):
@@ -112,6 +113,57 @@ class CheckoutRequest(BaseModel):
     origin_url: str
 
 
+class BookingUpdate(BaseModel):
+    status: Optional[str] = None  # confirmed, refused, cancelled, paid
+
+
+class ListingUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    price_per_day: Optional[float] = None
+    photos: Optional[List[str]] = None
+    location: Optional[dict] = None
+
+
+class MessageCreate(BaseModel):
+    to_id: str
+    content: str
+    listing_id: Optional[str] = None
+
+
+class ReviewCreate(BaseModel):
+    listing_id: str
+    rating: int
+    comment: Optional[str] = ""
+    booking_id: Optional[str] = None
+
+
+class KYCSubmit(BaseModel):
+    document_type: str  # id_card, passport, driving_license
+    document_image: str  # base64
+
+
+class AvailabilityUpdate(BaseModel):
+    blocked_dates: List[str] = []  # ISO yyyy-mm-dd
+
+
+class PushRegister(BaseModel):
+    token: str
+
+
+class ReferralCheck(BaseModel):
+    code: str
+
+
+class UserRegisterExt(BaseModel):
+    """Used internally — extends UserCreate with referral_code"""
+    email: EmailStr
+    password: str
+    name: str
+    referral_code: Optional[str] = None
+
+
 # ---------- Auth helpers ----------
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -156,8 +208,28 @@ def serialize_user(user: dict) -> dict:
         "email": user["email"],
         "name": user["name"],
         "avatar": user.get("avatar"),
+        "verified": user.get("verified", False),
+        "kyc_status": user.get("kyc_status", "none"),
+        "referral_code": user.get("referral_code"),
+        "credit_balance": user.get("credit_balance", 0),
+        "referred_by": user.get("referred_by"),
         "created_at": user["created_at"],
     }
+
+
+def public_user(user: dict) -> dict:
+    return {
+        "id": user["id"],
+        "name": user["name"],
+        "avatar": user.get("avatar"),
+        "verified": user.get("verified", False),
+        "kyc_status": user.get("kyc_status", "none"),
+    }
+
+
+def gen_referral_code(name: str) -> str:
+    base = "".join(c for c in name.upper() if c.isalpha())[:6] or "USER"
+    return base + uuid.uuid4().hex[:3].upper()
 
 
 # ---------- Auth Endpoints ----------
@@ -167,15 +239,49 @@ async def register(payload: UserCreate):
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Référral : crédite parrain + filleul si code valide
+    credit_balance = 0
+    referred_by = None
+    sponsor = None
+    if payload.referral_code:
+        sponsor = await db.users.find_one({"referral_code": payload.referral_code.upper()})
+        if sponsor:
+            credit_balance = 10
+            referred_by = sponsor["referral_code"]
+
     user_doc = {
         "id": str(uuid.uuid4()),
         "email": email,
         "name": payload.name,
         "password_hash": hash_password(payload.password),
         "avatar": None,
+        "verified": False,
+        "kyc_status": "none",
+        "referral_code": gen_referral_code(payload.name),
+        "credit_balance": credit_balance,
+        "referred_by": referred_by,
         "created_at": datetime.now(timezone.utc),
     }
     await db.users.insert_one(user_doc)
+
+    if sponsor:
+        # +10€ pour le parrain
+        await db.users.update_one(
+            {"id": sponsor["id"]},
+            {"$inc": {"credit_balance": 10}},
+        )
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": sponsor["id"],
+            "type": "referral_credit",
+            "title": "🎉 Nouveau filleul !",
+            "body": f"{payload.name} s'est inscrit avec votre code. +10€ crédités !",
+            "data": {"referred_user_id": user_doc["id"]},
+            "read": False,
+            "created_at": datetime.now(timezone.utc),
+        })
+
     token = create_access_token(user_doc["id"], email)
     return {"user": serialize_user(user_doc), "access_token": token}
 
@@ -253,6 +359,24 @@ async def delete_listing(listing_id: str, current_user: dict = Depends(get_curre
     return {"ok": True}
 
 
+@api_router.patch("/listings/{listing_id}")
+async def update_listing(
+    listing_id: str,
+    payload: ListingUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    updates = {k: v for k, v in payload.dict().items() if v is not None}
+    if not updates:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+    res = await db.listings.update_one(
+        {"id": listing_id, "owner_id": current_user["id"]}, {"$set": updates}
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    item = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    return item
+
+
 # ---------- Bookings ----------
 @api_router.post("/bookings")
 async def create_booking(
@@ -293,6 +417,341 @@ async def my_bookings(current_user: dict = Depends(get_current_user)):
         l = await db.listings.find_one({"id": b["listing_id"]}, {"_id": 0})
         b["listing"] = l
     return items
+
+
+@api_router.get("/bookings/owner/me")
+async def owner_bookings(current_user: dict = Depends(get_current_user)):
+    items = await db.bookings.find(
+        {"owner_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    for b in items:
+        l = await db.listings.find_one({"id": b["listing_id"]}, {"_id": 0})
+        b["listing"] = l
+        renter = await db.users.find_one({"id": b.get("renter_id")}, {"_id": 0, "password_hash": 0})
+        b["renter"] = (
+            {"id": renter["id"], "name": renter["name"], "avatar": renter.get("avatar")}
+            if renter else None
+        )
+    return items
+
+
+@api_router.patch("/bookings/{booking_id}")
+async def update_booking(
+    booking_id: str,
+    payload: BookingUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    # Le propriétaire peut accept/refuse, le locataire peut cancel
+    new_status = payload.status
+    if new_status in {"confirmed", "refused"} and booking["owner_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only owner can confirm/refuse")
+    if new_status == "cancelled" and booking["renter_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only renter can cancel")
+    if new_status not in {"confirmed", "refused", "cancelled", "paid", "pending"}:
+        raise HTTPException(status_code=400, detail="Invalid status")
+    await db.bookings.update_one(
+        {"id": booking_id},
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}},
+    )
+    return await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+
+
+# ---------- Messages ----------
+@api_router.post("/messages")
+async def send_message(
+    payload: MessageCreate, current_user: dict = Depends(get_current_user)
+):
+    if payload.to_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Cannot message yourself")
+    # KYC obligatoire
+    if not current_user.get("verified", False):
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "detail": "Vérification d'identité requise pour contacter un propriétaire.",
+                "code": "KYC_REQUIRED",
+                "action": "/verification?reason=message",
+            },
+        )
+    msg = {
+        "id": str(uuid.uuid4()),
+        "from_id": current_user["id"],
+        "to_id": payload.to_id,
+        "content": payload.content,
+        "listing_id": payload.listing_id,
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.messages.insert_one(msg)
+    return {**msg, "_id": None}
+
+
+@api_router.get("/conversations")
+async def list_conversations(current_user: dict = Depends(get_current_user)):
+    me = current_user["id"]
+    # Récupère tous les messages où je participe
+    msgs = await db.messages.find(
+        {"$or": [{"from_id": me}, {"to_id": me}]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(2000)
+
+    by_peer = {}
+    for m in msgs:
+        peer_id = m["to_id"] if m["from_id"] == me else m["from_id"]
+        if peer_id not in by_peer:
+            by_peer[peer_id] = m
+
+    convs = []
+    for peer_id, last in by_peer.items():
+        peer = await db.users.find_one({"id": peer_id}, {"_id": 0, "password_hash": 0})
+        unread = await db.messages.count_documents(
+            {"from_id": peer_id, "to_id": me, "read": False}
+        )
+        listing = None
+        if last.get("listing_id"):
+            listing = await db.listings.find_one(
+                {"id": last["listing_id"]}, {"_id": 0, "description": 0}
+            )
+        convs.append({
+            "peer_id": peer_id,
+            "peer": {"id": peer["id"], "name": peer["name"], "avatar": peer.get("avatar")} if peer else {"id": peer_id, "name": "Utilisateur", "avatar": None},
+            "last_message": last["content"],
+            "last_at": last["created_at"],
+            "unread": unread,
+            "listing": listing,
+        })
+    convs.sort(key=lambda c: c["last_at"], reverse=True)
+    return convs
+
+
+@api_router.get("/conversations/{peer_id}")
+async def get_conversation(peer_id: str, current_user: dict = Depends(get_current_user)):
+    me = current_user["id"]
+    msgs = await db.messages.find(
+        {"$or": [
+            {"from_id": me, "to_id": peer_id},
+            {"from_id": peer_id, "to_id": me},
+        ]},
+        {"_id": 0},
+    ).sort("created_at", 1).to_list(500)
+    # Mark received as read
+    await db.messages.update_many(
+        {"from_id": peer_id, "to_id": me, "read": False}, {"$set": {"read": True}}
+    )
+    peer = await db.users.find_one({"id": peer_id}, {"_id": 0, "password_hash": 0})
+    return {
+        "peer": {"id": peer["id"], "name": peer["name"], "avatar": peer.get("avatar")} if peer else {"id": peer_id, "name": "Utilisateur", "avatar": None},
+        "messages": msgs,
+    }
+
+
+@api_router.get("/messages/unread-count")
+async def unread_count(current_user: dict = Depends(get_current_user)):
+    count = await db.messages.count_documents({"to_id": current_user["id"], "read": False})
+    return {"count": count}
+
+
+# ---------- Reviews ----------
+@api_router.get("/reviews/listing/{listing_id}")
+async def listing_reviews(listing_id: str):
+    items = await db.reviews.find({"listing_id": listing_id}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    for r in items:
+        author = await db.users.find_one({"id": r["author_id"]}, {"_id": 0, "password_hash": 0})
+        r["author"] = (
+            {"id": author["id"], "name": author["name"], "avatar": author.get("avatar")}
+            if author else None
+        )
+    rating = round(sum(r["rating"] for r in items) / len(items), 1) if items else None
+    return {"reviews": items, "rating": rating, "count": len(items)}
+
+
+@api_router.post("/reviews")
+async def create_review(payload: ReviewCreate, current_user: dict = Depends(get_current_user)):
+    if payload.rating < 1 or payload.rating > 5:
+        raise HTTPException(status_code=400, detail="Rating must be 1-5")
+    # Check that user has actually rented this listing (paid booking)
+    has_booking = await db.bookings.find_one({
+        "listing_id": payload.listing_id,
+        "renter_id": current_user["id"],
+        "status": "paid",
+    })
+    if not has_booking:
+        raise HTTPException(status_code=403, detail="You must have rented this item to review it")
+    # One review per user per listing
+    existing = await db.reviews.find_one({
+        "listing_id": payload.listing_id,
+        "author_id": current_user["id"],
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="You already reviewed this listing")
+    review = {
+        "id": str(uuid.uuid4()),
+        "listing_id": payload.listing_id,
+        "booking_id": payload.booking_id,
+        "author_id": current_user["id"],
+        "rating": payload.rating,
+        "comment": payload.comment or "",
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.reviews.insert_one(review)
+    return {**review, "_id": None}
+
+
+# ---------- KYC / Vérification ----------
+@api_router.post("/kyc/submit")
+async def kyc_submit(payload: KYCSubmit, current_user: dict = Depends(get_current_user)):
+    if payload.document_type not in {"id_card", "passport", "driving_license"}:
+        raise HTTPException(status_code=400, detail="Invalid document type")
+    if not payload.document_image or len(payload.document_image) < 100:
+        raise HTTPException(status_code=400, detail="Invalid image")
+    await db.kyc_documents.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "document_type": payload.document_type,
+        "document_image": payload.document_image,  # In production: store in S3, save URL only
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc),
+    })
+    await db.users.update_one(
+        {"id": current_user["id"]}, {"$set": {"kyc_status": "pending"}}
+    )
+    return {"status": "pending", "message": "Document soumis, vérification sous 24h"}
+
+
+@api_router.get("/kyc/status")
+async def kyc_status(current_user: dict = Depends(get_current_user)):
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    return {
+        "status": user.get("kyc_status", "none"),
+        "verified": user.get("verified", False),
+    }
+
+
+# ---------- Calendrier de disponibilité ----------
+@api_router.get("/listings/{listing_id}/availability")
+async def listing_availability(listing_id: str):
+    listing = await db.listings.find_one({"id": listing_id}, {"_id": 0})
+    if not listing:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    blocked = listing.get("blocked_dates", [])
+    # Dates bloquées par les bookings actifs
+    bookings = await db.bookings.find(
+        {"listing_id": listing_id, "status": {"$in": ["confirmed", "paid"]}}, {"_id": 0}
+    ).to_list(200)
+    booked = []
+    for b in bookings:
+        try:
+            start = datetime.fromisoformat(b["start_date"])
+            end = datetime.fromisoformat(b["end_date"])
+            d = start
+            while d <= end:
+                booked.append(d.date().isoformat())
+                d = d.replace() + timedelta(days=1)
+        except Exception:
+            pass
+    return {"blocked_dates": blocked, "booked_dates": booked}
+
+
+@api_router.patch("/listings/{listing_id}/availability")
+async def update_availability(
+    listing_id: str,
+    payload: AvailabilityUpdate,
+    current_user: dict = Depends(get_current_user),
+):
+    res = await db.listings.update_one(
+        {"id": listing_id, "owner_id": current_user["id"]},
+        {"$set": {"blocked_dates": payload.blocked_dates}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    return {"ok": True, "blocked_dates": payload.blocked_dates}
+
+
+# ---------- Push notifications ----------
+@api_router.post("/push/register")
+async def register_push_token(payload: PushRegister, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"id": current_user["id"]}, {"$set": {"push_token": payload.token}}
+    )
+    return {"ok": True}
+
+
+@api_router.get("/notifications")
+async def list_notifications(current_user: dict = Depends(get_current_user)):
+    items = await db.notifications.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    return items
+
+
+@api_router.post("/notifications/{notif_id}/read")
+async def mark_notif_read(notif_id: str, current_user: dict = Depends(get_current_user)):
+    await db.notifications.update_one(
+        {"id": notif_id, "user_id": current_user["id"]}, {"$set": {"read": True}}
+    )
+    return {"ok": True}
+
+
+@api_router.post("/notifications/read-all")
+async def mark_all_notifs_read(current_user: dict = Depends(get_current_user)):
+    await db.notifications.update_many(
+        {"user_id": current_user["id"], "read": False}, {"$set": {"read": True}}
+    )
+    return {"ok": True}
+
+
+# ---------- Parrainage ----------
+@api_router.get("/referral/me")
+async def my_referral(current_user: dict = Depends(get_current_user)):
+    me = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 0})
+    referrals = await db.users.find(
+        {"referred_by": me.get("referral_code")}, {"_id": 0, "password_hash": 0}
+    ).to_list(200)
+    results = []
+    for r in referrals:
+        has_booked = await db.bookings.count_documents(
+            {"renter_id": r["id"], "status": "paid"}
+        ) > 0
+        results.append({
+            "id": r["id"], "name": r["name"], "joined_at": r["created_at"],
+            "has_booked": has_booked,
+        })
+    return {
+        "referral_code": me.get("referral_code"),
+        "credit_balance": me.get("credit_balance", 0),
+        "referrals": results,
+        "reward_amount": 10,
+    }
+
+
+@api_router.post("/referral/check")
+async def check_referral(payload: ReferralCheck):
+    sponsor = await db.users.find_one(
+        {"referral_code": payload.code.upper()}, {"_id": 0, "password_hash": 0}
+    )
+    if not sponsor:
+        return {"valid": False, "message": "Code invalide"}
+    return {"valid": True, "sponsor_name": sponsor["name"], "reward": 10}
+
+
+@api_router.get("/reviews/pending")
+async def pending_reviews(current_user: dict = Depends(get_current_user)):
+    me = current_user["id"]
+    paid_bookings = await db.bookings.find(
+        {"renter_id": me, "status": "paid"}, {"_id": 0}
+    ).to_list(200)
+    reviewed_listings = set(
+        r["listing_id"] async for r in db.reviews.find({"author_id": me}, {"listing_id": 1})
+    )
+    pending = []
+    for b in paid_bookings:
+        if b["listing_id"] in reviewed_listings:
+            continue
+        listing = await db.listings.find_one({"id": b["listing_id"]}, {"_id": 0})
+        pending.append({"booking": b, "listing": listing})
+    return pending
 
 
 # ---------- Stripe Checkout ----------

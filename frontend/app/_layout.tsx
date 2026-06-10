@@ -1,32 +1,165 @@
+import { useEffect, useRef } from "react";
 import { Stack } from "expo-router";
-import { AuthProvider } from "../src/auth";
+import { AuthProvider, useAuth, BACKEND_URL } from "../src/auth";
 import { ThemeProvider, useTheme } from "../src/theme";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
+import { NotificationsManager } from "../src/NotificationsManager";
+
+// ─── Suppression définitive des outlines focus (web only) ───
+// Injecte le CSS en bout de <head> APRÈS les styles RN Web pour gagner la cascade
+function useNoFocusOutline() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    if (document.getElementById("no-focus-outline")) return;
+    const s = document.createElement("style");
+    s.id = "no-focus-outline";
+    s.textContent = `
+      html body *,
+      html body *:focus,
+      html body *:focus-visible,
+      html body *:focus-within {
+        outline: 0 none transparent !important;
+        outline-width: 0 !important;
+        outline-style: none !important;
+        outline-color: transparent !important;
+        outline-offset: 0 !important;
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-focus-ring-color: transparent !important;
+      }
+      html body input:focus,
+      html body input:focus-visible,
+      html body textarea:focus,
+      html body textarea:focus-visible,
+      html body select:focus,
+      html body select:focus-visible,
+      html body button:focus,
+      html body button:focus-visible,
+      html body a:focus,
+      html body a:focus-visible,
+      html body [tabindex]:focus,
+      html body [tabindex]:focus-visible,
+      html body [role]:focus,
+      html body [role]:focus-visible,
+      html body [data-focusable]:focus,
+      html body [data-focusable]:focus-visible {
+        box-shadow: none !important;
+      }
+    `;
+    document.head.appendChild(s);
+  }, []);
+}
+
+// ─── Push notifications : SW + polling backend ───
+function useNotifications() {
+  const { token, user } = useAuth();
+  const lastSeen = useRef<Set<string>>(new Set());
+  const initialized = useRef(false);
+
+  // Enregistre le service worker au mount
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+    NotificationsManager.registerServiceWorker();
+  }, []);
+
+  // Quand l'utilisateur se connecte, enregistre son push token côté backend
+  useEffect(() => {
+    if (!user || !token) return;
+    (async () => {
+      const pushToken = await NotificationsManager.getPushToken();
+      if (!pushToken) return;
+      try {
+        await fetch(`${BACKEND_URL}/api/push/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ token: pushToken, device: navigator.userAgent.split(") ")[0] + ")" }),
+        });
+      } catch {}
+    })();
+  }, [user, token]);
+
+  // Poll les notifications backend toutes les 8s et affiche les nouvelles
+  useEffect(() => {
+    if (!user || !token || Platform.OS !== "web") return;
+    let stopped = false;
+
+    const pollOnce = async () => {
+      try {
+        const r = await fetch(`${BACKEND_URL}/api/notifications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!r.ok) return;
+        const items = await r.json();
+        if (stopped) return;
+
+        // Première initialisation : on note ce qu'on a déjà vu sans rien afficher
+        if (!initialized.current) {
+          for (const n of items) lastSeen.current.add(n.id);
+          initialized.current = true;
+          return;
+        }
+
+        // Affiche les nouvelles non-lues
+        for (const n of items) {
+          if (lastSeen.current.has(n.id)) continue;
+          lastSeen.current.add(n.id);
+          if (n.read) continue;
+          NotificationsManager.show(n.title, {
+            body: n.body,
+            tag: n.id,
+            data: n.data,
+          });
+        }
+      } catch {}
+    };
+
+    pollOnce();
+    const t = setInterval(pollOnce, 8000);
+    return () => { stopped = true; clearInterval(t); };
+  }, [user, token]);
+}
 
 function RootShell() {
   const { isDark, colors } = useTheme();
+  const isWeb = Platform.OS === "web";
+  useNoFocusOutline();
+  useNotifications();
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <StatusBar style={isDark ? "light" : "dark"} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
-          animation: "fade",
-        }}
+    <View
+      style={[
+        styles.stage,
+        isWeb && styles.webStage,
+        { backgroundColor: isWeb ? colors.surface2 : colors.bg },
+      ]}
+    >
+      <View
+        style={[
+          styles.appFrame,
+          isWeb && styles.webFrame,
+          { backgroundColor: colors.bg, borderColor: colors.border },
+        ]}
       >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="listing/[id]" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="booking/[id]" options={{ animation: "slide_from_bottom" }} />
-        <Stack.Screen name="payment-success" />
-        <Stack.Screen name="settings" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="payments" options={{ animation: "slide_from_right" }} />
-        <Stack.Screen name="help" options={{ animation: "slide_from_right" }} />
-      </Stack>
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.bg },
+            animation: "fade",
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="listing/[id]" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="booking/[id]" options={{ animation: "slide_from_bottom" }} />
+          <Stack.Screen name="payment-success" />
+          <Stack.Screen name="settings" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="payments" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="help" options={{ animation: "slide_from_right" }} />
+        </Stack>
+      </View>
     </View>
   );
 }
@@ -42,3 +175,22 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  stage: {
+    flex: 1,
+  },
+  webStage: {
+    alignItems: "center",
+  },
+  appFrame: {
+    flex: 1,
+    width: "100%",
+  },
+  webFrame: {
+    maxWidth: 440,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    overflow: "hidden",
+  },
+});

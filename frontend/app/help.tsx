@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, KeyboardAvoidingView, Platform, Linking } from "react-native";
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -7,13 +17,25 @@ import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
 
 const FAQS = [
-  { q: "Comment réserver un objet ?", a: "Recherchez un objet, choisissez vos dates, payez en ligne. Le propriétaire est notifié immédiatement." },
-  { q: "Comment publier une annonce ?", a: "Allez sur l'onglet Publier, ajoutez une photo, une description, le prix par jour et le lieu. C'est en ligne en 30 secondes." },
-  { q: "L'objet est-il assuré ?", a: "Oui, chaque location est couverte par notre assurance partenaire à hauteur de 5 000€." },
-  { q: "Comment annuler une réservation ?", a: "Dans l'onglet Locations, ouvrez la réservation et cliquez sur Annuler. Annulation gratuite jusqu'à 24h avant." },
-  { q: "Quand suis-je payé en tant que propriétaire ?", a: "48h après le début de la location, le montant est viré sur votre compte bancaire." },
-  { q: "Que faire en cas de litige ?", a: "Contactez le support depuis l'app ou par email. Notre équipe répond sous 4h en moyenne." },
+  {
+    q: "Comment réserver un objet ?",
+    a: "Recherchez un objet, choisissez vos dates, puis confirmez la réservation. Le propriétaire reçoit la demande immédiatement.",
+  },
+  {
+    q: "Comment publier une annonce ?",
+    a: "Ajoutez une photo, un titre clair, le prix par jour et le lieu de retrait depuis l'onglet Publier.",
+  },
+  {
+    q: "Comment annuler une réservation ?",
+    a: "Ouvrez l'onglet Locations, sélectionnez la réservation concernée, puis utilisez l'action d'annulation si elle est encore disponible.",
+  },
+  {
+    q: "Que faire en cas de litige ?",
+    a: "Envoyez un message au support avec le numéro de réservation, des photos si besoin et une description courte du problème.",
+  },
 ];
+
+const QUICK_REPLIES = ["Réservation", "Paiement", "Annonce", "Litige"];
 
 export default function Help() {
   const router = useRouter();
@@ -21,15 +43,35 @@ export default function Help() {
   const [open, setOpen] = useState<number | null>(0);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [chatDraft, setChatDraft] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    { from: "support", text: "Bonjour, expliquez-nous ce qui bloque." },
+  ]);
 
   const send = () => {
-    if (!subject || !message) {
-      Alert.alert("Champs manquants", "Renseignez un sujet et un message.");
+    if (!subject.trim() || !message.trim()) {
+      Alert.alert("Champs manquants", "Ajoutez un sujet et un message pour contacter le support.");
       return;
     }
-    Alert.alert("Message envoyé ✓", "Notre équipe vous répondra sous 4h en moyenne.", [
-      { text: "OK", onPress: () => { setSubject(""); setMessage(""); } },
+    Alert.alert("Message envoyé", "Votre demande est prête pour le support.", [
+      {
+        text: "OK",
+        onPress: () => {
+          setSubject("");
+          setMessage("");
+        },
+      },
     ]);
+  };
+
+  const sendChat = () => {
+    if (!chatDraft.trim()) return;
+    setChatMessages([
+      ...chatMessages,
+      { from: "user", text: chatDraft.trim() },
+      { from: "support", text: "Merci, votre message est bien reçu." },
+    ]);
+    setChatDraft("");
   };
 
   return (
@@ -38,70 +80,190 @@ export default function Help() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <View style={styles.header}>
-              <TouchableOpacity onPress={() => router.back()}>
+              <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")} testID="help-back">
                 <Glass borderRadius={22} style={styles.backBtn}>
                   <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
                 </Glass>
               </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Aide & support</Text>
+              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Aide</Text>
               <View style={{ width: 44 }} />
             </View>
 
-            <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <View style={styles.heroRow}>
-                <Quick icon="chatbubble-ellipses" label="Chat" colors={colors} onPress={() => Alert.alert("Chat", "Ouverture du chat en direct…")} />
-                <Quick icon="call" label="Appeler" colors={colors} onPress={() => Linking.openURL("tel:+33180000000").catch(() => {})} />
-                <Quick icon="mail" label="Email" colors={colors} onPress={() => Linking.openURL("mailto:support@locashare.fr").catch(() => {})} />
-              </View>
-
-              <Text style={[styles.section, { color: colors.textSecondary }]}>QUESTIONS FRÉQUENTES</Text>
-              <Glass borderRadius={radius.lg}>
-                {FAQS.map((f, i) => (
-                  <View key={i}>
-                    <TouchableOpacity style={styles.faqRow} onPress={() => setOpen(open === i ? null : i)} testID={`faq-${i}`}>
-                      <Text style={[styles.faqQ, { color: colors.textPrimary }]}>{f.q}</Text>
-                      <Ionicons name={open === i ? "chevron-up" : "chevron-down"} size={20} color={colors.primary} />
-                    </TouchableOpacity>
-                    {open === i && (
-                      <View style={styles.faqAnswer}>
-                        <Text style={[styles.faqA, { color: colors.textSecondary }]}>{f.a}</Text>
-                      </View>
-                    )}
-                    {i < FAQS.length - 1 && <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: spacing.md }} />}
+            <ScrollView
+              contentContainerStyle={styles.scroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Glass borderRadius={radius.lg} style={styles.contactCard}>
+                <View style={styles.contactHeader}>
+                  <View style={[styles.contactIcon, { backgroundColor: colors.primaryTint }]}>
+                    <Ionicons name="headset" size={24} color={colors.primary} />
                   </View>
-                ))}
-              </Glass>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.contactTitle, { color: colors.textPrimary }]}>Contacter le support</Text>
+                    <Text style={[styles.contactSub, { color: colors.textSecondary }]}>
+                      Réponse moyenne sous 4h
+                    </Text>
+                  </View>
+                </View>
 
-              <Text style={[styles.section, { color: colors.textSecondary }]}>NOUS CONTACTER</Text>
-              <Glass borderRadius={radius.lg} style={{ padding: spacing.md }}>
+                <Text style={[styles.sectionMini, { color: colors.textSecondary }]}>APPELER</Text>
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[styles.callButton, { backgroundColor: colors.primary }]}
+                  testID="support-call"
+                  onPress={() => Alert.alert("Appeler le support", "01 80 00 00 00")}
+                >
+                  <Ionicons name="call" size={18} color={colors.textInverse} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.callTitle, { color: colors.textInverse }]}>01 80 00 00 00</Text>
+                    <Text style={[styles.callSub, { color: colors.textInverse }]}>Disponible de 9h à 20h</Text>
+                  </View>
+                </TouchableOpacity>
+
+                <Text style={[styles.sectionMini, { color: colors.textSecondary }]}>ENVOYER UN MESSAGE</Text>
                 <Text style={[styles.label, { color: colors.textPrimary }]}>Sujet</Text>
                 <TextInput
-                  style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
-                  placeholder="Ex: Problème de paiement"
-                  value={subject} onChangeText={setSubject}
+                  style={[
+                    styles.input,
+                    { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface },
+                  ]}
+                  placeholder="Ex: Problème avec une réservation"
+                  value={subject}
+                  onChangeText={setSubject}
                   placeholderTextColor={colors.textTertiary}
                   testID="contact-subject"
                 />
+
                 <Text style={[styles.label, { color: colors.textPrimary }]}>Message</Text>
                 <TextInput
-                  style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface, minHeight: 120, textAlignVertical: "top" }]}
-                  placeholder="Décrivez votre problème ou question..."
-                  value={message} onChangeText={setMessage} multiline
+                  style={[
+                    styles.input,
+                    styles.textArea,
+                    { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface },
+                  ]}
+                  placeholder="Expliquez le problème en quelques lignes..."
+                  value={message}
+                  onChangeText={setMessage}
+                  multiline
                   placeholderTextColor={colors.textTertiary}
                   testID="contact-message"
                 />
+
                 <TouchableOpacity
-                  style={[styles.sendBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.4, radius: 16, offsetY: 6 })]}
-                  onPress={send} testID="contact-send"
+                  style={[
+                    styles.sendBtn,
+                    { backgroundColor: colors.primary },
+                    shadowStyle({ color: colors.primary, opacity: 0.32, radius: 14, offsetY: 6 }),
+                  ]}
+                  onPress={send}
+                  testID="contact-send"
                 >
                   <Ionicons name="send" size={16} color={colors.textInverse} />
                   <Text style={[styles.sendText, { color: colors.textInverse }]}>Envoyer</Text>
                 </TouchableOpacity>
               </Glass>
 
-              <Text style={[styles.foot, { color: colors.textTertiary }]}>
-                Réponse moyenne : 4h · Disponible 7j/7
-              </Text>
+              <Text style={[styles.section, { color: colors.textSecondary }]}>CHAT DIRECT</Text>
+              <Glass borderRadius={radius.lg} style={styles.chatCard}>
+                <View style={styles.chatHeader}>
+                  <View style={[styles.agentAvatar, { backgroundColor: colors.primary }]}>
+                    <Ionicons name="chatbubble-ellipses" size={21} color={colors.textInverse} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.chatTitle, { color: colors.textPrimary }]}>Assistant support</Text>
+                    <View style={styles.statusRow}>
+                      <View style={[styles.statusDot, { backgroundColor: colors.primary }]} />
+                      <Text style={[styles.statusText, { color: colors.textSecondary }]}>En ligne maintenant</Text>
+                    </View>
+                  </View>
+                </View>
+
+                <View style={[styles.chatTranscript, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  {chatMessages.map((item, index) => {
+                    const isUser = item.from === "user";
+                    return (
+                      <View key={`${item.text}-${index}`} style={isUser ? styles.messageOut : styles.messageIn}>
+                        {!isUser && (
+                          <View style={[styles.miniAvatar, { backgroundColor: colors.primaryTint }]}>
+                            <Ionicons name="headset" size={13} color={colors.primary} />
+                          </View>
+                        )}
+                        <View
+                          style={[
+                            styles.chatBubble,
+                            isUser ? styles.chatBubbleUser : styles.chatBubbleSupport,
+                            { backgroundColor: isUser ? colors.primary : colors.surface2 },
+                          ]}
+                        >
+                          <Text style={[styles.chatBubbleText, { color: isUser ? colors.textInverse : colors.textPrimary }]}>
+                            {item.text}
+                          </Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </View>
+
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickReplies}>
+                  {QUICK_REPLIES.map((reply) => (
+                    <TouchableOpacity
+                      key={reply}
+                      activeOpacity={0.8}
+                      style={[styles.quickReply, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                      onPress={() => setChatDraft(reply)}
+                    >
+                      <Text style={[styles.quickReplyText, { color: colors.textPrimary }]}>{reply}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <View style={[styles.chatComposer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <TextInput
+                    style={[styles.chatInput, { color: colors.textPrimary }]}
+                    placeholder="Écrire au support..."
+                    placeholderTextColor={colors.textTertiary}
+                    value={chatDraft}
+                    onChangeText={setChatDraft}
+                    testID="support-chat-input"
+                  />
+                  <TouchableOpacity
+                    style={[styles.chatSend, { backgroundColor: colors.primary }]}
+                    onPress={sendChat}
+                    testID="support-chat-send"
+                  >
+                    <Ionicons name="send" size={16} color={colors.textInverse} />
+                  </TouchableOpacity>
+                </View>
+              </Glass>
+
+              <Text style={[styles.section, { color: colors.textSecondary }]}>QUESTIONS FRÉQUENTES</Text>
+              <Glass borderRadius={radius.lg}>
+                {FAQS.map((faq, index) => (
+                  <View key={faq.q}>
+                    <TouchableOpacity
+                      style={styles.faqRow}
+                      onPress={() => setOpen(open === index ? null : index)}
+                      testID={`faq-${index}`}
+                    >
+                      <Text style={[styles.faqQ, { color: colors.textPrimary }]}>{faq.q}</Text>
+                      <Ionicons
+                        name={open === index ? "chevron-up" : "chevron-down"}
+                        size={20}
+                        color={colors.primary}
+                      />
+                    </TouchableOpacity>
+                    {open === index && (
+                      <View style={styles.faqAnswer}>
+                        <Text style={[styles.faqA, { color: colors.textSecondary }]}>{faq.a}</Text>
+                      </View>
+                    )}
+                    {index < FAQS.length - 1 && (
+                      <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: spacing.md }} />
+                    )}
+                  </View>
+                ))}
+              </Glass>
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -110,35 +272,100 @@ export default function Help() {
   );
 }
 
-function Quick({ icon, label, colors, onPress }: any) {
-  return (
-    <TouchableOpacity onPress={onPress} style={{ flex: 1 }}>
-      <Glass borderRadius={radius.md} style={styles.quick}>
-        <View style={[styles.quickIcon, { backgroundColor: colors.primaryTint }]}>
-          <Ionicons name={icon} size={20} color={colors.primary} />
-        </View>
-        <Text style={[styles.quickLabel, { color: colors.textPrimary }]}>{label}</Text>
-      </Glass>
-    </TouchableOpacity>
-  );
-}
-
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
   backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 18, fontWeight: "800" },
-  heroRow: { flexDirection: "row", gap: 10, marginBottom: spacing.lg },
-  quick: { alignItems: "center", padding: spacing.md, gap: 6 },
-  quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
-  quickLabel: { fontSize: 13, fontWeight: "700" },
-  section: { fontSize: 11, fontWeight: "800", letterSpacing: 1, marginTop: spacing.sm, marginBottom: spacing.sm, paddingHorizontal: 4 },
+  scroll: { padding: spacing.lg, paddingBottom: 80 },
+  contactCard: { padding: spacing.md, gap: spacing.sm },
+  contactHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm },
+  contactIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  contactTitle: { fontSize: 18, fontWeight: "900" },
+  contactSub: { fontSize: 13, marginTop: 2 },
+  sectionMini: {
+    fontSize: 10,
+    fontWeight: "900",
+    letterSpacing: 1,
+    marginTop: spacing.sm,
+  },
+  callButton: {
+    minHeight: 58,
+    borderRadius: radius.md,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  callTitle: { fontSize: 15, fontWeight: "900" },
+  callSub: { fontSize: 12, fontWeight: "700", opacity: 0.78, marginTop: 1 },
+  chatCard: { padding: spacing.md, gap: 12 },
+  chatHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  agentAvatar: { width: 46, height: 46, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  chatTitle: { fontSize: 16, fontWeight: "900" },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
+  statusDot: { width: 7, height: 7, borderRadius: 4 },
+  statusText: { fontSize: 12, fontWeight: "700" },
+  chatTranscript: { borderWidth: 1, borderRadius: radius.md, padding: 10, gap: 10, minHeight: 132 },
+  messageIn: { flexDirection: "row", alignItems: "flex-end", gap: 7, alignSelf: "flex-start", maxWidth: "88%" },
+  messageOut: { alignSelf: "flex-end", maxWidth: "88%" },
+  miniAvatar: { width: 24, height: 24, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  chatBubble: {
+    borderRadius: radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  chatBubbleSupport: { borderBottomLeftRadius: 4 },
+  chatBubbleUser: { borderBottomRightRadius: 4 },
+  chatBubbleText: { fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  quickReplies: { gap: 8, paddingRight: spacing.md },
+  quickReply: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
+  quickReplyText: { fontSize: 12, fontWeight: "800" },
+  chatComposer: {
+    minHeight: 48,
+    borderWidth: 1,
+    borderRadius: radius.md,
+    paddingLeft: 12,
+    paddingRight: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  chatInput: {
+    flex: 1,
+    minHeight: 42,
+    fontSize: 14,
+    paddingVertical: 0,
+  },
+  chatSend: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  section: {
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 1,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 4,
+  },
+  label: { fontSize: 13, fontWeight: "700", marginTop: spacing.sm, marginBottom: 6 },
+  input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
+  textArea: { minHeight: 116, textAlignVertical: "top" },
+  sendBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
+  sendText: { fontWeight: "800", fontSize: 15 },
   faqRow: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: 12 },
   faqQ: { flex: 1, fontSize: 15, fontWeight: "700" },
   faqAnswer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },
   faqA: { fontSize: 14, lineHeight: 20 },
-  label: { fontSize: 13, fontWeight: "700", marginTop: spacing.sm, marginBottom: 6 },
-  input: { borderWidth: 1, borderRadius: radius.sm + 2, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
-  sendBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 14, borderRadius: radius.md, marginTop: spacing.md },
-  sendText: { fontWeight: "800", fontSize: 15 },
-  foot: { fontSize: 12, textAlign: "center", marginTop: spacing.lg },
 });

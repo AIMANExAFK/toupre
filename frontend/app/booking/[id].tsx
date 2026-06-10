@@ -18,6 +18,7 @@ export default function BookingFlow() {
   const colors = useColors();
 
   const [listing, setListing] = useState<any>(null);
+  const [listingError, setListingError] = useState(false);
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
   const dayAfter = new Date(today); dayAfter.setDate(today.getDate() + 2);
@@ -33,10 +34,21 @@ export default function BookingFlow() {
       try {
         const data = await apiFetch(`/api/listings/${id}`);
         setListing(data);
-      } catch (e: any) { Alert.alert("Erreur", e.message); }
+      } catch (e: any) { Alert.alert("Erreur", e.message); setListingError(true); }
     })();
   }, [id]);
 
+  if (listingError) {
+    return (
+      <View style={[styles.loading, { backgroundColor: colors.bg, gap: 12 }]}>
+        <Ionicons name="alert-circle-outline" size={52} color={colors.error} />
+        <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>Annonce introuvable</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={{ color: colors.primary, fontWeight: "600" }}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   if (!listing) {
     return (
       <View style={[styles.loading, { backgroundColor: colors.bg }]}>

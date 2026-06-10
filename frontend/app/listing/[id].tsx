@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -6,15 +6,17 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  ActivityIndicator,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
-import { Glass, GradientBg } from "../../src/Glass";
+import { Glass } from "../../src/Glass";
+import { SkeletonBox } from "../../src/Skeleton";
 import { Map } from "../../src/Map";
+import { ReportModal } from "../../src/ReportModal";
 
 const CATEGORY_LABELS: Record<string, string> = {
   car: "Voitures", bike: "Vélos", tool: "Outils", tech: "Tech", camping: "Camping", other: "Autres",
@@ -26,27 +28,69 @@ export default function ListingDetail() {
   const { user } = useAuth();
   const colors = useColors();
   const [listing, setListing] = useState<any>(null);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState<{ rating: number | null; count: number }>({ rating: null, count: 0 });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const bookScale = useRef(new Animated.Value(1)).current;
+  const favScale = useRef(new Animated.Value(1)).current;
+
+  const pressIn = (anim: Animated.Value) =>
+    Animated.spring(anim, { toValue: 0.94, useNativeDriver: true, speed: 40 }).start();
+  const pressOut = (anim: Animated.Value) =>
+    Animated.spring(anim, { toValue: 1, useNativeDriver: true, speed: 40 }).start();
 
   useEffect(() => {
     (async () => {
       try {
         const data = await apiFetch(`/api/listings/${id}`);
         setListing(data);
-      } catch (e) { console.log(e); }
+        try {
+          const r = await apiFetch(`/api/reviews/listing/${id}`);
+          setReviews(r.reviews || []);
+          setReviewStats({ rating: r.rating, count: r.count || 0 });
+        } catch {}
+      } catch (e) { console.log(e); setError(true); }
       finally { setLoading(false); }
     })();
   }, [id]);
 
+  const contactOwner = () => {
+    if (!user) { router.push("/(auth)/login"); return; }
+    if (!listing?.owner?.id) return;
+    router.push(`/messages/${listing.owner.id}?listingId=${listing.id}`);
+  };
+
   if (loading) {
     return (
-      <View style={[styles.loading, { backgroundColor: colors.bg }]}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors.bg }} testID="listing-detail-screen">
+        <SkeletonBox width="100%" height={360} borderRadius={0} />
+        <View style={{ padding: spacing.lg, gap: 14 }}>
+          <SkeletonBox width="25%" height={28} borderRadius={radius.pill} />
+          <SkeletonBox width="85%" height={32} borderRadius={radius.sm} />
+          <SkeletonBox width="60%" height={18} borderRadius={radius.sm} />
+          <SkeletonBox width="100%" height={72} borderRadius={radius.lg} style={{ marginTop: spacing.sm }} />
+          <SkeletonBox width="40%" height={22} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
+          <SkeletonBox width="100%" height={16} borderRadius={radius.sm} />
+          <SkeletonBox width="90%" height={16} borderRadius={radius.sm} />
+          <SkeletonBox width="75%" height={16} borderRadius={radius.sm} />
+        </View>
       </View>
     );
   }
-  if (!listing) return null;
+  if (error || !listing) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", gap: 12 }}>
+        <Ionicons name="alert-circle-outline" size={52} color={colors.error} />
+        <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>Annonce introuvable</Text>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Text style={{ color: colors.primary, fontWeight: "600" }}>Retour</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
   const isOwner = user?.id === listing.owner_id;
 
   return (
@@ -61,11 +105,27 @@ export default function ListingDetail() {
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setFavorite(!favorite)}>
-              <Glass borderRadius={22} style={styles.iconBtn}>
-                <Ionicons name={favorite ? "heart" : "heart-outline"} size={20} color={favorite ? colors.secondary : colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <Animated.View style={{ transform: [{ scale: favScale }] }}>
+                <TouchableOpacity
+                  onPress={() => setFavorite(!favorite)}
+                  onPressIn={() => pressIn(favScale)}
+                  onPressOut={() => pressOut(favScale)}
+                  activeOpacity={1}
+                >
+                  <Glass borderRadius={22} style={styles.iconBtn}>
+                    <Ionicons name={favorite ? "heart" : "heart-outline"} size={20} color={favorite ? colors.secondary : colors.textPrimary} />
+                  </Glass>
+                </TouchableOpacity>
+              </Animated.View>
+              {!isOwner && (
+                <TouchableOpacity onPress={() => setReportOpen(true)} testID="report-listing-btn">
+                  <Glass borderRadius={22} style={styles.iconBtn}>
+                    <Ionicons name="flag-outline" size={18} color={colors.textPrimary} />
+                  </Glass>
+                </TouchableOpacity>
+              )}
+            </View>
           </SafeAreaView>
         </View>
 
@@ -77,10 +137,24 @@ export default function ListingDetail() {
           </View>
           <Text style={[styles.title, { color: colors.textPrimary }]} testID="listing-title">{listing.title}</Text>
 
+          <Glass borderRadius={radius.lg} style={styles.pricePanel}>
+            <View>
+              <Text style={[styles.pricePanelLabel, { color: colors.textSecondary }]}>Prix de location</Text>
+              <Text style={[styles.pricePanelValue, { color: colors.textPrimary }]}>
+                {listing.price_per_day}€ <Text style={{ color: colors.textSecondary, fontSize: 15 }}>par jour</Text>
+              </Text>
+            </View>
+            <View style={[styles.feePill, { backgroundColor: colors.successBg }]}>
+              <Text style={[styles.feeText, { color: colors.success }]}>Frais 10%</Text>
+            </View>
+          </Glass>
+
           <View style={styles.metaRow}>
             <View style={styles.metaItem}>
               <Ionicons name="star" size={16} color={colors.warning} />
-              <Text style={[styles.metaText, { color: colors.textSecondary }]}>4.9 · 28 avis</Text>
+              <Text style={[styles.metaText, { color: colors.textSecondary }]}>
+                {reviewStats.rating ? `${reviewStats.rating.toFixed(1)} · ${reviewStats.count} avis` : "Pas encore d'avis"}
+              </Text>
             </View>
             <Text style={[styles.dot, { color: colors.textTertiary }]}>·</Text>
             <View style={styles.metaItem}>
@@ -100,7 +174,16 @@ export default function ListingDetail() {
                 <Text style={[styles.ownerName, { color: colors.textPrimary }]}>{listing.owner.name}</Text>
                 <Text style={[styles.ownerLabel, { color: colors.textSecondary }]}>Propriétaire vérifié</Text>
               </View>
-              <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+              {!isOwner && (
+                <TouchableOpacity
+                  onPress={contactOwner}
+                  style={[styles.contactBtn, { backgroundColor: colors.primaryTint }]}
+                  testID="contact-owner-btn"
+                >
+                  <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.primary} />
+                  <Text style={[styles.contactBtnText, { color: colors.primary }]}>Contacter</Text>
+                </TouchableOpacity>
+              )}
             </Glass>
           )}
 
@@ -119,11 +202,65 @@ export default function ListingDetail() {
               }]}
             />
           </View>
+
+          {/* ─── AVIS ───────────────────────────────── */}
+          <View style={styles.reviewsHeader}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 0 }]}>
+              Avis {reviewStats.count > 0 ? `(${reviewStats.count})` : ""}
+            </Text>
+            {reviewStats.rating !== null && (
+              <View style={styles.metaItem}>
+                <Ionicons name="star" size={16} color={colors.warning} />
+                <Text style={[styles.metaText, { color: colors.textPrimary, fontWeight: "800" }]}>
+                  {reviewStats.rating.toFixed(1)}
+                </Text>
+              </View>
+            )}
+          </View>
+          {reviews.length === 0 ? (
+            <View style={[styles.emptyReviews, { backgroundColor: colors.surface2, borderColor: colors.border }]}>
+              <Ionicons name="chatbubble-outline" size={28} color={colors.textTertiary} />
+              <Text style={[styles.emptyReviewsText, { color: colors.textSecondary }]}>
+                Aucun avis pour le moment. Soyez le premier !
+              </Text>
+            </View>
+          ) : (
+            reviews.map((r) => (
+              <Glass key={r.id} borderRadius={radius.lg} style={styles.reviewCard}>
+                <View style={styles.reviewHead}>
+                  <View style={[styles.reviewAvatar, { backgroundColor: colors.surface2 }]}>
+                    <Text style={[styles.reviewInitial, { color: colors.textPrimary }]}>
+                      {(r.author?.name || "?").charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.reviewName, { color: colors.textPrimary }]}>{r.author?.name || "Anonyme"}</Text>
+                    <Text style={[styles.reviewDate, { color: colors.textTertiary }]}>
+                      {new Date(r.created_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </Text>
+                  </View>
+                  <View style={styles.reviewStars}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Ionicons
+                        key={s}
+                        name={s <= r.rating ? "star" : "star-outline"}
+                        size={13}
+                        color={s <= r.rating ? colors.warning : colors.textTertiary}
+                      />
+                    ))}
+                  </View>
+                </View>
+                {r.comment ? (
+                  <Text style={[styles.reviewText, { color: colors.textSecondary }]}>{r.comment}</Text>
+                ) : null}
+              </Glass>
+            ))
+          )}
         </View>
       </ScrollView>
 
       <SafeAreaView edges={["bottom"]} style={styles.bottomWrap}>
-        <Glass borderRadius={0} style={styles.bottomBar}>
+        <Glass borderRadius={0} style={[styles.bottomBar, { borderTopColor: colors.border }]}>
           <View style={styles.bottomInner}>
             <View>
               <Text style={[styles.bottomPrice, { color: colors.textPrimary }]}>{listing.price_per_day}€</Text>
@@ -134,20 +271,38 @@ export default function ListingDetail() {
                 <Text style={[styles.bookText, { color: colors.textSecondary }]}>Votre annonce</Text>
               </View>
             ) : (
-              <TouchableOpacity
-                style={[styles.bookBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 })]}
-                onPress={() => {
-                  if (!user) { router.push("/(auth)/login"); return; }
-                  router.push(`/booking/${listing.id}`);
-                }}
-                testID="book-now-btn"
-              >
-                <Text style={[styles.bookText, { color: colors.textInverse }]}>Réserver</Text>
-              </TouchableOpacity>
+              <Animated.View style={{ transform: [{ scale: bookScale }] }}>
+                <TouchableOpacity
+                  style={[styles.bookBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 })]}
+                  onPress={() => {
+                    if (!user) { router.push("/(auth)/login"); return; }
+                    // Vérif KYC avant booking
+                    if (user && !user.verified) {
+                      router.push("/verification?reason=booking");
+                      return;
+                    }
+                    router.push(`/booking/${listing.id}`);
+                  }}
+                  onPressIn={() => pressIn(bookScale)}
+                  onPressOut={() => pressOut(bookScale)}
+                  activeOpacity={1}
+                  testID="book-now-btn"
+                >
+                  <Text style={[styles.bookText, { color: colors.textInverse }]}>Réserver</Text>
+                </TouchableOpacity>
+              </Animated.View>
             )}
           </View>
         </Glass>
       </SafeAreaView>
+
+      <ReportModal
+        visible={reportOpen}
+        onClose={() => setReportOpen(false)}
+        targetType="listing"
+        targetId={listing.id}
+        targetLabel={listing.title}
+      />
     </View>
   );
 }
@@ -161,7 +316,12 @@ const styles = StyleSheet.create({
   body: { padding: spacing.lg },
   cat: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, alignSelf: "flex-start", marginBottom: spacing.sm },
   catText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6 },
-  title: { fontSize: 28, fontWeight: "800", letterSpacing: -0.6 },
+  title: { fontSize: 28, fontWeight: "900", letterSpacing: -0.6 },
+  pricePanel: { marginTop: spacing.md, padding: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  pricePanelLabel: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
+  pricePanelValue: { fontSize: 24, fontWeight: "900", marginTop: 2 },
+  feePill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  feeText: { fontSize: 12, fontWeight: "900" },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12, gap: 6, flexWrap: "wrap" },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 14 },
@@ -175,10 +335,23 @@ const styles = StyleSheet.create({
   description: { fontSize: 15, lineHeight: 22 },
   mapBox: { height: 220, borderRadius: 16, overflow: "hidden", marginTop: 4 },
   bottomWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
-  bottomBar: { borderTopWidth: 1, borderTopColor: "rgba(124,58,237,0.18)" },
+  bottomBar: { borderTopWidth: 1 },
   bottomInner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },
   bottomPrice: { fontSize: 24, fontWeight: "800", letterSpacing: -0.6 },
   bottomUnit: { fontSize: 13 },
   bookBtn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: radius.md },
   bookText: { fontWeight: "800", fontSize: 16 },
+  contactBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999 },
+  contactBtnText: { fontSize: 13, fontWeight: "700" },
+  reviewsHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.lg, marginBottom: spacing.sm },
+  emptyReviews: { padding: spacing.lg, borderRadius: radius.lg, borderWidth: 1, alignItems: "center", gap: 8 },
+  emptyReviewsText: { fontSize: 13, textAlign: "center" },
+  reviewCard: { padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm },
+  reviewHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  reviewAvatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  reviewInitial: { fontSize: 14, fontWeight: "800" },
+  reviewName: { fontSize: 14, fontWeight: "700" },
+  reviewDate: { fontSize: 11, marginTop: 2 },
+  reviewStars: { flexDirection: "row", gap: 1 },
+  reviewText: { fontSize: 14, lineHeight: 20 },
 });

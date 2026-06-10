@@ -13,7 +13,7 @@ export default function Index() {
     if (loading) return;
     if (user) router.replace("/(tabs)");
     else router.replace("/(auth)/welcome");
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.bg }]} testID="splash-screen">

@@ -1,9 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { supabase } from "./supabase";
 
-const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
-const TOKEN_KEY = "locashare_token";
+WebBrowser.maybeCompleteAuthSession();
+
+export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+
+// Détecte si Supabase est vraiment configuré (pas les placeholders par défaut)
+const IS_SUPABASE_CONFIGURED =
+  !!process.env.EXPO_PUBLIC_SUPABASE_URL &&
+  !process.env.EXPO_PUBLIC_SUPABASE_URL.includes("VOTRE") &&
+  !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY &&
+  !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.includes("VOTRE");
 
 type User = {
   id: string;
@@ -11,6 +21,12 @@ type User = {
   name: string;
   avatar?: string | null;
   created_at: string;
+  verified?: boolean;
+  kyc_status?: "none" | "pending" | "verified" | "rejected";
+  kyc_source?: string;
+  referral_code?: string;
+  credit_balance?: number;
+  referred_by?: string | null;
 };
 
 type AuthCtx = {
@@ -18,96 +34,337 @@ type AuthCtx = {
   token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  register: (email: string, password: string, name: string, referral_code?: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
+  loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-async function storeToken(token: string | null) {
-  if (Platform.OS === "web") {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-    else localStorage.removeItem(TOKEN_KEY);
-    return;
-  }
-  if (token) await SecureStore.setItemAsync(TOKEN_KEY, token);
-  else await SecureStore.deleteItemAsync(TOKEN_KEY);
+function toUser(u: any, meta: any): User {
+  return {
+    id: u.id,
+    email: u.email ?? "",
+    name: meta?.name ?? meta?.full_name ?? u.email?.split("@")[0] ?? "Utilisateur",
+    avatar: meta?.avatar_url ?? null,
+    created_at: u.created_at ?? new Date().toISOString(),
+  };
 }
 
-async function loadToken(): Promise<string | null> {
-  if (Platform.OS === "web") return localStorage.getItem(TOKEN_KEY);
-  return await SecureStore.getItemAsync(TOKEN_KEY);
+// ── Persistance mock (localStorage web / mémoire native) ──────
+const MOCK_TOKEN_KEY = "ls_mock_token";
+const MOCK_USER_KEY  = "ls_mock_user";
+const MOCK_USERS_KEY = "ls_mock_users";
+
+type LocalStoredUser = User & { password: string };
+
+function mockSave(token: string, user: User) {
+  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+    localStorage.setItem(MOCK_TOKEN_KEY, token);
+    localStorage.setItem(MOCK_USER_KEY, JSON.stringify(user));
+  }
+}
+
+function mockLoad(): { token: string; user: User } | null {
+  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+    const token = localStorage.getItem(MOCK_TOKEN_KEY);
+    const raw   = localStorage.getItem(MOCK_USER_KEY);
+    if (token && raw) {
+      try { return { token, user: JSON.parse(raw) }; } catch {}
+    }
+  }
+  return null;
+}
+
+function mockClear() {
+  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+    localStorage.removeItem(MOCK_TOKEN_KEY);
+    localStorage.removeItem(MOCK_USER_KEY);
+  }
+}
+
+function canUseLocalAuthFallback() {
+  return Platform.OS === "web" && typeof localStorage !== "undefined";
+}
+
+function localUsers(): LocalStoredUser[] {
+  if (!canUseLocalAuthFallback()) return [];
+  const raw = localStorage.getItem(MOCK_USERS_KEY);
+  const base: LocalStoredUser[] = [
+    {
+      id: "demo-local",
+      email: "demo@locashare.fr",
+      password: "demo1234",
+      name: "Alexandre D.",
+      avatar: null,
+      created_at: "2024-01-01T00:00:00.000Z",
+    },
+  ];
+  if (!raw) return base;
+  try {
+    const stored = JSON.parse(raw) as LocalStoredUser[];
+    return [...base, ...stored.filter((u) => u.email !== "demo@locashare.fr")];
+  } catch {
+    return base;
+  }
+}
+
+function saveLocalUsers(users: LocalStoredUser[]) {
+  if (!canUseLocalAuthFallback()) return;
+  localStorage.setItem(
+    MOCK_USERS_KEY,
+    JSON.stringify(users.filter((u) => u.email !== "demo@locashare.fr"))
+  );
+}
+
+function localToken(email: string) {
+  return `local_demo_${email}_${Date.now()}`;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [user, setUser]       = useState<User | null>(null);
+  const [token, setToken]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const t = await loadToken();
-        if (t) {
-          const res = await fetch(`${BACKEND_URL}/api/auth/me`, {
-            headers: { Authorization: `Bearer ${t}` },
-          });
-          if (res.ok) {
-            const u = await res.json();
-            setUser(u);
-            setToken(t);
-          } else {
-            await storeToken(null);
-          }
+    if (IS_SUPABASE_CONFIGURED) {
+      // ── Mode Supabase ──
+      supabase.auth.getSession().then(({ data }) => {
+        const session = data.session;
+        if (session) {
+          setToken(session.access_token);
+          setUser(toUser(session.user, session.user.user_metadata));
         }
-      } catch (e) {
-        console.log("auth init error", e);
-      } finally {
         setLoading(false);
+      });
+
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+        if (session) {
+          setToken(session.access_token);
+          setUser(toUser(session.user, session.user.user_metadata));
+        } else {
+          setToken(null);
+          setUser(null);
+        }
+      });
+
+      return () => listener.subscription.unsubscribe();
+    } else {
+      // ── Mode mock backend ──
+      const saved = mockLoad();
+      if (saved) {
+        setToken(saved.token);
+        setUser(saved.user);
       }
-    })();
+      setLoading(false);
+    }
   }, []);
 
+  // ── Login ────────────────────────────────────────────────────
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || "Email ou mot de passe incorrect");
+    if (IS_SUPABASE_CONFIGURED) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error(error.message);
+      return;
     }
-    const data = await res.json();
-    await storeToken(data.access_token);
-    setToken(data.access_token);
-    setUser(data.user);
+
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.detail || "Identifiants incorrects.");
+
+      const u: User = {
+        id:             data.user?.id         ?? "mock_id",
+        email,
+        name:           data.user?.name       ?? data.user?.nom ?? email.split("@")[0],
+        avatar:         data.user?.avatar     ?? null,
+        created_at:     data.user?.created_at ?? new Date().toISOString(),
+        verified:       data.user?.verified ?? false,
+        kyc_status:     data.user?.kyc_status ?? "none",
+        kyc_source:     data.user?.kyc_source,
+        referral_code:  data.user?.referral_code,
+        credit_balance: data.user?.credit_balance,
+        referred_by:    data.user?.referred_by,
+      };
+      const authToken = data.access_token ?? data.token;
+      mockSave(authToken, u);
+      setToken(authToken);
+      setUser(u);
+    } catch (error: any) {
+      if (!canUseLocalAuthFallback() || error?.message === "Identifiants incorrects.") throw error;
+      const found = localUsers().find(
+        (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
+      );
+      if (!found) throw new Error("Identifiants incorrects.");
+      const { password: _password, ...u } = found;
+      const authToken = localToken(u.email);
+      mockSave(authToken, u);
+      setToken(authToken);
+      setUser(u);
+    }
   };
 
-  const register = async (email: string, password: string, name: string) => {
-    const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(typeof err.detail === "string" ? err.detail : "Inscription impossible");
+  // ── Register ─────────────────────────────────────────────────
+  const register = async (email: string, password: string, name: string, referral_code?: string) => {
+    if (IS_SUPABASE_CONFIGURED) {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name, referral_code } },
+      });
+      if (error) throw new Error(error.message);
+      return;
     }
-    const data = await res.json();
-    await storeToken(data.access_token);
-    setToken(data.access_token);
-    setUser(data.user);
+
+    try {
+      const res  = await fetch(`${BACKEND_URL}/api/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name, referral_code }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || data.detail || "Erreur lors de la création du compte.");
+
+      const u: User = {
+        id:             data.user?.id         ?? "mock_id",
+        email,
+        name:           data.user?.name       ?? name,
+        avatar:         data.user?.avatar     ?? null,
+        created_at:     data.user?.created_at ?? new Date().toISOString(),
+        verified:       data.user?.verified ?? false,
+        kyc_status:     data.user?.kyc_status ?? "none",
+        kyc_source:     data.user?.kyc_source,
+        referral_code:  data.user?.referral_code,
+        credit_balance: data.user?.credit_balance,
+        referred_by:    data.user?.referred_by,
+      };
+      const authToken = data.access_token ?? data.token;
+      mockSave(authToken, u);
+      setToken(authToken);
+      setUser(u);
+    } catch (error: any) {
+      if (!canUseLocalAuthFallback()) throw error;
+      const normalizedEmail = email.trim().toLowerCase();
+      const users = localUsers();
+      if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
+        throw new Error("Cet email est déjà utilisé.");
+      }
+      const u: User = {
+        id: `local_${Date.now()}`,
+        email: normalizedEmail,
+        name,
+        avatar: null,
+        created_at: new Date().toISOString(),
+      };
+      saveLocalUsers([...users, { ...u, password }]);
+      const authToken = localToken(u.email);
+      mockSave(authToken, u);
+      setToken(authToken);
+      setUser(u);
+    }
   };
 
+  // ── Google OAuth ─────────────────────────────────────────────
+  const loginWithGoogle = async () => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      throw new Error("Connexion Google non disponible en mode démo.");
+    }
+    if (Platform.OS === "web") {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw new Error(error.message);
+      return;
+    }
+    const redirectUrl = Linking.createURL("auth/callback");
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+    });
+    if (error) throw new Error(error.message);
+    if (!data.url) return;
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+    if (result.type === "success") {
+      const parsed = Linking.parse(result.url);
+      const params = parsed.queryParams as Record<string, string>;
+      if (params.code) await supabase.auth.exchangeCodeForSession(result.url);
+    }
+  };
+
+  // ── Apple Sign In ─────────────────────────────────────────────
+  const loginWithApple = async () => {
+    if (!IS_SUPABASE_CONFIGURED) {
+      throw new Error("Connexion Apple non disponible en mode démo.");
+    }
+    if (Platform.OS === "web") {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) throw new Error(error.message);
+      return;
+    }
+    try {
+      const AppleAuth = await import("expo-apple-authentication");
+      const credential = await AppleAuth.signInAsync({
+        requestedScopes: [
+          AppleAuth.AppleAuthenticationScope.FULL_NAME,
+          AppleAuth.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      if (!credential.identityToken) throw new Error("Apple: token manquant");
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken,
+        nonce: credential.authorizationCode ?? undefined,
+      });
+      if (error) throw new Error(error.message);
+    } catch (e: any) {
+      if (e.code !== "ERR_REQUEST_CANCELED") throw e;
+    }
+  };
+
+  // ── Refresh user (après KYC validé, par exemple) ────────────
+  const refreshUser = async () => {
+    try {
+      const r = await fetch(`${BACKEND_URL}/api/auth/me`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!r.ok) return;
+      const data = await r.json();
+      const u: User = {
+        id:            data.id || user?.id || "",
+        email:         data.email || user?.email || "",
+        name:          data.name || user?.name || "",
+        avatar:        data.avatar ?? user?.avatar ?? null,
+        created_at:    data.created_at ?? user?.created_at ?? new Date().toISOString(),
+        ...((data as any) || {}),
+      };
+      setUser(u);
+      mockSave(token || "", u);
+    } catch {}
+  };
+
+  // ── Logout ───────────────────────────────────────────────────
   const logout = async () => {
-    await storeToken(null);
-    setToken(null);
-    setUser(null);
+    if (IS_SUPABASE_CONFIGURED) {
+      await supabase.auth.signOut();
+    } else {
+      mockClear();
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (
-    <Ctx.Provider value={{ user, token, loading, login, register, logout }}>
+    <Ctx.Provider value={{ user, token, loading, login, register, loginWithGoogle, loginWithApple, logout, refreshUser }}>
       {children}
     </Ctx.Provider>
   );
@@ -119,6 +376,21 @@ export function useAuth() {
   return ctx;
 }
 
+// ── apiFetch ─────────────────────────────────────────────────
+export class ApiError extends Error {
+  code?: string;
+  action?: string;
+  reasons?: string[];
+  status?: number;
+  constructor(message: string, opts: { code?: string; action?: string; reasons?: string[]; status?: number } = {}) {
+    super(message);
+    this.code = opts.code;
+    this.action = opts.action;
+    this.reasons = opts.reasons;
+    this.status = opts.status;
+  }
+}
+
 export async function apiFetch(path: string, opts: RequestInit = {}, token?: string | null) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -128,9 +400,15 @@ export async function apiFetch(path: string, opts: RequestInit = {}, token?: str
   const res = await fetch(`${BACKEND_URL}${path}`, { ...opts, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(typeof err.detail === "string" ? err.detail : `Erreur ${res.status}`);
+    throw new ApiError(
+      typeof err.detail === "string" ? err.detail : `Erreur ${res.status}`,
+      {
+        code: err.code,
+        action: err.action,
+        reasons: err.reasons,
+        status: res.status,
+      },
+    );
   }
   return res.json();
 }
-
-export { BACKEND_URL };

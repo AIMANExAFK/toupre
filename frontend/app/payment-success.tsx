@@ -75,7 +75,7 @@ export default function PaymentSuccess() {
               </Glass>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Paiement en attente</Text>
               <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                Le paiement n'est pas encore confirmé. Consultez Mes locations pour suivre le statut.
+                {"Le paiement n'est pas encore confirmé. Consultez Mes locations pour suivre le statut."}
               </Text>
               <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => router.replace("/(tabs)/bookings")}>
                 <Text style={[styles.btnText, { color: colors.textInverse }]}>Voir mes locations</Text>
@@ -90,7 +90,7 @@ export default function PaymentSuccess() {
               <Text style={[styles.title, { color: colors.textPrimary }]}>Une erreur est survenue</Text>
               <Text style={[styles.sub, { color: colors.textSecondary }]}>Veuillez réessayer ou contacter le support.</Text>
               <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }]} onPress={() => router.replace("/(tabs)")}>
-                <Text style={[styles.btnText, { color: colors.textInverse }]}>Retour à l'accueil</Text>
+                <Text style={[styles.btnText, { color: colors.textInverse }]}>{"Retour à l'accueil"}</Text>
               </TouchableOpacity>
             </>
           )}

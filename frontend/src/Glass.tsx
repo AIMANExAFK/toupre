@@ -10,7 +10,7 @@ type Props = {
   borderRadius?: number;
 };
 
-export function Glass({ intensity = 50, style, children, borderRadius = 20 }: Props) {
+export function Glass({ intensity = 35, style, children, borderRadius = 8 }: Props) {
   const { isDark, colors } = useTheme();
   if (Platform.OS === "web") {
     return (
@@ -22,9 +22,9 @@ export function Glass({ intensity = 50, style, children, borderRadius = 20 }: Pr
             borderWidth: 1,
             borderColor: colors.surfaceGlassBorder,
             // @ts-ignore web only
-            backdropFilter: "blur(22px) saturate(180%)",
+            backdropFilter: "blur(14px) saturate(130%)",
             // @ts-ignore web only
-            WebkitBackdropFilter: "blur(22px) saturate(180%)",
+            WebkitBackdropFilter: "blur(14px) saturate(130%)",
             overflow: "hidden",
           },
           style,
@@ -54,36 +54,31 @@ export function Glass({ intensity = 50, style, children, borderRadius = 20 }: Pr
 }
 
 export function GradientBg({ children }: { children: React.ReactNode }) {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}>
-      {/* Decorative glow blobs */}
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          top: -120,
-          right: -80,
-          width: 320,
-          height: 320,
-          borderRadius: 160,
-          backgroundColor: colors.primaryGlow,
-          opacity: isDark ? 0.55 : 0.6,
-        }}
-      />
-      <View
-        pointerEvents="none"
-        style={{
-          position: "absolute",
-          bottom: -140,
-          left: -100,
-          width: 360,
-          height: 360,
-          borderRadius: 180,
-          backgroundColor: isDark ? "rgba(196, 181, 253, 0.18)" : "rgba(255, 107, 107, 0.18)",
-        }}
-      />
+      <View pointerEvents="none" style={[styles.topWash, { backgroundColor: colors.surface2 }]} />
+      <View pointerEvents="none" style={[styles.rule, { backgroundColor: colors.border }]} />
       <View style={{ flex: 1 }}>{children}</View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  topWash: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 210,
+    opacity: 0.72,
+  },
+  rule: {
+    position: "absolute",
+    top: 209,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    opacity: 0.7,
+  },
+});

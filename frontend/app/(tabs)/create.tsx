@@ -16,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { apiFetch, useAuth } from "../../src/auth";
+import { apiFetch, useAuth, ApiError } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 
@@ -40,8 +40,9 @@ export default function Create() {
   const [category, setCategory] = useState("car");
   const [price, setPrice] = useState("");
   const [address, setAddress] = useState("");
-  const [photo, setPhoto] = useState<string>(SAMPLE);
+  const [photo, setPhoto] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const isReady = Boolean(title.trim() && description.trim() && price.trim() && address.trim());
 
   const pickImage = async () => {
     const res = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -66,10 +67,28 @@ export default function Create() {
       router.push("/(auth)/login");
       return;
     }
+    // ─── KYC obligatoire pour publier ───
+    if (!user.verified) {
+      Alert.alert(
+        "Vérification d'identité requise",
+        "Pour publier une annonce et protéger la communauté, vous devez d'abord vérifier votre identité.",
+        [
+          { text: "Plus tard", style: "cancel" },
+          { text: "Vérifier maintenant", onPress: () => router.push("/verification?reason=publish") },
+        ],
+      );
+      return;
+    }
     if (!title || !description || !price || !address) {
       Alert.alert("Champs manquants", "Veuillez remplir tous les champs.");
       return;
     }
+    const parsedPrice = parseFloat(price);
+    if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      Alert.alert("Prix invalide", "Entrez un prix par jour valide (ex: 25).");
+      return;
+    }
+    const finalPhoto = photo || SAMPLE;
     setLoading(true);
     try {
       await apiFetch(
@@ -80,8 +99,8 @@ export default function Create() {
             title,
             description,
             category,
-            price_per_day: parseFloat(price),
-            photos: [photo],
+            price_per_day: parsedPrice,
+            photos: [finalPhoto],
             location: { lat: 48.8566, lng: 2.3522, address },
           }),
         },
@@ -97,7 +116,18 @@ export default function Create() {
         },
       ]);
     } catch (e: any) {
-      Alert.alert("Erreur", e.message);
+      if (e instanceof ApiError && e.code === "CONTENT_BLOCKED") {
+        Alert.alert(
+          "Contenu interdit détecté",
+          (e.reasons || []).join("\n") || e.message,
+        );
+      } else if (e instanceof ApiError && e.code === "KYC_REQUIRED") {
+        Alert.alert("Vérification requise", e.message, [
+          { text: "Vérifier", onPress: () => router.push("/verification") },
+        ]);
+      } else {
+        Alert.alert("Erreur", e.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -131,8 +161,43 @@ export default function Create() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.heading, { color: colors.textPrimary }]}>Publier une annonce</Text>
-              <Text style={[styles.sub, { color: colors.textSecondary }]}>Mettez en location en quelques secondes</Text>
+              <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.push("/(tabs)")} testID="create-back-btn">
+                  <Glass borderRadius={22} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+                  </Glass>
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Publier</Text>
+                <View style={{ width: 44 }} />
+              </View>
+
+              <View style={styles.topBlock}>
+                <Text style={[styles.kicker, { color: colors.primary }]}>Nouvelle annonce</Text>
+                <Text style={[styles.heading, { color: colors.textPrimary }]}>Publier un bien</Text>
+                <Text style={[styles.sub, { color: colors.textSecondary }]}>
+                  Ajoutez les informations essentielles pour inspirer confiance dès la première vue.
+                </Text>
+              </View>
+
+              <Glass borderRadius={radius.lg} style={styles.progressCard}>
+                <View style={styles.progressHeader}>
+                  <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>{"Qualité de l'annonce"}</Text>
+                  <Text style={[styles.progressValue, { color: colors.primary }]}>
+                    {[title, description, price, address, photo].filter(Boolean).length}/5
+                  </Text>
+                </View>
+                <View style={[styles.progressTrack, { backgroundColor: colors.surface2 }]}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        backgroundColor: colors.primary,
+                        width: `${([title, description, price, address, photo].filter(Boolean).length / 5) * 100}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              </Glass>
 
               <TouchableOpacity onPress={pickImage} testID="pick-image-btn" style={{ marginTop: spacing.lg }}>
                 <Glass borderRadius={radius.lg} style={[styles.imageBox, { borderColor: colors.primary }]}>
@@ -141,7 +206,8 @@ export default function Create() {
                   ) : (
                     <View style={styles.placeholder}>
                       <Ionicons name="camera-outline" size={36} color={colors.primary} />
-                      <Text style={[styles.placeholderText, { color: colors.primary }]}>Ajouter une photo</Text>
+                      <Text style={[styles.placeholderText, { color: colors.primary }]}>Ajouter une photo claire</Text>
+                      <Text style={[styles.placeholderHint, { color: colors.textSecondary }]}>Face avant, bon éclairage, objet entier</Text>
                     </View>
                   )}
                   <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
@@ -172,10 +238,10 @@ export default function Create() {
                 })}
               </ScrollView>
 
-              <Text style={[styles.label, { color: colors.textPrimary }]}>Titre de l'annonce</Text>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>{"Titre de l'annonce"}</Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
-                placeholder="Ex: Tesla Model 3 - berline électrique"
+                placeholder="Ex: Perceuse Bosch sans fil"
                 value={title}
                 onChangeText={setTitle}
                 placeholderTextColor={colors.textTertiary}
@@ -185,7 +251,7 @@ export default function Create() {
               <Text style={[styles.label, { color: colors.textPrimary }]}>Description</Text>
               <TextInput
                 style={[styles.input, styles.textArea, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
-                placeholder="Décrivez votre objet, son état, ses caractéristiques..."
+                placeholder="État, accessoires inclus, consignes de retrait, caution éventuelle..."
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -197,7 +263,7 @@ export default function Create() {
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
                 placeholder="25"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
                 value={price}
                 onChangeText={setPrice}
                 placeholderTextColor={colors.textTertiary}
@@ -207,7 +273,7 @@ export default function Create() {
               <Text style={[styles.label, { color: colors.textPrimary }]}>Lieu de retrait</Text>
               <TextInput
                 style={[styles.input, { color: colors.textPrimary, borderColor: colors.border, backgroundColor: colors.surface }]}
-                placeholder="Ex: Paris 11ème"
+                placeholder="Ex: Paris 11e, proche Bastille"
                 value={address}
                 onChangeText={setAddress}
                 placeholderTextColor={colors.textTertiary}
@@ -215,12 +281,23 @@ export default function Create() {
               />
 
               <TouchableOpacity
-                style={[styles.submitBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 })]}
+                style={[
+                  styles.submitBtn,
+                  { backgroundColor: isReady ? colors.primary : colors.surface2 },
+                  (loading || !isReady) && { opacity: 0.78 },
+                  isReady && shadowStyle({ color: colors.primary, opacity: 0.32, radius: 14, offsetY: 6 }),
+                ]}
                 onPress={submit}
-                disabled={loading}
+                disabled={loading || !isReady}
                 testID="create-submit-btn"
               >
-                {loading ? <ActivityIndicator color={colors.textInverse} /> : <Text style={[styles.submitText, { color: colors.textInverse }]}>Publier l'annonce</Text>}
+                {loading ? (
+                  <ActivityIndicator color={colors.textInverse} />
+                ) : (
+                  <Text style={[styles.submitText, { color: isReady ? colors.textInverse : colors.textSecondary }]}>
+                    {"Publier l'annonce"}
+                  </Text>
+                )}
               </TouchableOpacity>
             </ScrollView>
           </KeyboardAvoidingView>
@@ -231,16 +308,33 @@ export default function Create() {
 }
 
 const styles = StyleSheet.create({
-  scroll: { padding: spacing.lg, paddingBottom: 160 },
-  heading: { fontSize: 28, fontWeight: "800", letterSpacing: -0.8 },
-  sub: { fontSize: 14, marginTop: 4 },
+  scroll: { padding: spacing.lg, paddingBottom: 180 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: spacing.md,
+  },
+  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  headerTitle: { fontSize: 15, fontWeight: "900" },
+  topBlock: { gap: 5 },
+  kicker: { fontSize: 12, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" },
+  heading: { fontSize: 30, fontWeight: "900", letterSpacing: -0.8 },
+  sub: { fontSize: 14, lineHeight: 21, marginTop: 2 },
+  progressCard: { marginTop: spacing.lg, padding: spacing.md },
+  progressHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  progressTitle: { fontSize: 14, fontWeight: "800" },
+  progressValue: { fontSize: 13, fontWeight: "900" },
+  progressTrack: { height: 7, borderRadius: 999, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 999 },
   imageBox: { height: 200, alignItems: "center", justifyContent: "center", borderWidth: 2, borderStyle: "dashed", overflow: "hidden", position: "relative" },
   image: { ...StyleSheet.absoluteFillObject, width: "100%", height: "100%" },
   placeholder: { alignItems: "center", justifyContent: "center", gap: 8 },
-  placeholderText: { fontWeight: "700" },
+  placeholderText: { fontWeight: "800" },
+  placeholderHint: { fontSize: 12, fontWeight: "600", textAlign: "center" },
   editBadge: { position: "absolute", bottom: 12, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   label: { fontSize: 13, fontWeight: "700", marginTop: spacing.lg, marginBottom: spacing.sm },
-  input: { borderWidth: 1, borderRadius: radius.sm + 2, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15 },
+  input: { borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 13, fontSize: 15 },
   textArea: { minHeight: 100, textAlignVertical: "top" },
   catChip: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 999, borderWidth: 1, borderColor: "transparent" },
   catText: { fontSize: 13, fontWeight: "700" },

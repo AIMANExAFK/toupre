@@ -1,8 +1,9 @@
+import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../../src/auth";
+import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 
@@ -10,6 +11,25 @@ export default function Profile() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const colors = useColors();
+  const [unread, setUnread] = useState(0);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const [me, setMe] = useState<any>(null);
+
+  const loadAll = useCallback(async () => {
+    if (!user) return;
+    try {
+      const [msgs, notifs, fullMe] = await Promise.all([
+        apiFetch("/api/messages/unread-count").catch(() => ({ count: 0 })),
+        apiFetch("/api/notifications").catch(() => []),
+        apiFetch("/api/auth/me").catch(() => null),
+      ]);
+      setUnread(msgs.count || 0);
+      setNotifUnread((notifs || []).filter((n: any) => !n.read).length);
+      setMe(fullMe);
+    } catch {}
+  }, [user]);
+
+  useFocusEffect(useCallback(() => { loadAll(); }, [loadAll]));
 
   const onLogout = async () => {
     await logout();
@@ -75,8 +95,70 @@ export default function Profile() {
               </Glass>
             </View>
 
+            {/* KYC banner — dynamique */}
+            <TouchableOpacity onPress={() => router.push("/verification")} style={styles.menu} activeOpacity={0.8}>
+              <Glass borderRadius={radius.lg} style={styles.trustCard}>
+                <View style={[styles.trustIcon, {
+                  backgroundColor: me?.kyc_status === "verified" ? colors.successBg : colors.primaryTint,
+                }]}>
+                  <Ionicons
+                    name={me?.kyc_status === "verified" ? "shield-checkmark" : "shield-outline"}
+                    size={22}
+                    color={me?.kyc_status === "verified" ? colors.success : colors.primary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.trustTitle, { color: colors.textPrimary }]}>
+                    {me?.kyc_status === "verified" ? "✓ Identité vérifiée" : me?.kyc_status === "pending" ? "Vérification en cours…" : "Vérifier mon identité"}
+                  </Text>
+                  <Text style={[styles.trustText, { color: colors.textSecondary }]}>
+                    {me?.kyc_status === "verified" ? "Vous pouvez louer et publier en toute confiance." : "Débloquez toutes les fonctionnalités en quelques secondes."}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+              </Glass>
+            </TouchableOpacity>
+
+            {/* Parrainage banner */}
+            {me?.credit_balance != null && (
+              <TouchableOpacity onPress={() => router.push("/referral")} style={styles.menu} activeOpacity={0.8}>
+                <Glass borderRadius={radius.lg} style={[styles.trustCard, { backgroundColor: colors.primaryTint + "30" }]}>
+                  <View style={[styles.trustIcon, { backgroundColor: colors.primary }]}>
+                    <Ionicons name="gift" size={22} color={colors.textInverse} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.trustTitle, { color: colors.primary }]}>
+                      Parrainage · {me.credit_balance}€ de crédit
+                    </Text>
+                    <Text style={[styles.trustText, { color: colors.textSecondary }]}>
+                      Code <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{me.referral_code}</Text> · Gagnez 10€ par filleul.
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={colors.primary} />
+                </Glass>
+              </TouchableOpacity>
+            )}
+
             <View style={styles.menu}>
               <Glass borderRadius={radius.lg}>
+                <MenuItem
+                  icon="notifications-outline"
+                  label="Notifications"
+                  badge={notifUnread > 0 ? notifUnread : undefined}
+                  onPress={() => router.push("/notifications")}
+                  testID="menu-notifications"
+                  colors={colors}
+                />
+                <Divider colors={colors} />
+                <MenuItem
+                  icon="chatbubbles-outline"
+                  label="Messages"
+                  badge={unread > 0 ? unread : undefined}
+                  onPress={() => router.push("/messages")}
+                  testID="menu-messages"
+                  colors={colors}
+                />
+                <Divider colors={colors} />
                 <MenuItem icon="calendar-outline" label="Mes locations" onPress={() => router.push("/(tabs)/bookings")} testID="menu-bookings" colors={colors} />
                 <Divider colors={colors} />
                 <MenuItem icon="cube-outline" label="Mes annonces" onPress={() => router.push("/(tabs)/myitems")} testID="menu-listings" colors={colors} />
@@ -87,6 +169,8 @@ export default function Profile() {
 
             <View style={styles.menu}>
               <Glass borderRadius={radius.lg}>
+                <MenuItem icon="finger-print-outline" label="Sécurité & sessions" onPress={() => router.push("/security")} testID="menu-security" colors={colors} />
+                <Divider colors={colors} />
                 <MenuItem icon="card-outline" label="Moyens de paiement" onPress={() => router.push("/payments")} testID="menu-payments" colors={colors} />
                 <Divider colors={colors} />
                 <MenuItem icon="settings-outline" label="Paramètres" onPress={() => router.push("/settings")} testID="menu-settings" colors={colors} />
@@ -112,13 +196,18 @@ function Divider({ colors }: { colors: any }) {
   return <View style={{ height: 1, backgroundColor: colors.border, marginHorizontal: spacing.md }} />;
 }
 
-function MenuItem({ icon, label, onPress, testID, colors }: any) {
+function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
   return (
     <TouchableOpacity style={styles.menuItem} onPress={onPress} testID={testID}>
       <View style={[styles.menuIcon, { backgroundColor: colors.primaryTint }]}>
         <Ionicons name={icon} size={20} color={colors.primary} />
       </View>
       <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{label}</Text>
+      {badge !== undefined && (
+        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginRight: 6 }}>
+          <Text style={{ fontSize: 11, fontWeight: "800", color: colors.textInverse }}>{badge}</Text>
+        </View>
+      )}
       <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
     </TouchableOpacity>
   );
@@ -126,7 +215,7 @@ function MenuItem({ icon, label, onPress, testID, colors }: any) {
 
 const styles = StyleSheet.create({
   header: { alignItems: "center", padding: spacing.xl },
-  avatar: { width: 90, height: 90, borderRadius: 45, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 90, height: 90, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 36, fontWeight: "800" },
   name: { fontSize: 24, fontWeight: "800", marginTop: spacing.md, letterSpacing: -0.4 },
   email: { fontSize: 14, marginTop: 2 },
@@ -137,6 +226,10 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 22, fontWeight: "800" },
   statLabel: { fontSize: 12, marginTop: 2 },
   menu: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
+  trustCard: { padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
+  trustIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  trustTitle: { fontSize: 15, fontWeight: "900" },
+  trustText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   menuItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: 14, gap: spacing.md },
   menuIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   menuLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
