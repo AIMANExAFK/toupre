@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Stack } from "expo-router";
 import { AuthProvider, useAuth, BACKEND_URL } from "../src/auth";
-import { ThemeProvider, useTheme } from "../src/theme";
+import { ThemeProvider, useTheme, shadowStyle } from "../src/theme";
 import { StatusBar } from "expo-status-bar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { Platform, StyleSheet, View } from "react-native";
@@ -136,9 +136,10 @@ function RootShell() {
     >
       <View
         style={[
-          styles.appFrame,
-          isWeb && styles.webFrame,
-          { backgroundColor: colors.bg, borderColor: colors.border },
+        styles.appFrame,
+        isWeb && styles.webFrame,
+        isWeb && shadowStyle({ color: colors.primaryDark, opacity: 0.14, radius: 44, offsetY: 18 }),
+        { backgroundColor: colors.bg, borderColor: colors.border },
         ]}
       >
         <StatusBar style={isDark ? "light" : "dark"} />
@@ -182,15 +183,21 @@ const styles = StyleSheet.create({
   },
   webStage: {
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
   },
   appFrame: {
     flex: 1,
     width: "100%",
   },
   webFrame: {
-    maxWidth: 440,
+    maxWidth: 450,
+    maxHeight: 920,
     borderLeftWidth: 1,
     borderRightWidth: 1,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderRadius: 8,
     overflow: "hidden",
   },
 });

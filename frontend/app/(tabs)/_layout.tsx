@@ -15,21 +15,26 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: colors.bg } as any,
         tabBarBackground: () => (
           <Glass
-            borderRadius={0}
+            borderRadius={8}
             style={StyleSheet.absoluteFillObject}
           />
         ),
         tabBarStyle: {
           backgroundColor: "transparent",
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 86 : 66,
+          borderTopColor: "transparent",
+          borderTopWidth: 0,
+          height: Platform.OS === "ios" ? 80 : 64,
           paddingTop: 7,
-          paddingBottom: Platform.OS === "ios" ? 30 : 10,
+          paddingBottom: Platform.OS === "ios" ? 24 : 9,
           position: "absolute",
-          overflow: "visible",
+          left: 12,
+          right: 12,
+          bottom: Platform.OS === "ios" ? 10 : 12,
+          borderRadius: 8,
+          overflow: "hidden",
           zIndex: 1000,
           elevation: 1000,
+          ...shadowStyle({ color: colors.primaryDark, opacity: 0.12, radius: 24, offsetY: 10 }),
         },
         tabBarItemStyle: { overflow: "visible" },
         tabBarLabelStyle: { fontSize: 11, fontWeight: "800", marginTop: 2 },
@@ -61,8 +66,8 @@ export default function TabsLayout() {
             <View
               style={[
                 styles.fab,
-                { backgroundColor: colors.primary },
-                shadowStyle({ color: colors.primary, opacity: 0.34, radius: 12, offsetY: 5 }),
+                { backgroundColor: colors.primary, borderColor: colors.surfaceGlassBorder },
+                shadowStyle({ color: colors.primary, opacity: 0.38, radius: 18, offsetY: 7 }),
               ]}
             >
               <Ionicons name="add" size={28} color={colors.textInverse} />
@@ -97,7 +102,8 @@ const styles = StyleSheet.create({
   fab: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 8,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     marginTop: -12,

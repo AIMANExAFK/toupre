@@ -14,7 +14,7 @@ export default function Welcome() {
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="welcome-screen">
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-          <View style={[styles.heroBox, { height: height * 0.55 }]}>
+          <View style={[styles.heroBox, { height: height * 0.58 }]}>
             <Image
               source={{ uri: "https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg" }}
               style={styles.heroImg}
@@ -32,12 +32,17 @@ export default function Welcome() {
               </Glass>
             </View>
 
+            <View style={styles.heroCopy}>
+              <Text style={styles.heroKicker}>LocaShare</Text>
+              <Text style={styles.heroTitle}>Louer local, sans friction.</Text>
+            </View>
+
             <View style={styles.heroFooter}>
               <Glass borderRadius={radius.md} style={styles.tagPill}>
                 <View style={styles.tagInner}>
                   <Ionicons name="shield-checkmark" size={14} color={colors.textInverse} />
                   <Text style={[styles.tag, { color: colors.textInverse }]}>
-                    Objets vérifiés, paiement sécurisé
+                    Contact vérifié, paiement en espèces
                   </Text>
                 </View>
               </Glass>
@@ -46,8 +51,7 @@ export default function Welcome() {
 
           <View style={styles.content}>
             <Text style={[styles.title, { color: colors.textPrimary }]} testID="welcome-title">
-              LocaShare{"\n"}
-              <Text style={{ color: colors.primary }}>louez local.</Text>
+              Trouvez, réservez, récupérez.
             </Text>
             <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Réservez une voiture, un vélo, un outil ou du matériel pour quelques heures ou quelques jours, sans achat inutile.
@@ -64,14 +68,14 @@ export default function Welcome() {
             >
               <Ionicons name="finger-print" size={20} color={colors.textInverse} style={{ marginRight: 8 }} />
               <Text style={[styles.primaryBtnText, { color: colors.textInverse }]}>
-                {"Commencer · M'identifier"}
+                {"Commencer"}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push("/(auth)/login")} testID="welcome-login-btn">
+            <TouchableOpacity onPress={() => router.push("/auth/otp")} testID="welcome-login-btn">
               <Glass borderRadius={radius.md} style={styles.secondaryGlass}>
                 <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
-                  {"J'ai déjà un compte"}
+                  {"J'ai déjà un compte · Recevoir un code"}
                 </Text>
               </Glass>
             </TouchableOpacity>
@@ -83,21 +87,30 @@ export default function Welcome() {
 }
 
 const styles = StyleSheet.create({
-  heroBox: { position: "relative", overflow: "hidden", borderBottomLeftRadius: 18, borderBottomRightRadius: 18 },
+  heroBox: { position: "relative", overflow: "hidden", borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
   heroImg: { width: "100%", height: "100%" },
   overlay: { ...StyleSheet.absoluteFillObject },
   brandBox: { position: "absolute", top: 16, left: 16 },
-  brandPill: { paddingHorizontal: 14, paddingVertical: 8 },
+  brandPill: { paddingHorizontal: 14, paddingVertical: 8, borderWidth: 1 },
   brandInner: { flexDirection: "row", alignItems: "center", gap: 10 },
   logoCircle: { width: 36, height: 36, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   brandText: { fontSize: 18, fontWeight: "900", letterSpacing: -0.2 },
-  heroFooter: { position: "absolute", bottom: 24, alignSelf: "center" },
-  tagPill: { paddingHorizontal: 16, paddingVertical: 10 },
+  heroCopy: { position: "absolute", left: 20, right: 20, bottom: 76 },
+  heroKicker: { color: "rgba(255,255,255,0.82)", fontSize: 12, fontWeight: "900", letterSpacing: 1.1, textTransform: "uppercase" },
+  heroTitle: { color: "#FFFFFF", fontSize: 34, lineHeight: 38, fontWeight: "900", marginTop: 6 },
+  heroFooter: { position: "absolute", bottom: 24, left: 20, right: 20 },
+  tagPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignSelf: "flex-start",
+    backgroundColor: "rgba(7, 19, 19, 0.58)",
+    borderColor: "rgba(255,255,255,0.22)",
+  },
   tagInner: { flexDirection: "row", alignItems: "center", gap: 8 },
   tag: { fontSize: 12, fontWeight: "600" },
   content: { flex: 1, padding: spacing.lg, justifyContent: "center" },
-  title: { fontSize: 38, fontWeight: "900", letterSpacing: -1, marginBottom: spacing.sm, lineHeight: 44 },
-  subtitle: { fontSize: 16, lineHeight: 24, marginBottom: spacing.xl },
+  title: { fontSize: 25, fontWeight: "900", letterSpacing: 0, marginBottom: spacing.sm, lineHeight: 30 },
+  subtitle: { fontSize: 15, lineHeight: 23, marginBottom: spacing.xl },
   primaryBtn: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center", flexDirection: "row", marginBottom: spacing.md },
   primaryBtnText: { fontSize: 16, fontWeight: "700" },
   secondaryGlass: { paddingVertical: 17, alignItems: "center", justifyContent: "center" },

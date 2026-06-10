@@ -1,8 +1,8 @@
 // Mock backend for LocaShare — replaces FastAPI+MongoDB for local preview
-// Phase 2: messagerie, avis, accept/refuse bookings, webhook Stripe
-// Phase 3: KYC, calendrier de disponibilité, push notifications
+// Phase 2: messagerie, avis, accept/refuse bookings
+// Phase 3: vérification email + téléphone, calendrier de disponibilité, push notifications
 // Phase 4: système de parrainage
-// Phase 5: filtrage de contenu, signalements, KYC obligatoire
+// Phase 5: filtrage de contenu, signalements, coordonnées obligatoires
 const http = require("http");
 
 // ═══════════════════════════════════════════════
@@ -22,7 +22,7 @@ const BANNED_PATTERNS = [
   // Armes
   /\b(arme\s+(à\s+feu|de\s+poing)|pistolet|revolver|kalachnikov|ak\s*47|fusil\s+d['']assaut|grenade|explosif|tnt|c4)\b/i,
   // Fraude / arnaque / contournement plateforme
-  /\b(payez?\s+(en\s+)?cash\s+(uniquement|seulement|direct)|paiement\s+direct|hors\s+(de\s+la\s+)?plateforme|virement\s+(direct|western\s+union)|paypal\s+f(amily|riends)|envoyez\s+(de\s+)?l['']argent\s+(à|sur))\b/i,
+  /\b(paiement\s+direct\s+hors\s+(de\s+la\s+)?plateforme|hors\s+(de\s+la\s+)?plateforme|virement\s+(direct|western\s+union)|paypal\s+f(amily|riends)|envoyez\s+(de\s+)?l['']argent\s+(à|sur))\b/i,
   // Coordonnées hors plateforme (numéros de téléphone explicites, emails masqués)
   /\b(0[1-9]\s*([\.\-\s]?\d{2}){4})\b/, // téléphone FR
   /\b([a-zA-Z0-9._%+-]+\s*[@\(at\)]\s*[a-zA-Z0-9.-]+\s*\.\s*[a-zA-Z]{2,})\b/, // email même obfusqué
@@ -63,10 +63,10 @@ const CATEGORIES = [
 ];
 
 const USERS = {
-  u1: { id: "u1", email: "demo@locashare.fr", password: "demo1234", name: "Alexandre D.", avatar: null, created_at: "2024-01-01T00:00:00Z", verified: true,    kyc_status: "verified", referral_code: "ALEXD2024", referred_by: null, credit_balance: 30, push_token: null },
-  u2: { id: "u2", email: "sophie@locashare.fr", name: "Sophie M.",     avatar: null, created_at: "2024-02-15T00:00:00Z", verified: true,  kyc_status: "verified", referral_code: "SOPHIEM",   referred_by: "ALEXD2024", credit_balance: 10, push_token: null },
-  u3: { id: "u3", email: "thomas@locashare.fr", name: "Thomas B.",     avatar: null, created_at: "2024-03-20T00:00:00Z", verified: false, kyc_status: "none",     referral_code: "THOMASB",   referred_by: null, credit_balance: 0, push_token: null },
-  u4: { id: "u4", email: "marie@locashare.fr",  name: "Marie L.",      avatar: null, created_at: "2024-04-10T00:00:00Z", verified: true,  kyc_status: "verified", referral_code: "MARIEL",    referred_by: null, credit_balance: 0, push_token: null },
+  u1: { id: "u1", email: "demo@locashare.fr", phone: "+33600000000", password: "demo1234", name: "Alexandre D.", avatar: null, created_at: "2024-01-01T00:00:00Z", verified: true,    kyc_status: "verified", kyc_source: "email_phone_otp", contact_verified_at: "2024-01-01T00:00:00Z", referral_code: "ALEXD2024", referred_by: null, credit_balance: 30, push_token: null },
+  u2: { id: "u2", email: "sophie@locashare.fr", phone: "+33611111111", name: "Sophie M.",     avatar: null, created_at: "2024-02-15T00:00:00Z", verified: true,  kyc_status: "verified", kyc_source: "email_phone_otp", contact_verified_at: "2024-02-15T00:00:00Z", referral_code: "SOPHIEM",   referred_by: "ALEXD2024", credit_balance: 10, push_token: null },
+  u3: { id: "u3", email: "thomas@locashare.fr", phone: "+33622222222", name: "Thomas B.",     avatar: null, created_at: "2024-03-20T00:00:00Z", verified: false, kyc_status: "none",     referral_code: "THOMASB",   referred_by: null, credit_balance: 0, push_token: null },
+  u4: { id: "u4", email: "marie@locashare.fr",  phone: "+33633333333", name: "Marie L.",      avatar: null, created_at: "2024-04-10T00:00:00Z", verified: true,  kyc_status: "verified", kyc_source: "email_phone_otp", contact_verified_at: "2024-04-10T00:00:00Z", referral_code: "MARIEL",    referred_by: null, credit_balance: 0, push_token: null },
 };
 
 const LISTINGS = [
@@ -83,7 +83,7 @@ const LISTINGS = [
 // In-memory persistence (resets at restart)
 const BOOKINGS = [
   // Une réservation demo en attente (Sophie veut louer la BMW d'Alexandre)
-  { id: "b_seed1", listing_id: "1", user_id: "u2", owner_id: "u1", start_date: "2026-05-20", end_date: "2026-05-22", days: 3, total_price: 255, service_fee: 26, status: "pending", created_at: new Date(Date.now() - 86400000).toISOString(), renter: USERS.u2, listing: null },
+  { id: "b_seed1", listing_id: "1", user_id: "u2", renter_id: "u2", owner_id: "u1", start_date: "2026-05-20", end_date: "2026-05-22", days: 3, total_price: 255, service_fee: 0, status: "pending", payment_method: "cash", payment_status: "cash_to_collect", created_at: new Date(Date.now() - 86400000).toISOString(), renter: USERS.u2, listing: null },
 ];
 const MESSAGES = [
   { id: "m_seed1", from_id: "u2", to_id: "u1", content: "Bonjour, je suis intéressée par votre BMW pour ce week-end !", listing_id: "1", read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
@@ -96,7 +96,7 @@ function publicUser(u) {
 
 function meUser(u) {
   if (!u) return null;
-  return { id: u.id, email: u.email, name: u.name, avatar: u.avatar, verified: !!u.verified, kyc_status: u.kyc_status || "none", referral_code: u.referral_code, credit_balance: u.credit_balance || 0, referred_by: u.referred_by || null, created_at: u.created_at };
+  return { id: u.id, email: u.email, phone: u.phone || null, name: u.name, avatar: u.avatar, verified: !!u.verified, kyc_status: u.kyc_status || "none", kyc_source: u.kyc_source, contact_verified_at: u.contact_verified_at, referral_code: u.referral_code, credit_balance: u.credit_balance || 0, referred_by: u.referred_by || null, created_at: u.created_at };
 }
 
 // Notifications (in-memory queue)
@@ -104,6 +104,14 @@ const NOTIFICATIONS = []; // { id, user_id, type, title, body, data, read, creat
 
 // Signalements (in-memory)
 const REPORTS = []; // { id, reporter_id, target_type, target_id, category, reason, status, created_at }
+const PAYMENT_METHODS = [
+  { id: "pm_demo_visa", user_id: "u1", brand: "visa", last4: "4242", exp_month: 12, exp_year: 2028, is_default: true, provider: "local_vault", created_at: new Date(Date.now() - 3 * 86400000).toISOString() },
+];
+const PAYMENT_TRANSACTIONS = [];
+const SUPPORT_TICKETS = [];
+const BOOKING_INSPECTIONS = [];
+const DISPUTES = [];
+const ACTIVE_BOOKING_STATUSES = new Set(["confirmed", "paid", "active"]);
 
 // OTP / Magic link store : email → { code, expires_at, attempts }
 const OTP_STORE = new Map();
@@ -118,6 +126,22 @@ function genOTP() { return String(Math.floor(100000 + Math.random() * 900000)); 
 function genToken() { return "tk_" + Math.random().toString(36).slice(2) + Date.now().toString(36); }
 function userByEmail(email) {
   return Object.values(USERS).find((u) => u.email?.toLowerCase() === (email || "").toLowerCase());
+}
+function normalizePhone(phone) {
+  let value = String(phone || "").trim().replace("(0)", "");
+  if (value.startsWith("00")) value = "+" + value.slice(2);
+  const digits = value.replace(/\D/g, "");
+  let normalized;
+  if (value.startsWith("+")) normalized = "+" + digits;
+  else if (digits.startsWith("0") && digits.length === 10) normalized = "+33" + digits.slice(1);
+  else if (digits.startsWith("33") && digits.length === 11) normalized = "+" + digits;
+  else normalized = digits.length >= 8 ? "+" + digits : digits;
+  if (!/^\+\d{8,15}$/.test(normalized)) return null;
+  return normalized;
+}
+function userByPhone(phone) {
+  const normalized = normalizePhone(phone);
+  return Object.values(USERS).find((u) => normalizePhone(u.phone) === normalized);
 }
 function startSession(userId, device) {
   const token = "mock_jwt_" + userId + "_" + Date.now();
@@ -164,6 +188,24 @@ function notify(userId, type, title, body, data = {}) {
   NOTIFICATIONS.push(n);
   console.log(`[notif] → ${userId}: ${title}`);
   return n;
+}
+
+function dateOnly(value) {
+  return new Date(`${String(value).slice(0, 10)}T00:00:00Z`);
+}
+
+function dateRange(startDate, endDate) {
+  const dates = [];
+  for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+function bookingOverlaps(start, end, booking) {
+  const otherStart = dateOnly(booking.start_date);
+  const otherEnd = dateOnly(booking.end_date);
+  return start <= otherEnd && end >= otherStart;
 }
 
 const REVIEWS = [
@@ -350,7 +392,7 @@ const server = http.createServer(async (req, res) => {
   if ((path === "/api/bookings/me" || path === "/api/bookings") && method === "GET") {
     const user = requireUser(req, res);
     if (!user) return;
-    const data = BOOKINGS.filter((b) => b.user_id === user.id).map((b) => ({
+    const data = BOOKINGS.filter((b) => (b.renter_id || b.user_id) === user.id).map((b) => ({
       ...b,
       listing: LISTINGS.find((l) => l.id === b.listing_id) || b.listing,
     }));
@@ -364,7 +406,7 @@ const server = http.createServer(async (req, res) => {
     const data = BOOKINGS.filter((b) => b.owner_id === user.id).map((b) => ({
       ...b,
       listing: LISTINGS.find((l) => l.id === b.listing_id) || b.listing,
-      renter: publicUser(USERS[b.user_id]) || b.renter,
+      renter: publicUser(USERS[b.renter_id || b.user_id]) || b.renter,
     }));
     return json(res, data);
   }
@@ -376,19 +418,45 @@ const server = http.createServer(async (req, res) => {
     const listing = LISTINGS.find((l) => l.id === body.listing_id);
     if (!listing) return json(res, { detail: "Listing introuvable" }, 404);
     if (listing.owner_id === user.id) return json(res, { detail: "Impossible de réserver votre propre annonce" }, 400);
+    if (!user.verified) {
+      return json(res, {
+        detail: "Vérification email et téléphone requise pour réserver.",
+        code: "KYC_REQUIRED",
+        action: "/auth/otp?reason=booking",
+      }, 403);
+    }
 
-    const start = new Date(body.start_date);
-    const end = new Date(body.end_date);
+    const start = dateOnly(body.start_date);
+    const end = dateOnly(body.end_date);
+    const today = dateOnly(new Date().toISOString().slice(0, 10));
+    if (start < today) return json(res, { detail: "Start date cannot be in the past" }, 400);
+    if (end < start) return json(res, { detail: "End date must be after start date" }, 400);
+    const requestedDates = new Set(dateRange(start, end));
+    const blocked = new Set(listing.blocked_dates || []);
+    const blockedOverlap = [...requestedDates].filter((d) => blocked.has(d));
+    const bookingConflict = BOOKINGS.find(
+      (b) => b.listing_id === listing.id && ACTIVE_BOOKING_STATUSES.has(b.status) && bookingOverlaps(start, end, b)
+    );
+    if (blockedOverlap.length || bookingConflict) {
+      return json(res, {
+        detail: "Ces dates ne sont plus disponibles.",
+        code: "DATES_UNAVAILABLE",
+        type: blockedOverlap.length ? "blocked_dates" : "bookings",
+        refs: blockedOverlap.length ? blockedOverlap : [bookingConflict.id],
+      }, 409);
+    }
     const computedDays = Math.max(1, Math.round((end - start) / 86400000) + 1);
     const days = body.days || computedDays;
     const subtotal = listing.price_per_day * days;
-    const serviceFee = Math.round(subtotal * 0.1 * 100) / 100;
-    const total = Math.round((subtotal + serviceFee) * 100) / 100;
+    const serviceFee = 0;
+    const total = Math.round(subtotal * 100) / 100;
     const booking = {
       id: "b_" + Date.now(),
-      listing_id: body.listing_id, user_id: user.id, owner_id: listing.owner_id,
+      listing_id: body.listing_id, user_id: user.id, renter_id: user.id, owner_id: listing.owner_id,
       start_date: body.start_date, end_date: body.end_date, days,
       total_price: total, service_fee: serviceFee,
+      payment_method: "cash",
+      payment_status: "cash_to_collect",
       status: "pending", created_at: new Date().toISOString(),
       renter: publicUser(user),
       listing: listingWithRating(listing),
@@ -414,6 +482,9 @@ const server = http.createServer(async (req, res) => {
         refused:   ["❌ Réservation refusée", `Votre demande pour "${listing?.title || ""}" a été refusée.`],
         paid:      ["💸 Paiement confirmé", `Le paiement de votre réservation "${listing?.title || ""}" est confirmé.`],
         cancelled: ["🚫 Réservation annulée", `La réservation pour "${listing?.title || ""}" a été annulée.`],
+        active:    ["🔑 Location démarrée", `La location "${listing?.title || ""}" a démarré.`],
+        completed: ["✅ Location terminée", `La location "${listing?.title || ""}" est terminée.`],
+        disputed:  ["⚠️ Litige ouvert", `Un litige est ouvert pour "${listing?.title || ""}".`],
       };
       const t = titles[body.status];
       if (t) notify(prev.user_id, "booking_" + body.status, t[0], t[1], { booking_id: id });
@@ -421,24 +492,49 @@ const server = http.createServer(async (req, res) => {
     return json(res, BOOKINGS[idx]);
   }
 
-  // ─── STRIPE ───────────────────────────────────
   if ((path === "/api/checkout/session" || path === "/api/checkout/create") && method === "POST") {
+    return json(res, {
+      detail: "Le checkout en ligne est désactivé. Cette réservation se règle en espèces à la remise.",
+    }, 410);
     const body = await parseBody(req);
-    const sid = "mock_session_" + Date.now();
+    const user = requireUser(req, res);
+    if (!user) return;
+    const sid = "local_cs_" + Date.now();
     // Stocke le mapping booking → session pour le polling
     if (body.booking_id) {
       const b = BOOKINGS.find((b) => b.id === body.booking_id);
-      if (b) b.stripe_session_id = sid;
+      if (b) {
+        b.stripe_session_id = sid;
+        b.payment_session_id = sid;
+        b.status = "paid";
+        PAYMENT_TRANSACTIONS.push({
+          session_id: sid,
+          booking_id: b.id,
+          user_id: user.id,
+          amount: b.total_price,
+          currency: "eur",
+          status: "complete",
+          payment_status: "paid",
+          provider: "local_fallback",
+          created_at: new Date().toISOString(),
+        });
+        notify(b.owner_id, "booking_paid", "Paiement confirmé", "Le paiement de la réservation a été confirmé.", { booking_id: b.id, session_id: sid });
+      }
     }
-    return json(res, { url: `http://localhost:4174/payment-success?session_id=${sid}`, session_id: sid });
+    const origin = (body.origin_url || "http://localhost:4174").replace(/\/$/, "");
+    return json(res, { url: `${origin}/payment-success?session_id=${sid}`, session_id: sid, provider: "local_fallback" });
   }
 
   if (path.match(/^\/api\/checkout\/status\//) && method === "GET") {
+    return json(res, {
+      detail: "Le checkout en ligne est désactivé. Les réservations se règlent en espèces à la remise.",
+    }, 410);
     // En mock, on simule un paiement réussi instantané + on marque la booking comme paid
     const sid = path.split("/").pop();
     const b = BOOKINGS.find((b) => b.stripe_session_id === sid);
     if (b && b.status !== "paid") b.status = "paid";
-    return json(res, { status: "complete", payment_status: "paid", booking_id: b?.id || null });
+    const tx = PAYMENT_TRANSACTIONS.find((t) => t.session_id === sid);
+    return json(res, { status: "complete", payment_status: "paid", booking_id: b?.id || null, amount_total: Math.round((tx?.amount || b?.total_price || 0) * 100), currency: "eur", provider: tx?.provider || "local_fallback" });
   }
 
   if (path === "/api/webhook/stripe" && method === "POST") {
@@ -450,6 +546,200 @@ const server = http.createServer(async (req, res) => {
       if (b) b.status = "paid";
     }
     return json(res, { received: true });
+  }
+
+  // ─── PAYMENT METHODS désactivés ─────────────
+  if (path === "/api/payment-methods" && method === "GET") {
+    return json(res, {
+      detail: "Les paiements en ligne sont désactivés. Le règlement se fait en espèces entre utilisateurs.",
+    }, 410);
+    const user = requireUser(req, res);
+    if (!user) return;
+    return json(res, PAYMENT_METHODS.filter((m) => m.user_id === user.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+  }
+
+  if (path === "/api/payment-methods" && method === "POST") {
+    return json(res, {
+      detail: "Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    }, 410);
+    const user = requireUser(req, res);
+    if (!user) return;
+    const body = await parseBody(req);
+    const last4 = String(body.last4 || "").replace(/\D/g, "");
+    if (last4.length !== 4) return json(res, { detail: "last4 must contain 4 digits" }, 400);
+    const isDefault = body.is_default !== false || !PAYMENT_METHODS.some((m) => m.user_id === user.id);
+    if (isDefault) PAYMENT_METHODS.forEach((m) => { if (m.user_id === user.id) m.is_default = false; });
+    const methodItem = {
+      id: "pm_" + Date.now(),
+      user_id: user.id,
+      brand: String(body.brand || "card").toLowerCase(),
+      last4,
+      exp_month: Number(body.exp_month || 1),
+      exp_year: Number(body.exp_year || 2030),
+      holder_name: body.holder_name || null,
+      is_default: isDefault,
+      provider: "local_vault",
+      created_at: new Date().toISOString(),
+    };
+    PAYMENT_METHODS.push(methodItem);
+    return json(res, methodItem, 201);
+  }
+
+  if (path.match(/^\/api\/payment-methods\/[\w-]+\/default$/) && method === "PATCH") {
+    return json(res, {
+      detail: "Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    }, 410);
+    const user = requireUser(req, res);
+    if (!user) return;
+    const id = path.split("/")[3];
+    const methodItem = PAYMENT_METHODS.find((m) => m.id === id && m.user_id === user.id);
+    if (!methodItem) return json(res, { detail: "Payment method not found" }, 404);
+    PAYMENT_METHODS.forEach((m) => { if (m.user_id === user.id) m.is_default = false; });
+    methodItem.is_default = true;
+    return json(res, methodItem);
+  }
+
+  if (path.match(/^\/api\/payment-methods\/[\w-]+$/) && method === "DELETE") {
+    return json(res, {
+      detail: "Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    }, 410);
+    const user = requireUser(req, res);
+    if (!user) return;
+    const id = path.split("/").pop();
+    const idx = PAYMENT_METHODS.findIndex((m) => m.id === id && m.user_id === user.id);
+    if (idx === -1) return json(res, { detail: "Payment method not found" }, 404);
+    const wasDefault = PAYMENT_METHODS[idx].is_default;
+    PAYMENT_METHODS.splice(idx, 1);
+    if (wasDefault) {
+      const next = PAYMENT_METHODS.find((m) => m.user_id === user.id);
+      if (next) next.is_default = true;
+    }
+    return json(res, { ok: true });
+  }
+
+  // ─── SUPPORT ─────────────────────────────────
+  if (path === "/api/support/tickets" && method === "POST") {
+    const user = userFromRequest(req);
+    const body = await parseBody(req);
+    if (!user && !body.email) return json(res, { detail: "Connectez-vous ou fournissez un email" }, 401);
+    if (!String(body.subject || "").trim() || !String(body.message || "").trim()) {
+      return json(res, { detail: "Sujet et message requis" }, 400);
+    }
+    const ticket = {
+      id: "sup_" + Date.now(),
+      user_id: user?.id || null,
+      email: user?.email || body.email,
+      name: user?.name || body.name || "",
+      subject: String(body.subject).trim(),
+      category: body.category || "general",
+      booking_id: body.booking_id || null,
+      status: "open",
+      priority: "normal",
+      messages: [{ id: "sup_msg_" + Date.now(), from: "user", message: String(body.message).trim(), created_at: new Date().toISOString() }],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      email_queued: false,
+    };
+    SUPPORT_TICKETS.push(ticket);
+    if (user) notify(user.id, "support_ticket", "Demande support reçue", `Ticket ${ticket.id.slice(0, 8)} ouvert.`, { ticket_id: ticket.id });
+    return json(res, ticket, 201);
+  }
+
+  if (path === "/api/support/tickets/me" && method === "GET") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    return json(res, SUPPORT_TICKETS.filter((t) => t.user_id === user.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+  }
+
+  if (path.match(/^\/api\/support\/tickets\/[\w-]+\/messages$/) && method === "POST") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    const id = path.split("/")[4];
+    const body = await parseBody(req);
+    const ticket = SUPPORT_TICKETS.find((t) => t.id === id && t.user_id === user.id);
+    if (!ticket) return json(res, { detail: "Support ticket not found" }, 404);
+    const item = { id: "sup_msg_" + Date.now(), from: "user", message: String(body.message || "").trim(), created_at: new Date().toISOString() };
+    if (!item.message) return json(res, { detail: "Message requis" }, 400);
+    ticket.messages.push(item);
+    ticket.updated_at = new Date().toISOString();
+    return json(res, item, 201);
+  }
+
+  // ─── INSPECTIONS / DISPUTES ──────────────────
+  if (path.match(/^\/api\/bookings\/[\w-]+\/inspection$/) && method === "POST") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    const bookingId = path.split("/")[3];
+    const booking = BOOKINGS.find((b) => b.id === bookingId);
+    if (!booking) return json(res, { detail: "Booking not found" }, 404);
+    if (![booking.owner_id, booking.renter_id || booking.user_id].includes(user.id)) return json(res, { detail: "Forbidden" }, 403);
+    const body = await parseBody(req);
+    if (!["pickup", "return"].includes(body.kind)) return json(res, { detail: "kind must be pickup or return" }, 400);
+    if (body.kind === "pickup" && !["confirmed", "paid"].includes(booking.status)) return json(res, { detail: "Pickup can only start after confirmation or payment" }, 400);
+    if (body.kind === "return" && booking.status !== "active") return json(res, { detail: "Return can only be confirmed while booking is active" }, 400);
+    const condition = body.condition || "ok";
+    const nextStatus = ["issue", "damaged"].includes(condition) ? "disputed" : (body.kind === "pickup" ? "active" : "completed");
+    const inspection = {
+      id: "insp_" + Date.now(),
+      booking_id: booking.id,
+      user_id: user.id,
+      kind: body.kind,
+      condition,
+      notes: body.notes || "",
+      photos: Array.isArray(body.photos) ? body.photos : [],
+      created_at: new Date().toISOString(),
+      booking_status: nextStatus,
+    };
+    BOOKING_INSPECTIONS.push(inspection);
+    booking.status = nextStatus;
+    booking.updated_at = new Date().toISOString();
+    const otherUserId = user.id === booking.owner_id ? (booking.renter_id || booking.user_id) : booking.owner_id;
+    notify(otherUserId, "booking_inspection", "État des lieux ajouté", `Un état des lieux ${body.kind} a été ajouté.`, { booking_id: booking.id, inspection_id: inspection.id });
+    return json(res, inspection, 201);
+  }
+
+  if (path.match(/^\/api\/bookings\/[\w-]+\/inspections$/) && method === "GET") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    const bookingId = path.split("/")[3];
+    const booking = BOOKINGS.find((b) => b.id === bookingId);
+    if (!booking) return json(res, { detail: "Booking not found" }, 404);
+    if (![booking.owner_id, booking.renter_id || booking.user_id].includes(user.id)) return json(res, { detail: "Forbidden" }, 403);
+    return json(res, BOOKING_INSPECTIONS.filter((i) => i.booking_id === bookingId));
+  }
+
+  if (path === "/api/disputes" && method === "POST") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    const body = await parseBody(req);
+    const booking = BOOKINGS.find((b) => b.id === body.booking_id);
+    if (!booking) return json(res, { detail: "Booking not found" }, 404);
+    if (![booking.owner_id, booking.renter_id || booking.user_id].includes(user.id)) return json(res, { detail: "Forbidden" }, 403);
+    const dispute = {
+      id: "disp_" + Date.now(),
+      booking_id: booking.id,
+      listing_id: booking.listing_id,
+      opened_by: user.id,
+      owner_id: booking.owner_id,
+      renter_id: booking.renter_id || booking.user_id,
+      reason: body.reason || "other",
+      description: body.description || "",
+      photos: Array.isArray(body.photos) ? body.photos : [],
+      status: "open",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    DISPUTES.push(dispute);
+    booking.status = "disputed";
+    const otherUserId = user.id === booking.owner_id ? (booking.renter_id || booking.user_id) : booking.owner_id;
+    notify(otherUserId, "dispute_opened", "Litige ouvert", "Un litige a été ouvert sur une réservation.", { booking_id: booking.id, dispute_id: dispute.id });
+    return json(res, dispute, 201);
+  }
+
+  if (path === "/api/disputes/me" && method === "GET") {
+    const user = requireUser(req, res);
+    if (!user) return;
+    return json(res, DISPUTES.filter((d) => d.owner_id === user.id || d.renter_id === user.id).sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
   }
 
   // ─── MESSAGES ─────────────────────────────────
@@ -495,12 +785,12 @@ const server = http.createServer(async (req, res) => {
   if (path === "/api/messages" && method === "POST") {
     const body = await parseBody(req);
 
-    // ─── KYC obligatoire pour envoyer un message ───
+    // ─── Coordonnées vérifiées obligatoires pour envoyer un message ───
     if (!DEMO_USER.verified) {
       return json(res, {
-        detail: "Vérification d'identité requise pour contacter un propriétaire.",
+        detail: "Vérification email et téléphone requise pour contacter un propriétaire.",
         code: "KYC_REQUIRED",
-        action: "/verification?reason=message",
+        action: "/auth/otp?reason=message",
       }, 403);
     }
 
@@ -572,7 +862,7 @@ const server = http.createServer(async (req, res) => {
   if (path === "/api/reviews/pending" && method === "GET") {
     const me = DEMO_USER.id;
     const reviewed = new Set(REVIEWS.filter((r) => r.author_id === me).map((r) => r.listing_id));
-    const pending = BOOKINGS.filter((b) => b.user_id === me && b.status === "paid" && !reviewed.has(b.listing_id))
+    const pending = BOOKINGS.filter((b) => (b.renter_id || b.user_id) === me && ["paid", "returned", "completed"].includes(b.status) && !reviewed.has(b.listing_id))
       .map((b) => ({ booking: b, listing: LISTINGS.find((l) => l.id === b.listing_id) }));
     return json(res, pending);
   }
@@ -583,22 +873,26 @@ const server = http.createServer(async (req, res) => {
 
   // KYC : upload pièce d'identité (mock — accepte n'importe quoi puis passe en "pending")
   if (path === "/api/kyc/submit" && method === "POST") {
+    const user = requireUser(req, res);
+    if (!user) return;
     const body = await parseBody(req);
     if (!body.document_type || !body.document_image) {
       return json(res, { detail: "Type et image requis" }, 400);
     }
-    DEMO_USER.kyc_status = "pending";
+    user.kyc_status = "pending";
     // Auto-validation après 3 secondes (mock)
     setTimeout(() => {
-      DEMO_USER.kyc_status = "verified";
-      DEMO_USER.verified = true;
-      notify(DEMO_USER.id, "kyc_verified", "✓ Identité vérifiée", "Votre profil est maintenant vérifié.");
+      user.kyc_status = "verified";
+      user.verified = true;
+      notify(user.id, "kyc_verified", "Coordonnées vérifiées", "Votre email et votre téléphone sont maintenant vérifiés.");
     }, 3000);
     return json(res, { status: "pending", message: "Vérification en cours, sous 3 secondes (mock)." });
   }
 
   if (path === "/api/kyc/status" && method === "GET") {
-    return json(res, { status: DEMO_USER.kyc_status || "none", verified: !!DEMO_USER.verified });
+    const user = requireUser(req, res);
+    if (!user) return;
+    return json(res, { status: user.kyc_status || "none", verified: !!user.verified });
   }
 
   // Calendrier de disponibilité
@@ -609,7 +903,7 @@ const server = http.createServer(async (req, res) => {
     const blocked = listing.blocked_dates || [];
     // Récupère aussi les bookings actifs comme dates bloquées
     const activeBookings = BOOKINGS.filter(
-      (b) => b.listing_id === id && ["confirmed", "paid"].includes(b.status)
+      (b) => b.listing_id === id && ACTIVE_BOOKING_STATUSES.has(b.status)
     );
     const bookingDates = [];
     for (const b of activeBookings) {
@@ -788,20 +1082,27 @@ const server = http.createServer(async (req, res) => {
   if (path === "/api/auth/otp/request" && method === "POST") {
     const body = await parseBody(req);
     const email = (body.email || "").toLowerCase().trim();
+    const phone = normalizePhone(body.phone);
     if (!email) return json(res, { detail: "Email requis" }, 400);
+    if (!phone) return json(res, { detail: "Numéro de téléphone invalide" }, 400);
     const code = genOTP();
-    OTP_STORE.set(email, {
+    const otpKey = `${email}|${phone}`;
+    OTP_STORE.set(otpKey, {
       code,
       expires_at: Date.now() + 10 * 60 * 1000, // 10 min
       attempts: 0,
+      email,
+      phone,
+      name: body.name || null,
     });
-    console.log(`[OTP] ${email} → ${code}`);
+    console.log(`[OTP] ${email} / ${phone} → ${code}`);
     return json(res, {
       ok: true,
-      message: `Code envoyé à ${email}. Valable 10 minutes.`,
+      message: `Code envoyé à ${email} et ${phone}. Valable 10 minutes.`,
       // En production, JAMAIS retourner le code. En mode démo on l'expose pour faciliter le test.
       _dev_code: code,
       expires_in: 600,
+      delivery: { email, phone },
     });
   }
 
@@ -809,35 +1110,46 @@ const server = http.createServer(async (req, res) => {
   if (path === "/api/auth/otp/verify" && method === "POST") {
     const body = await parseBody(req);
     const email = (body.email || "").toLowerCase().trim();
+    const phone = normalizePhone(body.phone);
     const code = String(body.code || "").trim();
-    const entry = OTP_STORE.get(email);
-    if (!entry) return json(res, { detail: "Aucun code demandé pour cet email." }, 400);
+    if (!phone) return json(res, { detail: "Numéro de téléphone invalide" }, 400);
+    const otpKey = `${email}|${phone}`;
+    const entry = OTP_STORE.get(otpKey);
+    if (!entry) return json(res, { detail: "Aucun code demandé pour ces coordonnées." }, 400);
     if (Date.now() > entry.expires_at) {
-      OTP_STORE.delete(email);
+      OTP_STORE.delete(otpKey);
       return json(res, { detail: "Code expiré. Demandez-en un nouveau." }, 400);
     }
     if (entry.attempts >= 5) {
-      OTP_STORE.delete(email);
+      OTP_STORE.delete(otpKey);
       return json(res, { detail: "Trop de tentatives. Demandez un nouveau code." }, 429);
     }
     if (code !== entry.code) {
       entry.attempts++;
       return json(res, { detail: "Code incorrect.", attempts_left: 5 - entry.attempts }, 401);
     }
-    OTP_STORE.delete(email);
+    OTP_STORE.delete(otpKey);
 
     // Trouve ou crée l'utilisateur
-    let user = userByEmail(email);
+    let user = userByEmail(email) || userByPhone(phone);
     if (!user) {
       const id = "u_otp_" + Date.now();
       user = {
-        id, email, name: email.split("@")[0],
+        id, email, phone, name: body.name || email.split("@")[0],
         avatar: null, created_at: new Date().toISOString(),
-        verified: false, kyc_status: "none",
+        verified: true, kyc_status: "verified", kyc_source: "email_phone_otp",
+        contact_verified_at: new Date().toISOString(),
         referral_code: "OTP" + Date.now().toString(36).slice(-4).toUpperCase(),
         referred_by: null, credit_balance: 0, push_token: null,
       };
       USERS[id] = user;
+    } else {
+      user.email = email;
+      user.phone = phone;
+      user.verified = true;
+      user.kyc_status = "verified";
+      user.kyc_source = "email_phone_otp";
+      user.contact_verified_at = new Date().toISOString();
     }
     const token = startSession(user.id, body.device || "Web");
     return json(res, {
@@ -847,73 +1159,19 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  // ─── 2. FRANCE CONNECT — identité officielle ───
-  // POST /api/auth/franceconnect/start → renvoie un état + URL "pseudo officielle"
+  // ─── Ancien parcours FranceConnect désactivé ───
   if (path === "/api/auth/franceconnect/start" && method === "POST") {
-    const state = genToken();
-    FC_STORE.set(state, {
-      state, started_at: Date.now(), status: "pending", email: null,
-    });
-    // URL mock — en réalité on redirigerait vers https://app.franceconnect.gouv.fr/...
     return json(res, {
-      state,
-      redirect_url: `http://localhost:4174/auth/franceconnect-callback?state=${state}`,
-      provider_name: "FranceConnect",
-      gov_endpoint: "https://app.franceconnect.gouv.fr/api/v2/authorize",
-    });
+      detail: "Parcours désactivé. Utilisez /api/auth/otp/request avec email et téléphone.",
+      action: "/auth/otp",
+    }, 410);
   }
 
-  // POST /api/auth/franceconnect/callback → simule la réponse du gouv'
-  // En vrai : récupère le code, échange contre un access_token, fetch /userinfo
-  // Ici : on simule un utilisateur officiel avec KYC auto-validé
   if (path === "/api/auth/franceconnect/callback" && method === "POST") {
-    const body = await parseBody(req);
-    const state = body.state;
-    const fc = FC_STORE.get(state);
-    if (!fc) return json(res, { detail: "État FranceConnect invalide ou expiré." }, 400);
-
-    // Mock : génère ou récupère un user vérifié via FC
-    const fcIdentity = body.identity || {
-      given_name: "Jean",
-      family_name: "Dupont",
-      email: "jean.dupont@example.fr",
-      birthdate: "1990-05-15",
-      gender: "male",
-    };
-    const email = fcIdentity.email.toLowerCase();
-    let user = userByEmail(email);
-    if (!user) {
-      const id = "u_fc_" + Date.now();
-      user = {
-        id, email,
-        name: `${fcIdentity.given_name} ${fcIdentity.family_name}`,
-        avatar: null,
-        created_at: new Date().toISOString(),
-        // ⚡ KYC auto-validé via FranceConnect (identité gouvernementale)
-        verified: true,
-        kyc_status: "verified",
-        kyc_source: "FranceConnect",
-        france_connect_sub: "fc_sub_" + Date.now(),
-        birthdate: fcIdentity.birthdate,
-        referral_code: "FC" + Date.now().toString(36).slice(-4).toUpperCase(),
-        referred_by: null, credit_balance: 0, push_token: null,
-      };
-      USERS[id] = user;
-    } else if (!user.verified) {
-      user.verified = true;
-      user.kyc_status = "verified";
-      user.kyc_source = "FranceConnect";
-    }
-
-    FC_STORE.delete(state);
-    const token = startSession(user.id, "Web · FranceConnect");
     return json(res, {
-      access_token: token,
-      user: meUser(user),
-      method: "france_connect",
-      kyc_verified: true,
-      message: "Identité vérifiée par FranceConnect — accès complet débloqué.",
-    });
+      detail: "Parcours désactivé. Utilisez /api/auth/otp/verify avec email, téléphone et code.",
+      action: "/auth/otp",
+    }, 410);
   }
 
   // ─── 3. PASSKEY / WebAuthn (biométrie) ─────────
@@ -1032,7 +1290,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n✅ Mock LocaShare API (v2 — P2P features) on http://localhost:${PORT}`);
-  console.log(`   Demo: demo@locashare.fr / demo1234`);
-  console.log(`   New: messages, reviews, owner bookings, stripe webhook\n`);
+  console.log(`\n✅ Mock LocaShare API on http://localhost:${PORT}`);
+  console.log(`   Demo OTP: demo@locashare.fr +33600000000`);
+  console.log(`   Active: OTP email+téléphone, réservations cash, messages, avis, support\n`);
 });

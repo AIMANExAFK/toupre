@@ -84,7 +84,7 @@ export default function ChatScreen() {
       } else if (e instanceof ApiError && e.code === "KYC_REQUIRED") {
         setBlockedError(null);
         setDraft(content);
-        router.push("/verification?reason=message");
+        router.push("/auth/otp?reason=message");
       } else {
         console.log("[send]", e);
       }

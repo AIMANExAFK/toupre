@@ -58,7 +58,7 @@ export default function ListingDetail() {
   }, [id]);
 
   const contactOwner = () => {
-    if (!user) { router.push("/(auth)/login"); return; }
+    if (!user) { router.push("/auth/otp"); return; }
     if (!listing?.owner?.id) return;
     router.push(`/messages/${listing.owner.id}?listingId=${listing.id}`);
   };
@@ -113,7 +113,7 @@ export default function ListingDetail() {
                   onPressOut={() => pressOut(favScale)}
                   activeOpacity={1}
                 >
-                  <Glass borderRadius={22} style={styles.iconBtn}>
+                  <Glass borderRadius={8} style={styles.iconBtn}>
                     <Ionicons name={favorite ? "heart" : "heart-outline"} size={20} color={favorite ? colors.secondary : colors.textPrimary} />
                   </Glass>
                 </TouchableOpacity>
@@ -145,7 +145,7 @@ export default function ListingDetail() {
               </Text>
             </View>
             <View style={[styles.feePill, { backgroundColor: colors.successBg }]}>
-              <Text style={[styles.feeText, { color: colors.success }]}>Frais 10%</Text>
+              <Text style={[styles.feeText, { color: colors.success }]}>0€ frais app</Text>
             </View>
           </Glass>
 
@@ -275,10 +275,10 @@ export default function ListingDetail() {
                 <TouchableOpacity
                   style={[styles.bookBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 })]}
                   onPress={() => {
-                    if (!user) { router.push("/(auth)/login"); return; }
-                    // Vérif KYC avant booking
+                    if (!user) { router.push("/auth/otp"); return; }
+                    // Vérification email+téléphone avant réservation
                     if (user && !user.verified) {
-                      router.push("/verification?reason=booking");
+                      router.push("/auth/otp?reason=booking");
                       return;
                     }
                     router.push(`/booking/${listing.id}`);
@@ -316,24 +316,24 @@ const styles = StyleSheet.create({
   body: { padding: spacing.lg },
   cat: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, alignSelf: "flex-start", marginBottom: spacing.sm },
   catText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.6 },
-  title: { fontSize: 28, fontWeight: "900", letterSpacing: -0.6 },
-  pricePanel: { marginTop: spacing.md, padding: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title: { fontSize: 28, fontWeight: "900", letterSpacing: 0, lineHeight: 34 },
+  pricePanel: { marginTop: spacing.md, padding: spacing.md, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1 },
   pricePanelLabel: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.5 },
   pricePanelValue: { fontSize: 24, fontWeight: "900", marginTop: 2 },
-  feePill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
+  feePill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8 },
   feeText: { fontSize: 12, fontWeight: "900" },
   metaRow: { flexDirection: "row", alignItems: "center", marginTop: 12, gap: 6, flexWrap: "wrap" },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   metaText: { fontSize: 14 },
   dot: {},
-  ownerBox: { flexDirection: "row", alignItems: "center", padding: spacing.md, marginTop: spacing.lg, gap: spacing.md },
-  ownerAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
+  ownerBox: { flexDirection: "row", alignItems: "center", padding: spacing.md, marginTop: spacing.lg, gap: spacing.md, borderWidth: 1 },
+  ownerAvatar: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   ownerInitial: { fontSize: 20, fontWeight: "800" },
-  ownerName: { fontSize: 16, fontWeight: "700" },
+  ownerName: { fontSize: 16, fontWeight: "900" },
   ownerLabel: { fontSize: 13, marginTop: 2 },
-  sectionTitle: { fontSize: 18, fontWeight: "800", marginTop: spacing.lg, marginBottom: spacing.sm, letterSpacing: -0.2 },
+  sectionTitle: { fontSize: 18, fontWeight: "900", marginTop: spacing.lg, marginBottom: spacing.sm, letterSpacing: 0 },
   description: { fontSize: 15, lineHeight: 22 },
-  mapBox: { height: 220, borderRadius: 16, overflow: "hidden", marginTop: 4 },
+  mapBox: { height: 220, borderRadius: 8, overflow: "hidden", marginTop: 4 },
   bottomWrap: { position: "absolute", left: 0, right: 0, bottom: 0 },
   bottomBar: { borderTopWidth: 1 },
   bottomInner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingVertical: spacing.md },

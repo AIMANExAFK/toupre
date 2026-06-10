@@ -13,7 +13,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
-import { useColors, spacing, radius } from "../../src/theme";
+import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 import { SkeletonCard } from "../../src/Skeleton";
 import { Map } from "../../src/Map";
@@ -109,12 +109,12 @@ export default function Explore() {
           isOwnListing={isOwn}
           onPress={() => router.push(`/listing/${item.id}`)}
           onBook={() => {
-            if (!user) { router.push("/(auth)/login"); return; }
-            if (!user.verified) { router.push("/verification?reason=booking"); return; }
+            if (!user) { router.push("/auth/otp"); return; }
+            if (!user.verified) { router.push("/auth/otp?reason=booking"); return; }
             router.push(`/booking/${item.id}`);
           }}
           onContact={() => {
-            if (!user) { router.push("/(auth)/login"); return; }
+            if (!user) { router.push("/auth/otp"); return; }
             if (item.owner?.id) router.push(`/messages/${item.owner.id}?listingId=${item.id}`);
           }}
         />
@@ -148,10 +148,10 @@ export default function Explore() {
             </TouchableOpacity>
           </View>
 
-          {/* ─── Bannière KYC — visible UNIQUEMENT si non-vérifié ─── */}
+          {/* Contact verification banner */}
           {user && !user.verified && (
             <TouchableOpacity
-              onPress={() => router.push("/verification")}
+              onPress={() => router.push("/auth/otp")}
               activeOpacity={0.85}
               style={styles.kycBanner}
               testID="kyc-banner"
@@ -161,9 +161,9 @@ export default function Explore() {
                   <Ionicons name="shield-outline" size={22} color={colors.warning || "#F59E0B"} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.kycTitle, { color: colors.textPrimary }]}>Identité non vérifiée</Text>
+                  <Text style={[styles.kycTitle, { color: colors.textPrimary }]}>Email et téléphone non vérifiés</Text>
                   <Text style={[styles.kycSub, { color: colors.textSecondary }]}>
-                    Vérifiez en 3 étapes (2 min) pour publier, réserver ou contacter un propriétaire.
+                    Recevez un code pour publier, réserver ou contacter un propriétaire.
                   </Text>
                 </View>
                 <View style={[styles.kycCta, { backgroundColor: colors.primary }]}>
@@ -185,14 +185,14 @@ export default function Explore() {
                     {"Trouvez un objet fiable, sans l'acheter."}
                   </Text>
                   <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-                    Réservation simple, propriétaire vérifié, retrait local.
+                    Réservation simple, contact vérifié, retrait local.
                   </Text>
                 </View>
               </View>
               <View style={styles.metricRow}>
                 <Metric value={String(allListings.length || "8+")} label="annonces" colors={colors} />
-                <Metric value="10%" label="frais clairs" colors={colors} />
-                <Metric value="4.9" label="note moyenne" colors={colors} />
+                <Metric value="0€" label="frais app" colors={colors} />
+                <Metric value="cash" label="à la remise" colors={colors} />
               </View>
             </Glass>
           </View>
@@ -243,6 +243,7 @@ export default function Explore() {
                       style={[
                         styles.chip,
                         { backgroundColor: colors.primary, borderColor: colors.primary },
+                        shadowStyle({ color: colors.primary, opacity: 0.22, radius: 12, offsetY: 4 }),
                       ]}
                     >
                       <Ionicons name={c.icon as any} size={15} color={colors.textInverse} />
@@ -317,7 +318,7 @@ export default function Explore() {
 
 function Metric({ value, label, colors }: { value: string; label: string; colors: any }) {
   return (
-    <View style={[styles.metric, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+    <View style={[styles.metric, { borderColor: colors.surfaceGlassBorder, backgroundColor: colors.surfaceGlass }]}>
       <Text style={[styles.metricValue, { color: colors.textPrimary }]}>{value}</Text>
       <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
@@ -336,14 +337,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
-    paddingBottom: 4,
+    paddingBottom: 8,
   },
-  greeting: { fontSize: 12, fontWeight: "800", letterSpacing: 0.8, textTransform: "uppercase" },
-  brand: { fontSize: 22, fontWeight: "900", letterSpacing: 0, marginTop: 2 },
-  toggleBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  greeting: { fontSize: 11, fontWeight: "900", letterSpacing: 1.1, textTransform: "uppercase" },
+  brand: { fontSize: 24, fontWeight: "900", letterSpacing: 0, marginTop: 2 },
+  toggleBtn: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
 
   heroCard: { paddingHorizontal: spacing.md, marginTop: 6 },
-  heroSurface: { padding: 12 },
+  heroSurface: { padding: 14, borderWidth: 1 },
   // KYC banner
   kycBanner: { paddingHorizontal: spacing.md, marginTop: 6, marginBottom: 4 },
   kycBannerInner: { flexDirection: "row", alignItems: "center", padding: 12, gap: 10, borderWidth: 1 },
@@ -353,11 +354,11 @@ const styles = StyleSheet.create({
   kycCta: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999 },
   kycCtaText: { fontSize: 11, fontWeight: "800" },
   heroTop: { flexDirection: "row", gap: 10, alignItems: "center" },
-  heroIcon: { width: 36, height: 36, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  heroTitle: { fontSize: 15, fontWeight: "900", letterSpacing: 0, lineHeight: 19 },
+  heroIcon: { width: 38, height: 38, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  heroTitle: { fontSize: 16, fontWeight: "900", letterSpacing: 0, lineHeight: 20 },
   heroSubtitle: { fontSize: 12, lineHeight: 17, marginTop: 3 },
   metricRow: { flexDirection: "row", gap: 7, marginTop: 12 },
-  metric: { flex: 1, borderWidth: 1, borderRadius: radius.md, paddingVertical: 8, paddingHorizontal: 6 },
+  metric: { flex: 1, borderWidth: 1, borderRadius: radius.md, paddingVertical: 9, paddingHorizontal: 6 },
   metricValue: { fontSize: 14, fontWeight: "900", textAlign: "center" },
   metricLabel: { fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 2 },
 
@@ -372,8 +373,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 14,
+    minHeight: 48,
     paddingVertical: 10,
     gap: 8,
+    borderWidth: 1,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
   filterBtn: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },

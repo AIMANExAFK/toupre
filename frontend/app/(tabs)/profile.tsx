@@ -50,7 +50,7 @@ export default function Profile() {
             </Text>
             <TouchableOpacity
               style={[styles.btn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 })]}
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.push("/auth/otp")}
               testID="profile-login-btn"
             >
               <Text style={[styles.btnText, { color: colors.textInverse }]}>Se connecter</Text>
@@ -69,7 +69,7 @@ export default function Profile() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
             <View style={styles.header}>
-              <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.5, radius: 22, offsetY: 8 })]}>
+              <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.42, radius: 20, offsetY: 8 })]}>
                 <Text style={[styles.avatarText, { color: colors.textInverse }]}>{initial}</Text>
               </View>
               <Text style={[styles.name, { color: colors.textPrimary }]} testID="profile-name">{user.name}</Text>
@@ -95,9 +95,9 @@ export default function Profile() {
               </Glass>
             </View>
 
-            {/* KYC banner — dynamique */}
-            <TouchableOpacity onPress={() => router.push("/verification")} style={styles.menu} activeOpacity={0.8}>
-              <Glass borderRadius={radius.lg} style={styles.trustCard}>
+            {/* Contact verification banner */}
+            <TouchableOpacity onPress={() => router.push("/auth/otp")} style={styles.menu} activeOpacity={0.8}>
+              <Glass borderRadius={radius.lg} style={[styles.trustCard, { borderColor: colors.surfaceGlassBorder }]}>
                 <View style={[styles.trustIcon, {
                   backgroundColor: me?.kyc_status === "verified" ? colors.successBg : colors.primaryTint,
                 }]}>
@@ -109,10 +109,10 @@ export default function Profile() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.trustTitle, { color: colors.textPrimary }]}>
-                    {me?.kyc_status === "verified" ? "✓ Identité vérifiée" : me?.kyc_status === "pending" ? "Vérification en cours…" : "Vérifier mon identité"}
+                    {me?.kyc_status === "verified" ? "Email et téléphone vérifiés" : me?.kyc_status === "pending" ? "Vérification en cours…" : "Vérifier mes coordonnées"}
                   </Text>
                   <Text style={[styles.trustText, { color: colors.textSecondary }]}>
-                    {me?.kyc_status === "verified" ? "Vous pouvez louer et publier en toute confiance." : "Débloquez toutes les fonctionnalités en quelques secondes."}
+                    {me?.kyc_status === "verified" ? "Un code a confirmé que vous possédez bien ces coordonnées." : "Recevez un code pour louer et publier."}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
@@ -140,7 +140,7 @@ export default function Profile() {
             )}
 
             <View style={styles.menu}>
-              <Glass borderRadius={radius.lg}>
+                <Glass borderRadius={radius.lg} style={styles.menuCard}>
                 <MenuItem
                   icon="notifications-outline"
                   label="Notifications"
@@ -168,10 +168,10 @@ export default function Profile() {
             </View>
 
             <View style={styles.menu}>
-              <Glass borderRadius={radius.lg}>
+                <Glass borderRadius={radius.lg} style={styles.menuCard}>
                 <MenuItem icon="finger-print-outline" label="Sécurité & sessions" onPress={() => router.push("/security")} testID="menu-security" colors={colors} />
                 <Divider colors={colors} />
-                <MenuItem icon="card-outline" label="Moyens de paiement" onPress={() => router.push("/payments")} testID="menu-payments" colors={colors} />
+                <MenuItem icon="cash-outline" label="Paiement en espèces" onPress={() => router.push("/payments")} testID="menu-payments" colors={colors} />
                 <Divider colors={colors} />
                 <MenuItem icon="settings-outline" label="Paramètres" onPress={() => router.push("/settings")} testID="menu-settings" colors={colors} />
                 <Divider colors={colors} />
@@ -214,25 +214,26 @@ function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "center", padding: spacing.xl },
-  avatar: { width: 90, height: 90, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  header: { alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing.xl, paddingBottom: spacing.lg },
+  avatar: { width: 88, height: 88, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 36, fontWeight: "800" },
-  name: { fontSize: 24, fontWeight: "800", marginTop: spacing.md, letterSpacing: -0.4 },
+  name: { fontSize: 24, fontWeight: "900", marginTop: spacing.md, letterSpacing: 0 },
   email: { fontSize: 14, marginTop: 2 },
   statsWrap: { paddingHorizontal: spacing.lg, marginTop: spacing.sm },
-  statsCard: { flexDirection: "row", padding: spacing.md, alignItems: "center" },
+  statsCard: { flexDirection: "row", padding: spacing.md, alignItems: "center", borderWidth: 1 },
   statBox: { flex: 1, alignItems: "center" },
   statSep: { width: 1, height: 32 },
-  statValue: { fontSize: 22, fontWeight: "800" },
+  statValue: { fontSize: 22, fontWeight: "900" },
   statLabel: { fontSize: 12, marginTop: 2 },
   menu: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
-  trustCard: { padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md },
-  trustIcon: { width: 44, height: 44, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
+  trustCard: { padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1 },
+  trustIcon: { width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   trustTitle: { fontSize: 15, fontWeight: "900" },
   trustText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  menuCard: { borderWidth: 1 },
   menuItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: 14, gap: spacing.md },
-  menuIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  menuLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
+  menuIcon: { width: 40, height: 40, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  menuLabel: { flex: 1, fontSize: 15, fontWeight: "700" },
   logoutText: { fontWeight: "700", fontSize: 15 },
   guestBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: 8 },
   guestTitle: { fontSize: 22, fontWeight: "800", marginTop: 16 },

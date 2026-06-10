@@ -14,17 +14,18 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
-import { BACKEND_URL, useAuth } from "../../src/auth";
+import { useAuth } from "../../src/auth";
 
-type Step = "email" | "code";
+type Step = "contact" | "code";
 
 export default function OtpFlow() {
   const router = useRouter();
   const colors = useColors();
-  const { refreshUser } = useAuth();
+  const { requestOtp, verifyOtp } = useAuth();
 
-  const [step, setStep] = useState<Step>("email");
+  const [step, setStep] = useState<Step>("contact");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -33,7 +34,10 @@ export default function OtpFlow() {
   const inputs = useRef<(TextInput | null)[]>([]);
 
   const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const PHONE_REGEX = /^(\+?\d[\d\s.-]{7,14})$/;
   const emailValid = EMAIL_REGEX.test(email.trim());
+  const phoneValid = PHONE_REGEX.test(phone.trim());
+  const contactValid = emailValid && phoneValid;
   const codeStr = code.join("");
   const codeValid = codeStr.length === 6;
 
@@ -46,18 +50,13 @@ export default function OtpFlow() {
 
   const requestOTP = async () => {
     if (!emailValid) { setError("Email invalide"); return; }
+    if (!phoneValid) { setError("Numéro de téléphone invalide"); return; }
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`${BACKEND_URL}/api/auth/otp/request`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
-      });
-      const data = await r.json();
-      if (!r.ok) { setError(data.detail || "Erreur"); return; }
+      const data = await requestOtp(email.trim().toLowerCase(), phone.trim());
       setStep("code");
       setResendIn(30);
-      setDevCode(data._dev_code || null); // mode démo
+      setDevCode(data.devCode || null);
       setTimeout(() => inputs.current[0]?.focus(), 200);
     } catch (e: any) {
       setError(e?.message || "Erreur réseau");
@@ -70,22 +69,12 @@ export default function OtpFlow() {
     if (!codeValid) return;
     setLoading(true); setError(null);
     try {
-      const r = await fetch(`${BACKEND_URL}/api/auth/otp/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), code: codeStr }),
-      });
-      const data = await r.json();
-      if (!r.ok) { setError(data.detail || "Code incorrect"); setCode(["", "", "", "", "", ""]); inputs.current[0]?.focus(); return; }
-      // Sauvegarde la session
-      if (Platform.OS === "web" && typeof localStorage !== "undefined") {
-        localStorage.setItem("ls_token", data.access_token);
-        localStorage.setItem("ls_user", JSON.stringify(data.user));
-      }
-      await refreshUser();
+      await verifyOtp(email.trim().toLowerCase(), phone.trim(), codeStr);
       router.replace("/(tabs)");
     } catch (e: any) {
-      setError(e?.message || "Erreur");
+      setError(e?.message || "Code incorrect");
+      setCode(["", "", "", "", "", ""]);
+      inputs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
@@ -122,30 +111,30 @@ export default function OtpFlow() {
 
           <View style={styles.header}>
             <TouchableOpacity
-              onPress={() => step === "code" ? setStep("email") : router.back()}
+              onPress={() => step === "code" ? setStep("contact") : router.back()}
               style={styles.iconBtn}
             >
               <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Code par email</Text>
+            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Connexion vérifiée</Text>
             <View style={{ width: 32 }} />
           </View>
 
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.md }} keyboardShouldPersistTaps="handled">
 
-            {step === "email" ? (
+            {step === "contact" ? (
               <>
                 <View style={{ alignItems: "center", marginTop: 16, marginBottom: 8 }}>
                   <View style={[styles.heroIco, { backgroundColor: colors.primaryTint }]}>
-                    <Ionicons name="mail-outline" size={36} color={colors.primary} />
+                    <Ionicons name="shield-checkmark-outline" size={36} color={colors.primary} />
                   </View>
-                  <Text style={[styles.title, { color: colors.textPrimary }]}>Saisissez votre email</Text>
+                  <Text style={[styles.title, { color: colors.textPrimary }]}>Email + téléphone</Text>
                   <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                    Nous vous enverrons un code à 6 chiffres valable 10 minutes.
+                    {"À chaque connexion, LocaShare envoie un code à 6 chiffres pour vérifier que c'est bien vous."}
                   </Text>
                 </View>
 
-                <Glass borderRadius={radius.lg} style={{ padding: spacing.md }}>
+                <Glass borderRadius={radius.lg} style={styles.formCard}>
                   <Text style={[styles.label, { color: colors.textSecondary }]}>Adresse email</Text>
                   <View style={[styles.inputWrap, { backgroundColor: colors.surface2, borderColor: emailValid ? colors.primary : colors.border }]}>
                     <Ionicons name="at-outline" size={18} color={colors.textTertiary} />
@@ -163,6 +152,21 @@ export default function OtpFlow() {
                       testID="otp-email-input"
                     />
                   </View>
+                  <Text style={[styles.label, { color: colors.textSecondary, marginTop: spacing.sm }]}>Numéro de téléphone</Text>
+                  <View style={[styles.inputWrap, { backgroundColor: colors.surface2, borderColor: phoneValid ? colors.primary : colors.border }]}>
+                    <Ionicons name="call-outline" size={18} color={colors.textTertiary} />
+                    <TextInput
+                      value={phone}
+                      onChangeText={setPhone}
+                      placeholder="06 12 34 56 78"
+                      placeholderTextColor={colors.textTertiary}
+                      keyboardType="phone-pad"
+                      autoComplete="tel"
+                      style={[styles.input, { color: colors.textPrimary }]}
+                      onSubmitEditing={requestOTP}
+                      testID="otp-phone-input"
+                    />
+                  </View>
                 </Glass>
 
                 {error && (
@@ -174,11 +178,11 @@ export default function OtpFlow() {
 
                 <TouchableOpacity
                   onPress={requestOTP}
-                  disabled={!emailValid || loading}
+                  disabled={!contactValid || loading}
                   style={[
                     styles.primaryBtn,
-                    { backgroundColor: emailValid ? colors.primary : colors.border },
-                    emailValid && shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 }),
+                    { backgroundColor: contactValid ? colors.primary : colors.border },
+                    contactValid && shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 }),
                   ]}
                   testID="otp-send-btn"
                 >
@@ -186,10 +190,10 @@ export default function OtpFlow() {
                     <ActivityIndicator color={colors.textInverse} />
                   ) : (
                     <>
-                      <Text style={[styles.primaryBtnText, { color: emailValid ? colors.textInverse : colors.textTertiary }]}>
+                      <Text style={[styles.primaryBtnText, { color: contactValid ? colors.textInverse : colors.textTertiary }]}>
                         Envoyer le code
                       </Text>
-                      <Ionicons name="paper-plane-outline" size={17} color={emailValid ? colors.textInverse : colors.textTertiary} />
+                      <Ionicons name="paper-plane-outline" size={17} color={contactValid ? colors.textInverse : colors.textTertiary} />
                     </>
                   )}
                 </TouchableOpacity>
@@ -200,10 +204,11 @@ export default function OtpFlow() {
                   <View style={[styles.heroIco, { backgroundColor: colors.primaryTint }]}>
                     <Ionicons name="keypad-outline" size={36} color={colors.primary} />
                   </View>
-                  <Text style={[styles.title, { color: colors.textPrimary }]}>Vérifiez votre boîte mail</Text>
+                  <Text style={[styles.title, { color: colors.textPrimary }]}>Saisissez le code</Text>
                   <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                    Nous avons envoyé un code à 6 chiffres à{"\n"}
+                    Nous avons envoyé un code à{"\n"}
                     <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{email}</Text>
+                    {"\n"}et <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{phone}</Text>
                   </Text>
                 </View>
 
@@ -296,27 +301,28 @@ export default function OtpFlow() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
+  iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
 
-  heroIco: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 12 },
-  title: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5, textAlign: "center" },
+  heroIco: { width: 72, height: 72, borderRadius: 8, alignItems: "center", justifyContent: "center", marginBottom: 12 },
+  title: { fontSize: 23, fontWeight: "900", letterSpacing: 0, textAlign: "center" },
   sub: { fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 6, paddingHorizontal: spacing.md },
 
+  formCard: { padding: spacing.md, gap: spacing.sm, borderWidth: 1 },
   label: { fontSize: 11, fontWeight: "800", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 },
-  inputWrap: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 12 },
+  inputWrap: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: radius.md, minHeight: 52, paddingHorizontal: 14, paddingVertical: 12 },
   input: { flex: 1, fontSize: 15 },
 
   errBox: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderRadius: radius.sm },
 
-  primaryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 15, borderRadius: radius.md, marginTop: spacing.sm },
+  primaryBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, minHeight: 54, paddingVertical: 15, borderRadius: radius.md, marginTop: spacing.sm },
   primaryBtnText: { fontSize: 15, fontWeight: "800" },
 
   // Code boxes
   codeRow: { flexDirection: "row", justifyContent: "center", gap: 8, marginVertical: spacing.md },
   codeBox: {
     width: 46, height: 56,
-    borderWidth: 2, borderRadius: 12,
+    borderWidth: 2, borderRadius: 8,
     textAlign: "center",
     fontSize: 26, fontWeight: "900",
     letterSpacing: -0.5,

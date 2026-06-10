@@ -64,17 +64,17 @@ export default function Create() {
 
   const submit = async () => {
     if (!user) {
-      router.push("/(auth)/login");
+      router.push("/auth/otp");
       return;
     }
-    // ─── KYC obligatoire pour publier ───
+    // Vérification email+téléphone obligatoire pour publier
     if (!user.verified) {
       Alert.alert(
-        "Vérification d'identité requise",
-        "Pour publier une annonce et protéger la communauté, vous devez d'abord vérifier votre identité.",
+        "Coordonnées à vérifier",
+        "Pour publier une annonce, vérifiez votre email et votre numéro avec un code.",
         [
           { text: "Plus tard", style: "cancel" },
-          { text: "Vérifier maintenant", onPress: () => router.push("/verification?reason=publish") },
+          { text: "Recevoir un code", onPress: () => router.push("/auth/otp?reason=publish") },
         ],
       );
       return;
@@ -123,7 +123,7 @@ export default function Create() {
         );
       } else if (e instanceof ApiError && e.code === "KYC_REQUIRED") {
         Alert.alert("Vérification requise", e.message, [
-          { text: "Vérifier", onPress: () => router.push("/verification") },
+          { text: "Recevoir un code", onPress: () => router.push("/auth/otp") },
         ]);
       } else {
         Alert.alert("Erreur", e.message);
@@ -145,7 +145,7 @@ export default function Create() {
             <Text style={[styles.guestSub, { color: colors.textSecondary }]}>Pour publier une annonce</Text>
             <TouchableOpacity
               style={[styles.btn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.4, radius: 16, offsetY: 6 })]}
-              onPress={() => router.push("/(auth)/login")}
+              onPress={() => router.push("/auth/otp")}
             >
               <Text style={[styles.btnText, { color: colors.textInverse }]}>Se connecter</Text>
             </TouchableOpacity>

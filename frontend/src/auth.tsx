@@ -14,10 +14,12 @@ const IS_SUPABASE_CONFIGURED =
   !process.env.EXPO_PUBLIC_SUPABASE_URL.includes("VOTRE") &&
   !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY &&
   !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.includes("VOTRE");
+const LOCAL_DEMO_AUTH_ENABLED = process.env.EXPO_PUBLIC_ENABLE_LOCAL_DEMO_AUTH === "true";
 
 type User = {
   id: string;
   email: string;
+  phone?: string | null;
   name: string;
   avatar?: string | null;
   created_at: string;
@@ -27,6 +29,7 @@ type User = {
   referral_code?: string;
   credit_balance?: number;
   referred_by?: string | null;
+  contact_verified_at?: string | null;
 };
 
 type AuthCtx = {
@@ -35,6 +38,8 @@ type AuthCtx = {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string, referral_code?: string) => Promise<void>;
+  requestOtp: (email: string, phone: string, name?: string) => Promise<{ devCode?: string | null; delivery?: any }>;
+  verifyOtp: (email: string, phone: string, code: string, name?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
   logout: () => Promise<void>;
@@ -53,7 +58,7 @@ function toUser(u: any, meta: any): User {
   };
 }
 
-// ── Persistance mock (localStorage web / mémoire native) ──────
+// ── Persistance web + comptes démo locaux ─────────────────────
 const MOCK_TOKEN_KEY = "ls_mock_token";
 const MOCK_USER_KEY  = "ls_mock_user";
 const MOCK_USERS_KEY = "ls_mock_users";
@@ -61,14 +66,14 @@ const MOCK_USERS_KEY = "ls_mock_users";
 type LocalStoredUser = User & { password: string };
 
 function mockSave(token: string, user: User) {
-  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+  if (canUseWebStorage()) {
     localStorage.setItem(MOCK_TOKEN_KEY, token);
     localStorage.setItem(MOCK_USER_KEY, JSON.stringify(user));
   }
 }
 
 function mockLoad(): { token: string; user: User } | null {
-  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+  if (canUseWebStorage()) {
     const token = localStorage.getItem(MOCK_TOKEN_KEY);
     const raw   = localStorage.getItem(MOCK_USER_KEY);
     if (token && raw) {
@@ -79,14 +84,18 @@ function mockLoad(): { token: string; user: User } | null {
 }
 
 function mockClear() {
-  if (Platform.OS === "web" && typeof localStorage !== "undefined") {
+  if (canUseWebStorage()) {
     localStorage.removeItem(MOCK_TOKEN_KEY);
     localStorage.removeItem(MOCK_USER_KEY);
   }
 }
 
-function canUseLocalAuthFallback() {
+function canUseWebStorage() {
   return Platform.OS === "web" && typeof localStorage !== "undefined";
+}
+
+function canUseLocalAuthFallback() {
+  return LOCAL_DEMO_AUTH_ENABLED && canUseWebStorage();
 }
 
 function localUsers(): LocalStoredUser[] {
@@ -96,10 +105,15 @@ function localUsers(): LocalStoredUser[] {
     {
       id: "demo-local",
       email: "demo@locashare.fr",
+      phone: "+33600000000",
       password: "demo1234",
       name: "Alexandre D.",
       avatar: null,
       created_at: "2024-01-01T00:00:00.000Z",
+      verified: true,
+      kyc_status: "verified",
+      kyc_source: "email_phone_otp",
+      contact_verified_at: "2024-01-01T00:00:00.000Z",
     },
   ];
   if (!raw) return base;
@@ -123,10 +137,34 @@ function localToken(email: string) {
   return `local_demo_${email}_${Date.now()}`;
 }
 
+function userFromAuthPayload(data: any, fallback: Partial<User> = {}): User {
+  return {
+    id:             data.user?.id ?? fallback.id ?? "mock_id",
+    email:          data.user?.email ?? fallback.email ?? "",
+    phone:          data.user?.phone ?? fallback.phone ?? null,
+    name:           data.user?.name ?? fallback.name ?? data.user?.nom ?? "Utilisateur",
+    avatar:         data.user?.avatar ?? fallback.avatar ?? null,
+    created_at:     data.user?.created_at ?? fallback.created_at ?? new Date().toISOString(),
+    verified:       data.user?.verified ?? fallback.verified ?? false,
+    kyc_status:     data.user?.kyc_status ?? fallback.kyc_status ?? "none",
+    kyc_source:     data.user?.kyc_source ?? fallback.kyc_source,
+    referral_code:  data.user?.referral_code ?? fallback.referral_code,
+    credit_balance: data.user?.credit_balance ?? fallback.credit_balance,
+    referred_by:    data.user?.referred_by ?? fallback.referred_by,
+    contact_verified_at: data.user?.contact_verified_at ?? fallback.contact_verified_at ?? null,
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [token, setToken]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const saveAuthSession = (authToken: string, nextUser: User) => {
+    mockSave(authToken, nextUser);
+    setToken(authToken);
+    setUser(nextUser);
+  };
 
   useEffect(() => {
     if (IS_SUPABASE_CONFIGURED) {
@@ -152,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => listener.subscription.unsubscribe();
     } else {
-      // ── Mode mock backend ──
+      // ── Mode backend LocaShare ──
       const saved = mockLoad();
       if (saved) {
         setToken(saved.token);
@@ -179,23 +217,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.detail || "Identifiants incorrects.");
 
-      const u: User = {
-        id:             data.user?.id         ?? "mock_id",
-        email,
-        name:           data.user?.name       ?? data.user?.nom ?? email.split("@")[0],
-        avatar:         data.user?.avatar     ?? null,
-        created_at:     data.user?.created_at ?? new Date().toISOString(),
-        verified:       data.user?.verified ?? false,
-        kyc_status:     data.user?.kyc_status ?? "none",
-        kyc_source:     data.user?.kyc_source,
-        referral_code:  data.user?.referral_code,
-        credit_balance: data.user?.credit_balance,
-        referred_by:    data.user?.referred_by,
-      };
+      const u = userFromAuthPayload(data, { email, name: email.split("@")[0] });
       const authToken = data.access_token ?? data.token;
-      mockSave(authToken, u);
-      setToken(authToken);
-      setUser(u);
+      saveAuthSession(authToken, u);
     } catch (error: any) {
       if (!canUseLocalAuthFallback() || error?.message === "Identifiants incorrects.") throw error;
       const found = localUsers().find(
@@ -204,9 +228,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!found) throw new Error("Identifiants incorrects.");
       const { password: _password, ...u } = found;
       const authToken = localToken(u.email);
-      mockSave(authToken, u);
-      setToken(authToken);
-      setUser(u);
+      saveAuthSession(authToken, u);
     }
   };
 
@@ -231,23 +253,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || data.detail || "Erreur lors de la création du compte.");
 
-      const u: User = {
-        id:             data.user?.id         ?? "mock_id",
-        email,
-        name:           data.user?.name       ?? name,
-        avatar:         data.user?.avatar     ?? null,
-        created_at:     data.user?.created_at ?? new Date().toISOString(),
-        verified:       data.user?.verified ?? false,
-        kyc_status:     data.user?.kyc_status ?? "none",
-        kyc_source:     data.user?.kyc_source,
-        referral_code:  data.user?.referral_code,
-        credit_balance: data.user?.credit_balance,
-        referred_by:    data.user?.referred_by,
-      };
+      const u = userFromAuthPayload(data, { email, name });
       const authToken = data.access_token ?? data.token;
-      mockSave(authToken, u);
-      setToken(authToken);
-      setUser(u);
+      saveAuthSession(authToken, u);
     } catch (error: any) {
       if (!canUseLocalAuthFallback()) throw error;
       const normalizedEmail = email.trim().toLowerCase();
@@ -264,10 +272,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       saveLocalUsers([...users, { ...u, password }]);
       const authToken = localToken(u.email);
-      mockSave(authToken, u);
-      setToken(authToken);
-      setUser(u);
+      saveAuthSession(authToken, u);
     }
+  };
+
+  const requestOtp = async (email: string, phone: string, name?: string) => {
+    const res = await fetch(`${BACKEND_URL}/api/auth/otp/request`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone, name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Impossible d'envoyer le code.");
+    return { devCode: data._dev_code ?? null, delivery: data.delivery };
+  };
+
+  const verifyOtp = async (email: string, phone: string, code: string, name?: string) => {
+    const res = await fetch(`${BACKEND_URL}/api/auth/otp/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, phone, code, name }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Code incorrect.");
+    const u = userFromAuthPayload(data, { email, phone, name: name || email.split("@")[0] });
+    const authToken = data.access_token ?? data.token;
+    saveAuthSession(authToken, u);
   };
 
   // ── Google OAuth ─────────────────────────────────────────────
@@ -364,7 +394,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, token, loading, login, register, loginWithGoogle, loginWithApple, logout, refreshUser }}>
+    <Ctx.Provider value={{ user, token, loading, login, register, requestOtp, verifyOtp, loginWithGoogle, loginWithApple, logout, refreshUser }}>
       {children}
     </Ctx.Provider>
   );
@@ -400,12 +430,13 @@ export async function apiFetch(path: string, opts: RequestInit = {}, token?: str
   const res = await fetch(`${BACKEND_URL}${path}`, { ...opts, headers });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
+    const detail = typeof err.detail === "object" && err.detail ? err.detail : err;
     throw new ApiError(
-      typeof err.detail === "string" ? err.detail : `Erreur ${res.status}`,
+      typeof err.detail === "string" ? err.detail : detail.detail || `Erreur ${res.status}`,
       {
-        code: err.code,
-        action: err.action,
-        reasons: err.reasons,
+        code: detail.code || err.code,
+        action: detail.action || err.action,
+        reasons: detail.reasons || err.reasons,
         status: res.status,
       },
     );

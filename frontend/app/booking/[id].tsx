@@ -5,9 +5,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import * as WebBrowser from "expo-web-browser";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { apiFetch, useAuth, BACKEND_URL } from "../../src/auth";
+import { ApiError, apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 
@@ -59,14 +58,13 @@ export default function BookingFlow() {
 
   const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
   const subtotal = days * Number(listing.price_per_day);
-  const serviceFee = Math.round(subtotal * 0.1 * 100) / 100;
-  const total = Math.round((subtotal + serviceFee) * 100) / 100;
+  const total = Math.round(subtotal * 100) / 100;
 
-  const onPay = async () => {
-    if (!token) { router.push("/(auth)/login"); return; }
+  const onReserve = async () => {
+    if (!token) { router.push("/auth/otp"); return; }
     setLoading(true);
     try {
-      const booking = await apiFetch(
+      await apiFetch(
         "/api/bookings",
         { method: "POST", body: JSON.stringify({
           listing_id: listing.id,
@@ -75,15 +73,22 @@ export default function BookingFlow() {
         }) },
         token
       );
-      const origin = BACKEND_URL || "https://locashare.app";
-      const checkout = await apiFetch(
-        "/api/checkout/session",
-        { method: "POST", body: JSON.stringify({ booking_id: booking.id, origin_url: origin }) },
-        token
+      if (Platform.OS === "web") {
+        router.replace("/(tabs)/bookings");
+        return;
+      }
+      Alert.alert(
+        "Demande envoyée",
+        "Le propriétaire doit confirmer la réservation. Le paiement se fera en espèces lors de la remise.",
+        [{ text: "OK", onPress: () => router.replace("/(tabs)/bookings") }],
       );
-      await WebBrowser.openBrowserAsync(checkout.url);
-      router.replace(`/payment-success?session_id=${checkout.session_id}`);
-    } catch (e: any) { Alert.alert("Erreur", e.message); }
+    } catch (e: any) {
+      if (e instanceof ApiError && e.code === "KYC_REQUIRED" && e.action) {
+        router.push(e.action as any);
+      } else {
+        Alert.alert("Erreur", e.message);
+      }
+    }
     finally { setLoading(false); }
   };
 
@@ -93,7 +98,7 @@ export default function BookingFlow() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.back()} testID="back-btn">
-              <Glass borderRadius={22} style={styles.backBtn}>
+              <Glass borderRadius={8} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
             </TouchableOpacity>
@@ -102,7 +107,7 @@ export default function BookingFlow() {
           </View>
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
-            <Glass borderRadius={radius.lg}>
+            <Glass borderRadius={radius.lg} style={styles.itemShell}>
               <View style={styles.itemCard}>
                 <Image source={{ uri: listing.photos[0] }} style={styles.itemImg} />
                 <View style={{ flex: 1, padding: spacing.md }}>
@@ -114,7 +119,7 @@ export default function BookingFlow() {
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Dates de location</Text>
             <TouchableOpacity onPress={() => setShowStartPicker(true)} testID="start-date-btn" style={{ marginBottom: spacing.sm }}>
-              <Glass borderRadius={radius.md}>
+              <Glass borderRadius={radius.md} style={styles.dateShell}>
                 <View style={styles.dateRow}>
                   <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
                     <Ionicons name="calendar-outline" size={20} color={colors.primary} />
@@ -129,7 +134,7 @@ export default function BookingFlow() {
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setShowEndPicker(true)} testID="end-date-btn">
-              <Glass borderRadius={radius.md}>
+              <Glass borderRadius={radius.md} style={styles.dateShell}>
                 <View style={styles.dateRow}>
                   <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
                     <Ionicons name="calendar-outline" size={20} color={colors.primary} />
@@ -169,18 +174,20 @@ export default function BookingFlow() {
             )}
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Récapitulatif</Text>
-            <Glass borderRadius={radius.lg}>
+            <Glass borderRadius={radius.lg} style={styles.summaryShell}>
               <View style={styles.summary}>
                 <Row label={`${listing.price_per_day}€ × ${days} jours`} value={`${subtotal.toFixed(2)}€`} colors={colors} />
-                <Row label="Frais de service (10%)" value={`${serviceFee.toFixed(2)}€`} colors={colors} />
+                <Row label="Frais de service" value="0,00€" colors={colors} />
                 <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                <Row label="Total" value={`${total.toFixed(2)}€`} bold colors={colors} />
+                <Row label="À régler en espèces" value={`${total.toFixed(2)}€`} bold colors={colors} />
               </View>
             </Glass>
 
-            <View style={[styles.notice, { backgroundColor: colors.successBg }]}>
-              <Ionicons name="shield-checkmark" size={18} color={colors.success} />
-              <Text style={[styles.noticeText, { color: colors.success }]}>Paiement sécurisé via Stripe</Text>
+            <View style={[styles.notice, { backgroundColor: colors.warningBg || colors.successBg }]}>
+              <Ionicons name="cash-outline" size={18} color={colors.warning || colors.success} />
+              <Text style={[styles.noticeText, { color: colors.warning || colors.success }]}>
+                Paiement en espèces entre le locataire et le propriétaire lors de la remise.
+              </Text>
             </View>
           </ScrollView>
 
@@ -191,12 +198,12 @@ export default function BookingFlow() {
                   styles.payBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 },
                   shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 }),
                 ]}
-                onPress={onPay} disabled={loading} testID="pay-btn"
+                onPress={onReserve} disabled={loading} testID="reserve-btn"
               >
                 {loading ? <ActivityIndicator color={colors.textInverse} /> : (
                   <>
-                    <Ionicons name="lock-closed" size={18} color={colors.textInverse} />
-                    <Text style={[styles.payText, { color: colors.textInverse }]}>Payer {total.toFixed(2)}€</Text>
+              <Ionicons name="calendar-outline" size={18} color={colors.textInverse} />
+                    <Text style={[styles.payText, { color: colors.textInverse }]}>Demander la réservation</Text>
                   </>
                 )}
               </TouchableOpacity>
@@ -224,22 +231,25 @@ const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800" },
+  headerTitle: { fontSize: 18, fontWeight: "900" },
   scroll: { padding: spacing.lg, paddingBottom: 120 },
+  itemShell: { borderWidth: 1 },
   itemCard: { flexDirection: "row", overflow: "hidden" },
-  itemImg: { width: 100, height: 100 },
-  itemTitle: { fontSize: 15, fontWeight: "700" },
-  itemPrice: { fontSize: 14, fontWeight: "700", marginTop: 4 },
-  sectionTitle: { fontSize: 17, fontWeight: "800", marginTop: spacing.lg, marginBottom: spacing.sm },
+  itemImg: { width: 104, height: 104 },
+  itemTitle: { fontSize: 15, fontWeight: "900", lineHeight: 20 },
+  itemPrice: { fontSize: 14, fontWeight: "900", marginTop: 4 },
+  sectionTitle: { fontSize: 17, fontWeight: "900", marginTop: spacing.lg, marginBottom: spacing.sm },
+  dateShell: { borderWidth: 1 },
   dateRow: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: spacing.md },
-  dateIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  dateIcon: { width: 40, height: 40, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   dateLabel: { fontSize: 12 },
-  dateValue: { fontSize: 15, fontWeight: "700", marginTop: 2 },
+  dateValue: { fontSize: 15, fontWeight: "900", marginTop: 2 },
+  summaryShell: { borderWidth: 1 },
   summary: { padding: spacing.md },
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
   rowLabel: { fontSize: 14 },
   rowValue: { fontSize: 14 },
-  bold: { fontSize: 17, fontWeight: "800" },
+  bold: { fontSize: 17, fontWeight: "900" },
   divider: { height: 1, marginVertical: 8 },
   notice: { flexDirection: "row", alignItems: "center", gap: 8, padding: spacing.md, borderRadius: radius.md, marginTop: spacing.md },
   noticeText: { fontSize: 14, fontWeight: "700" },

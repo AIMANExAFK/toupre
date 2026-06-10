@@ -61,7 +61,7 @@ export default function MyItems() {
     ]);
   };
 
-  const updateBooking = async (id: string, status: "confirmed" | "refused" | "cancelled") => {
+  const updateBooking = async (id: string, status: "confirmed" | "refused" | "cancelled" | "completed") => {
     try {
       await apiFetch(`/api/bookings/${id}`, {
         method: "PATCH",
@@ -199,19 +199,8 @@ export default function MyItems() {
                 </View>
               ) : (
                 bookings.map((b) => {
-                  const statusColor =
-                    b.status === "pending" ? colors.warning
-                    : b.status === "confirmed" ? colors.primary
-                    : b.status === "paid" ? colors.success
-                    : b.status === "refused" || b.status === "cancelled" ? colors.error
-                    : colors.textSecondary;
-                  const statusLabel =
-                    b.status === "pending" ? "En attente"
-                    : b.status === "confirmed" ? "Acceptée"
-                    : b.status === "paid" ? "Payée"
-                    : b.status === "refused" ? "Refusée"
-                    : b.status === "cancelled" ? "Annulée"
-                    : b.status;
+                  const statusColor = ownerStatusColor(b.status, colors);
+                  const statusLabel = ownerStatusLabel(b.status);
                   return (
                     <View key={b.id} style={{ marginBottom: spacing.md }} testID={`booking-${b.id}`}>
                       <Glass borderRadius={radius.lg} style={styles.bookingCard}>
@@ -280,7 +269,7 @@ export default function MyItems() {
                         )}
 
                         <TouchableOpacity
-                          onPress={() => router.push(`/messages/${b.user_id}?listingId=${b.listing_id}`)}
+                          onPress={() => router.push(`/messages/${b.renter_id || b.user_id || b.renter?.id}?listingId=${b.listing_id}`)}
                           style={[styles.btnMessage, { borderColor: colors.border }]}
                         >
                           <Ionicons name="chatbubble-ellipses-outline" size={15} color={colors.primary} />
@@ -301,6 +290,27 @@ export default function MyItems() {
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+}
+
+function ownerStatusLabel(status: string) {
+  if (status === "pending") return "En attente";
+  if (status === "confirmed") return "Acceptée";
+  if (status === "paid") return "Payée";
+  if (status === "active") return "En cours";
+  if (status === "completed") return "Terminée";
+  if (status === "returned") return "Retournée";
+  if (status === "refused") return "Refusée";
+  if (status === "cancelled") return "Annulée";
+  if (status === "disputed") return "Litige";
+  return status;
+}
+
+function ownerStatusColor(status: string, colors: any) {
+  if (status === "pending") return colors.warning;
+  if (status === "confirmed" || status === "active") return colors.primary;
+  if (status === "paid" || status === "completed" || status === "returned") return colors.success;
+  if (status === "refused" || status === "cancelled" || status === "disputed") return colors.error;
+  return colors.textSecondary;
 }
 
 const styles = StyleSheet.create({

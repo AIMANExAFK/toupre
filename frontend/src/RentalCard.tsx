@@ -73,19 +73,19 @@ export function RentalCard({
 
   // Couleurs catégorie
   const catBg = {
-    primary: "rgba(99,102,241,0.18)",
-    success: "rgba(16,185,129,0.18)",
-    warning: "rgba(245,158,11,0.18)",
+    primary: "rgba(0,108,103,0.18)",
+    success: "rgba(5,150,105,0.18)",
+    warning: "rgba(232,93,63,0.18)",
   }[catVariant];
   const catFg = {
-    primary: "#818CF8",
-    success: "#10B981",
-    warning: "#F59E0B",
+    primary: colors.primaryLight,
+    success: colors.success,
+    warning: colors.secondary,
   }[catVariant];
   const catBorder = {
-    primary: "rgba(99,102,241,0.35)",
-    success: "rgba(16,185,129,0.35)",
-    warning: "rgba(245,158,11,0.35)",
+    primary: "rgba(0,108,103,0.32)",
+    success: "rgba(5,150,105,0.32)",
+    warning: "rgba(232,93,63,0.32)",
   }[catVariant];
 
   return (
@@ -100,7 +100,7 @@ export function RentalCard({
           style={[
             styles.card,
             { backgroundColor: colors.surface, borderColor: colors.border },
-            shadowStyle({ color: "#6366F1", opacity: hovered ? 0.30 : 0.12, radius: hovered ? 24 : 14, offsetY: hovered ? 14 : 8 }),
+            shadowStyle({ color: colors.primaryDark, opacity: hovered ? 0.22 : 0.10, radius: hovered ? 26 : 16, offsetY: hovered ? 14 : 8 }),
           ]}
         >
           {/* Hero Image */}
@@ -178,8 +178,8 @@ export function RentalCard({
               {ownerAvatar ? (
                 <Image source={{ uri: ownerAvatar }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatarPlaceholder, { backgroundColor: "rgba(99,102,241,0.2)", borderColor: "rgba(99,102,241,0.35)" }]}>
-                  <Text style={styles.avatarText}>{initial}</Text>
+                <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryTint, borderColor: colors.surfaceGlassBorder }]}>
+                  <Text style={[styles.avatarText, { color: colors.primary }]}>{initial}</Text>
                 </View>
               )}
               <View style={{ flex: 1, minWidth: 0 }}>
@@ -204,10 +204,10 @@ export function RentalCard({
                   <TouchableOpacity
                     activeOpacity={0.85}
                     onPress={onBook}
-                    style={[styles.btnPrimary, shadowStyle({ color: "#6366F1", opacity: 0.4, radius: 10, offsetY: 4 })]}
+                    style={[styles.btnPrimary, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.34, radius: 14, offsetY: 5 })]}
                     testID="card-book-btn"
                   >
-                    <Text style={styles.btnPrimaryText}>Réserver</Text>
+                    <Text style={[styles.btnPrimaryText, { color: colors.textInverse }]}>Réserver</Text>
                   </TouchableOpacity>
                 )}
                 {onContact && (
@@ -224,9 +224,9 @@ export function RentalCard({
               </View>
             )}
             {isOwnListing && (
-              <View style={[styles.ownBadge, { backgroundColor: "rgba(99,102,241,0.12)", borderColor: "rgba(99,102,241,0.3)" }]}>
-                <Ionicons name="ribbon-outline" size={12} color="#818CF8" />
-                <Text style={[styles.ownBadgeText, { color: "#818CF8" }]}>Votre annonce</Text>
+              <View style={[styles.ownBadge, { backgroundColor: colors.primaryTint, borderColor: colors.surfaceGlassBorder }]}>
+                <Ionicons name="ribbon-outline" size={12} color={colors.primary} />
+                <Text style={[styles.ownBadgeText, { color: colors.primary }]}>Votre annonce</Text>
               </View>
             )}
           </View>
@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   },
   imgWrap: {
     width: "100%",
-    height: 220,
+    height: 190,
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#111",
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
     left: 0, right: 0, bottom: 0,
     height: 80,
     ...(Platform.OS === "web"
-      ? { background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)" as any }
+      ? { backgroundImage: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)" as any }
       : { backgroundColor: "rgba(0,0,0,0.35)" }),
   },
 
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     borderWidth: 1,
   },
-  avatarText: { color: "#818CF8", fontSize: 13, fontWeight: "800" },
+  avatarText: { fontSize: 13, fontWeight: "800" },
   ownerNameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   ownerName: { fontSize: 13, fontWeight: "700" },
   ownerLabel: { fontSize: 11, marginTop: 1 },
@@ -332,17 +332,16 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 8, marginTop: 6 },
   btnPrimary: {
     flex: 1,
-    backgroundColor: "#6366F1",
     paddingVertical: 11,
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: "center",
   },
-  btnPrimaryText: { color: "#fff", fontSize: 13, fontWeight: "800" },
+  btnPrimaryText: { fontSize: 13, fontWeight: "800" },
   btnSecondary: {
     flex: 1,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingVertical: 11,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
   },
   btnSecondaryText: { fontSize: 12, fontWeight: "800" },
@@ -360,10 +359,10 @@ const styles = StyleSheet.create({
   glow: {
     position: "absolute",
     bottom: -20, left: 20, right: 20, height: 40,
-    backgroundColor: "rgba(99,102,241,0.5)",
-    borderRadius: 20,
-    opacity: 0.6,
-    ...(Platform.OS === "web" ? { filter: "blur(30px)" as any } : {}),
+    backgroundColor: "rgba(0,108,103,0.24)",
+    borderRadius: 8,
+    opacity: 0.5,
+    ...(Platform.OS === "web" ? { filter: "blur(24px)" as any } : {}),
     zIndex: -1,
   },
 });

@@ -95,7 +95,7 @@ export default function ReferralScreen() {
                 Parrainez et gagnez {data.reward_amount}€
               </Text>
               <Text style={[styles.heroSub, { color: colors.textSecondary }]}>
-                Pour chaque ami qui s'inscrit avec votre code, vous recevez {data.reward_amount}€ de crédit et lui aussi !
+                {"Pour chaque ami qui s'inscrit avec votre code, vous recevez "}{data.reward_amount}€ de crédit et lui aussi !
               </Text>
             </Glass>
 

@@ -61,7 +61,7 @@ export default function MessagesScreen() {
       <SafeAreaView style={[styles.empty, { backgroundColor: colors.bg }]}>
         <Ionicons name="lock-closed-outline" size={52} color={colors.textTertiary} />
         <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Connexion requise</Text>
-        <TouchableOpacity onPress={() => router.push("/(auth)/login")}>
+        <TouchableOpacity onPress={() => router.push("/auth/otp")}>
           <Text style={[styles.emptyLink, { color: colors.primary }]}>Se connecter</Text>
         </TouchableOpacity>
       </SafeAreaView>

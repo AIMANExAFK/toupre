@@ -8,6 +8,7 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -23,6 +24,7 @@ export default function Bookings() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!token) {
@@ -42,6 +44,32 @@ export default function Bookings() {
   }, [token]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
+
+  const createInspection = async (booking: any, kind: "pickup" | "return") => {
+    if (!token) return;
+    setUpdatingId(booking.id);
+    try {
+      await apiFetch(
+        `/api/bookings/${booking.id}/inspection`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            kind,
+            condition: "ok",
+            notes: kind === "pickup" ? "Remise confirmée par le locataire." : "Retour confirmé par le locataire.",
+            photos: [],
+          }),
+        },
+        token,
+      );
+      await load();
+      Alert.alert(kind === "pickup" ? "Location démarrée" : "Retour confirmé");
+    } catch (e: any) {
+      Alert.alert("Erreur", e.message);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -78,6 +106,39 @@ export default function Bookings() {
               </View>
               <Text style={[styles.total, { color: colors.textPrimary }]}>{item.total_price}€</Text>
             </View>
+            {item.status === "confirmed" || item.status === "paid" ? (
+              <TouchableOpacity
+                onPress={() => createInspection(item, "pickup")}
+                disabled={updatingId === item.id}
+                style={[styles.flowBtn, { backgroundColor: colors.primary }]}
+                testID={`pickup-${item.id}`}
+              >
+                {updatingId === item.id ? (
+                  <ActivityIndicator size="small" color={colors.textInverse} />
+                ) : (
+                  <>
+                    <Ionicons name="key-outline" size={15} color={colors.textInverse} />
+                    <Text style={[styles.flowBtnText, { color: colors.textInverse }]}>Débuter</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ) : item.status === "active" ? (
+              <TouchableOpacity
+                onPress={() => createInspection(item, "return")}
+                disabled={updatingId === item.id}
+                style={[styles.flowBtn, { backgroundColor: colors.success }]}
+                testID={`return-${item.id}`}
+              >
+                {updatingId === item.id ? (
+                  <ActivityIndicator size="small" color={colors.textInverse} />
+                ) : (
+                  <>
+                    <Ionicons name="checkmark-done-outline" size={15} color={colors.textInverse} />
+                    <Text style={[styles.flowBtnText, { color: colors.textInverse }]}>Retour</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
       </Glass>
@@ -148,20 +209,28 @@ function formatDate(iso: string) {
 
 function statusLabel(s: string) {
   if (s === "paid") return "Payée";
+  if (s === "confirmed") return "Acceptée";
+  if (s === "active") return "En cours";
+  if (s === "completed") return "Terminée";
+  if (s === "returned") return "Retournée";
+  if (s === "refused") return "Refusée";
+  if (s === "disputed") return "Litige";
   if (s === "pending") return "En attente";
   if (s === "cancelled") return "Annulée";
   return s;
 }
 
 function statusColor(s: string, colors: any) {
-  if (s === "paid") return colors.success;
-  if (s === "cancelled") return colors.error;
+  if (s === "paid" || s === "completed" || s === "returned") return colors.success;
+  if (s === "confirmed" || s === "active") return colors.primary;
+  if (s === "cancelled" || s === "refused" || s === "disputed") return colors.error;
   return colors.warning;
 }
 
 function statusBg(s: string, colors: any) {
-  if (s === "paid") return colors.successBg;
-  if (s === "cancelled") return colors.errorBg;
+  if (s === "paid" || s === "completed" || s === "returned") return colors.successBg;
+  if (s === "confirmed" || s === "active") return colors.primaryTint;
+  if (s === "cancelled" || s === "refused" || s === "disputed") return colors.errorBg;
   return colors.warningBg;
 }
 
@@ -185,6 +254,8 @@ const styles = StyleSheet.create({
   dot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 11, fontWeight: "700" },
   total: { fontSize: 17, fontWeight: "800" },
+  flowBtn: { marginTop: 10, minHeight: 34, borderRadius: radius.sm + 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
+  flowBtnText: { fontSize: 13, fontWeight: "800" },
   loadingBox: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: 10 },
   emptyIcon: { alignItems: "center", justifyContent: "center" },

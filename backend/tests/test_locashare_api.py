@@ -8,7 +8,7 @@ BASE_URL = os.environ.get("EXPO_PUBLIC_BACKEND_URL", "https://mobility-platform-
 API = f"{BASE_URL}/api"
 
 DEMO_EMAIL = "demo@locashare.fr"
-DEMO_PASSWORD = "demo1234"
+DEMO_PHONE = "+33600000000"
 
 
 @pytest.fixture(scope="module")
@@ -20,19 +20,28 @@ def session():
 
 @pytest.fixture(scope="module")
 def demo_token(session):
-    r = session.post(f"{API}/auth/login", json={"email": DEMO_EMAIL, "password": DEMO_PASSWORD})
-    assert r.status_code == 200, f"Demo login failed: {r.text}"
-    return r.json()["access_token"]
+    return otp_login(session, DEMO_EMAIL, DEMO_PHONE)["token"]
 
 
 @pytest.fixture(scope="module")
 def new_user(session):
     """A fresh user who can book demo listings (cannot book own listings)."""
     email = f"TEST_{uuid.uuid4().hex[:8]}@example.com"
-    r = session.post(f"{API}/auth/register", json={"email": email, "password": "pass1234", "name": "Test User"})
+    suffix = int(uuid.uuid4().hex[:8], 16) % 100000000
+    phone = f"+336{suffix:08d}"
+    return otp_login(session, email, phone, name="Test User")
+
+
+def otp_login(session, email, phone, name="Test User"):
+    r = session.post(f"{API}/auth/otp/request", json={"email": email, "phone": phone, "name": name})
     assert r.status_code == 200, r.text
-    data = r.json()
-    return {"email": email, "token": data["access_token"], "id": data["user"]["id"]}
+    code = r.json().get("_dev_code")
+    assert code, "OTP tests require LOCASHARE_RETURN_DEV_OTP=true"
+    v = session.post(f"{API}/auth/otp/verify", json={"email": email, "phone": phone, "code": code, "name": name})
+    assert v.status_code == 200, v.text
+    data = v.json()
+    assert data["user"]["verified"] is True
+    return {"email": email, "phone": phone, "token": data["access_token"], "id": data["user"]["id"]}
 
 
 # ----------- Health / Categories / Listings read -----------
@@ -84,30 +93,31 @@ class TestPublicEndpoints:
 
 # ----------- Auth -----------
 class TestAuth:
-    def test_register_and_login(self, session):
+    def test_otp_login_creates_verified_user(self, session):
         email = f"test_{uuid.uuid4().hex[:8]}@example.com"
-        r = session.post(f"{API}/auth/register", json={"email": email, "password": "pass1234", "name": "Reg User"})
+        phone = f"+336{int(uuid.uuid4().hex[:8], 16) % 100000000:08d}"
+        r = session.post(f"{API}/auth/otp/request", json={"email": email, "phone": phone, "name": "Reg User"})
         assert r.status_code == 200
-        d = r.json()
-        # backend lowercases email
-        assert d["user"]["email"] == email.lower()
+        code = r.json().get("_dev_code")
+        assert code, "OTP tests require LOCASHARE_RETURN_DEV_OTP=true"
+        v = session.post(f"{API}/auth/otp/verify", json={"email": email, "phone": phone, "code": code, "name": "Reg User"})
+        assert v.status_code == 200, v.text
+        d = v.json()
         assert d["access_token"]
-
-        # duplicate
-        r2 = session.post(f"{API}/auth/register", json={"email": email, "password": "pass1234", "name": "Reg User"})
-        assert r2.status_code == 400
-
-        # login
-        r3 = session.post(f"{API}/auth/login", json={"email": email, "password": "pass1234"})
-        assert r3.status_code == 200
-        assert r3.json()["access_token"]
+        assert d["user"]["email"] == email.lower()
+        assert d["user"]["phone"].startswith("+33")
+        assert d["user"]["verified"] is True
 
     def test_login_demo(self, session, demo_token):
         assert demo_token
 
-    def test_login_invalid(self, session):
-        r = session.post(f"{API}/auth/login", json={"email": DEMO_EMAIL, "password": "wrong"})
-        assert r.status_code == 401
+    def test_otp_invalid_code(self, session):
+        email = f"bad_{uuid.uuid4().hex[:8]}@example.com"
+        phone = f"+336{int(uuid.uuid4().hex[:8], 16) % 100000000:08d}"
+        r = session.post(f"{API}/auth/otp/request", json={"email": email, "phone": phone, "name": "Bad Code"})
+        assert r.status_code == 200
+        v = session.post(f"{API}/auth/otp/verify", json={"email": email, "phone": phone, "code": "000000", "name": "Bad Code"})
+        assert v.status_code == 400
 
     def test_me_requires_token(self, session):
         r = session.get(f"{API}/auth/me")
@@ -162,26 +172,29 @@ class TestListingsAuth:
 
 # ----------- Bookings -----------
 class TestBookings:
-    def test_create_booking_and_checkout(self, session, new_user):
+    def test_create_cash_booking_and_handover(self, session, new_user, demo_token):
         h = {"Authorization": f"Bearer {new_user['token']}"}
+        owner_h = {"Authorization": f"Bearer {demo_token}"}
         # pick a demo listing (not owned by new_user)
         listings = session.get(f"{API}/listings").json()
         listing = listings[0]
 
         booking_payload = {
             "listing_id": listing["id"],
-            "start_date": "2026-02-01",
-            "end_date": "2026-02-03",
+            "start_date": "2026-09-01",
+            "end_date": "2026-09-03",
         }
         r = session.post(f"{API}/bookings", json=booking_payload, headers=h)
         assert r.status_code == 200, r.text
         b = r.json()
         # days = (end-start).days + 1 = 3
         assert b["days"] == 3
-        # total_price now includes 10% service fee
         subtotal = 3 * float(listing["price_per_day"])
-        expected = round(subtotal + round(subtotal * 0.10, 2), 2)
+        expected = round(subtotal, 2)
         assert b["total_price"] == expected, f"Expected {expected} got {b['total_price']}"
+        assert b["service_fee"] == 0
+        assert b["payment_method"] == "cash"
+        assert b["payment_status"] == "cash_to_collect"
         assert b["status"] == "pending"
         booking_id = b["id"]
 
@@ -192,24 +205,26 @@ class TestBookings:
         assert any(x["id"] == booking_id for x in items)
         assert items[0]["listing"] is not None
 
-        # stripe checkout session
-        r3 = session.post(
-            f"{API}/checkout/session",
-            json={"booking_id": booking_id, "origin_url": BASE_URL},
+        # owner accepts the cash reservation before handover
+        accepted = session.patch(f"{API}/bookings/{booking_id}/status", json={"status": "confirmed"}, headers=owner_h)
+        assert accepted.status_code == 200, accepted.text
+        assert accepted.json()["status"] == "confirmed"
+
+        # rental handover
+        pickup = session.post(
+            f"{API}/bookings/{booking_id}/inspection",
+            json={"kind": "pickup", "condition": "ok", "photos": []},
             headers=h,
         )
-        assert r3.status_code == 200, r3.text
-        d = r3.json()
-        assert d["url"].startswith("http")
-        assert d["session_id"]
-        sid = d["session_id"]
-
-        # status
-        r4 = session.get(f"{API}/checkout/status/{sid}")
-        assert r4.status_code == 200
-        st = r4.json()
-        assert "status" in st
-        assert "payment_status" in st
+        assert pickup.status_code in (200, 201), pickup.text
+        assert pickup.json()["booking_status"] == "active"
+        returned = session.post(
+            f"{API}/bookings/{booking_id}/inspection",
+            json={"kind": "return", "condition": "ok", "photos": []},
+            headers=h,
+        )
+        assert returned.status_code in (200, 201), returned.text
+        assert returned.json()["booking_status"] == "completed"
 
     def test_cannot_book_own_listing(self, session, demo_token):
         h = {"Authorization": f"Bearer {demo_token}"}
@@ -228,3 +243,19 @@ class TestBookings:
     def test_booking_requires_auth(self, session):
         r = session.post(f"{API}/bookings", json={"listing_id": "x", "start_date": "2026-01-01", "end_date": "2026-01-02"})
         assert r.status_code == 401
+
+
+class TestPaymentsAndSupport:
+    def test_support_ticket(self, session, new_user):
+        h = {"Authorization": f"Bearer {new_user['token']}"}
+        r = session.post(
+            f"{API}/support/tickets",
+            json={"subject": "Test support", "message": "Besoin d'aide", "category": "test"},
+            headers=h,
+        )
+        assert r.status_code in (200, 201), r.text
+        ticket_id = r.json()["id"]
+
+        mine = session.get(f"{API}/support/tickets/me", headers=h)
+        assert mine.status_code == 200
+        assert any(t["id"] == ticket_id for t in mine.json())

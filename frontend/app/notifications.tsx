@@ -67,7 +67,7 @@ export default function NotificationsScreen() {
     if (n.type === "new_message" && n.data?.from_id) router.push(`/messages/${n.data.from_id}`);
     else if (n.type.startsWith("booking_")) router.push("/(tabs)/myitems");
     else if (n.type === "referral_credit") router.push("/referral");
-    else if (n.type === "kyc_verified") router.push("/verification");
+    else if (n.type === "kyc_verified") router.push("/auth/otp");
     load();
   };
 

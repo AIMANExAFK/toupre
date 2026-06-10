@@ -13,13 +13,14 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { apiFetch, useAuth } from "../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
 
 const FAQS = [
   {
     q: "Comment réserver un objet ?",
-    a: "Recherchez un objet, choisissez vos dates, puis confirmez la réservation. Le propriétaire reçoit la demande immédiatement.",
+    a: "Recherchez un objet, choisissez vos dates, puis envoyez la demande. Le propriétaire confirme, puis le règlement se fait en espèces à la remise.",
   },
   {
     q: "Comment publier une annonce ?",
@@ -35,43 +36,87 @@ const FAQS = [
   },
 ];
 
-const QUICK_REPLIES = ["Réservation", "Paiement", "Annonce", "Litige"];
+const QUICK_REPLIES = ["Réservation", "Espèces", "Annonce", "Litige"];
 
 export default function Help() {
   const router = useRouter();
   const colors = useColors();
+  const { token, user } = useAuth();
   const [open, setOpen] = useState<number | null>(0);
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [chatDraft, setChatDraft] = useState("");
+  const [sending, setSending] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { from: "support", text: "Bonjour, expliquez-nous ce qui bloque." },
   ]);
 
-  const send = () => {
+  const send = async () => {
+    if (!token || !user) {
+      router.push("/auth/otp");
+      return;
+    }
     if (!subject.trim() || !message.trim()) {
       Alert.alert("Champs manquants", "Ajoutez un sujet et un message pour contacter le support.");
       return;
     }
-    Alert.alert("Message envoyé", "Votre demande est prête pour le support.", [
-      {
-        text: "OK",
-        onPress: () => {
-          setSubject("");
-          setMessage("");
+    setSending(true);
+    try {
+      const ticket = await apiFetch(
+        "/api/support/tickets",
+        {
+          method: "POST",
+          body: JSON.stringify({ subject, message, category: "support" }),
         },
-      },
-    ]);
+        token,
+      );
+      Alert.alert("Message envoyé", `Ticket ${String(ticket.id).slice(0, 8)} ouvert.`, [
+        { text: "OK", onPress: () => { setSubject(""); setMessage(""); } },
+      ]);
+    } catch (e: any) {
+      Alert.alert("Erreur", e.message);
+    } finally {
+      setSending(false);
+    }
   };
 
-  const sendChat = () => {
+  const sendChat = async () => {
     if (!chatDraft.trim()) return;
+    if (!token || !user) {
+      setChatMessages([
+        ...chatMessages,
+        { from: "user", text: chatDraft.trim() },
+        { from: "support", text: "Connectez-vous pour ouvrir un ticket suivi par le support." },
+      ]);
+      setChatDraft("");
+      return;
+    }
+    const text = chatDraft.trim();
+    setChatDraft("");
     setChatMessages([
       ...chatMessages,
-      { from: "user", text: chatDraft.trim() },
-      { from: "support", text: "Merci, votre message est bien reçu." },
+      { from: "user", text },
+      { from: "support", text: "Merci, j'ouvre un ticket support." },
     ]);
-    setChatDraft("");
+    try {
+      const ticket = await apiFetch(
+        "/api/support/tickets",
+        {
+          method: "POST",
+          body: JSON.stringify({ subject: `Chat support - ${text.slice(0, 32)}`, message: text, category: "chat" }),
+        },
+        token,
+      );
+      setChatMessages((items) => [
+        ...items,
+        { from: "support", text: `Ticket ${String(ticket.id).slice(0, 8)} ouvert.` },
+      ]);
+    } catch (e: any) {
+      setChatMessages((items) => [
+        ...items,
+        { from: "support", text: e.message || "Impossible d'ouvrir le ticket pour le moment." },
+      ]);
+    }
   };
 
   return (
@@ -154,13 +199,15 @@ export default function Help() {
                   style={[
                     styles.sendBtn,
                     { backgroundColor: colors.primary },
+                    sending && { opacity: 0.7 },
                     shadowStyle({ color: colors.primary, opacity: 0.32, radius: 14, offsetY: 6 }),
                   ]}
                   onPress={send}
+                  disabled={sending}
                   testID="contact-send"
                 >
                   <Ionicons name="send" size={16} color={colors.textInverse} />
-                  <Text style={[styles.sendText, { color: colors.textInverse }]}>Envoyer</Text>
+                  <Text style={[styles.sendText, { color: colors.textInverse }]}>{sending ? "Envoi..." : "Envoyer"}</Text>
                 </TouchableOpacity>
               </Glass>
 

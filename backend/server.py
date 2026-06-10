@@ -7,11 +7,16 @@ load_dotenv(ROOT_DIR / '.env')
 import os
 import uuid
 import logging
+import smtplib
 import bcrypt
 import jwt
-from datetime import datetime, timezone, timedelta
-from typing import List, Optional
+import re
+import secrets
+from datetime import date, datetime, timezone, timedelta
+from email.message import EmailMessage
+from typing import List, Optional, Tuple
 
+import requests
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Header
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
@@ -32,6 +37,23 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
+REQUIRE_KYC = os.environ.get("LOCASHARE_REQUIRE_KYC", "true").lower() != "false"
+AUTO_VERIFY_KYC = os.environ.get("LOCASHARE_AUTO_VERIFY_KYC", "true").lower() != "false"
+ENABLE_LOCAL_PAYMENTS = os.environ.get("LOCASHARE_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
+RETURN_DEV_OTP = os.environ.get("LOCASHARE_RETURN_DEV_OTP", "true").lower() != "false"
+
+BOOKING_STATUSES = {
+    "pending",
+    "confirmed",
+    "refused",
+    "cancelled",
+    "paid",
+    "active",
+    "returned",
+    "completed",
+    "disputed",
+}
+ACTIVE_BOOKING_STATUSES = {"confirmed", "paid", "active"}
 
 app = FastAPI(title="LocaShare API")
 api_router = APIRouter(prefix="/api")
@@ -46,6 +68,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+    phone: Optional[str] = None
     referral_code: Optional[str] = None
 
 
@@ -58,7 +81,15 @@ class UserOut(BaseModel):
     id: str
     email: str
     name: str
+    phone: Optional[str] = None
     avatar: Optional[str] = None
+    verified: bool = False
+    kyc_status: str = "none"
+    kyc_source: Optional[str] = None
+    referral_code: Optional[str] = None
+    credit_balance: float = 0
+    referred_by: Optional[str] = None
+    contact_verified_at: Optional[datetime] = None
     created_at: datetime
 
 
@@ -97,7 +128,10 @@ class Booking(BaseModel):
     end_date: str
     days: int
     total_price: float
+    service_fee: float = 0.0
     status: str = "pending"  # pending, paid, cancelled
+    payment_method: str = "cash"
+    payment_status: str = "cash_to_collect"
     payment_session_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -114,7 +148,7 @@ class CheckoutRequest(BaseModel):
 
 
 class BookingUpdate(BaseModel):
-    status: Optional[str] = None  # confirmed, refused, cancelled, paid
+    status: Optional[str] = None
 
 
 class ListingUpdate(BaseModel):
@@ -154,6 +188,55 @@ class PushRegister(BaseModel):
 
 class ReferralCheck(BaseModel):
     code: str
+
+
+class OTPRequest(BaseModel):
+    email: EmailStr
+    phone: str
+    name: Optional[str] = None
+
+
+class OTPVerify(BaseModel):
+    email: EmailStr
+    phone: str
+    code: str
+    name: Optional[str] = None
+
+
+class PaymentMethodCreate(BaseModel):
+    brand: str = "card"
+    last4: str
+    exp_month: int
+    exp_year: int
+    holder_name: Optional[str] = None
+    is_default: bool = True
+
+
+class SupportTicketCreate(BaseModel):
+    subject: str
+    message: str
+    category: str = "general"
+    booking_id: Optional[str] = None
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+
+
+class SupportMessageCreate(BaseModel):
+    message: str
+
+
+class InspectionCreate(BaseModel):
+    kind: str  # pickup, return
+    condition: str = "ok"  # ok, issue, damaged
+    notes: Optional[str] = ""
+    photos: List[str] = []
+
+
+class DisputeCreate(BaseModel):
+    booking_id: str
+    reason: str
+    description: str
+    photos: List[str] = []
 
 
 class UserRegisterExt(BaseModel):
@@ -202,17 +285,31 @@ async def get_current_user(
     return user
 
 
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+) -> Optional[dict]:
+    if not credentials:
+        return None
+    try:
+        return await get_current_user(credentials)
+    except HTTPException:
+        return None
+
+
 def serialize_user(user: dict) -> dict:
     return {
         "id": user["id"],
         "email": user["email"],
         "name": user["name"],
+        "phone": user.get("phone"),
         "avatar": user.get("avatar"),
         "verified": user.get("verified", False),
         "kyc_status": user.get("kyc_status", "none"),
+        "kyc_source": user.get("kyc_source"),
         "referral_code": user.get("referral_code"),
         "credit_balance": user.get("credit_balance", 0),
         "referred_by": user.get("referred_by"),
+        "contact_verified_at": user.get("contact_verified_at"),
         "created_at": user["created_at"],
     }
 
@@ -224,6 +321,7 @@ def public_user(user: dict) -> dict:
         "avatar": user.get("avatar"),
         "verified": user.get("verified", False),
         "kyc_status": user.get("kyc_status", "none"),
+        "kyc_source": user.get("kyc_source"),
     }
 
 
@@ -232,7 +330,308 @@ def gen_referral_code(name: str) -> str:
     return base + uuid.uuid4().hex[:3].upper()
 
 
+async def notify_user(
+    user_id: str,
+    type_: str,
+    title: str,
+    body: str,
+    data: Optional[dict] = None,
+) -> dict:
+    notification = {
+        "id": str(uuid.uuid4()),
+        "user_id": user_id,
+        "type": type_,
+        "title": title,
+        "body": body,
+        "data": data or {},
+        "read": False,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.notifications.insert_one(notification)
+    return notification
+
+
+def kyc_required_error(reason: str) -> HTTPException:
+    return HTTPException(
+        status_code=403,
+        detail={
+            "detail": "Vérification email et téléphone requise pour continuer.",
+            "code": "KYC_REQUIRED",
+            "action": f"/auth/otp?reason={reason}",
+        },
+    )
+
+
+def ensure_marketplace_verified(user: dict, reason: str) -> None:
+    if REQUIRE_KYC and not user.get("verified", False):
+        raise kyc_required_error(reason)
+
+
+def parse_iso_date(value: str, field_name: str) -> date:
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).date()
+    except Exception:
+        raise HTTPException(status_code=400, detail=f"{field_name} must be an ISO date")
+
+
+def date_range(start: date, end: date) -> List[str]:
+    days = (end - start).days
+    return [(start + timedelta(days=i)).isoformat() for i in range(days + 1)]
+
+
+def overlaps(start: date, end: date, other_start: str, other_end: str) -> bool:
+    existing_start = parse_iso_date(other_start, "booking.start_date")
+    existing_end = parse_iso_date(other_end, "booking.end_date")
+    return start <= existing_end and end >= existing_start
+
+
+async def find_availability_conflict(
+    listing: dict,
+    start: date,
+    end: date,
+    exclude_booking_id: Optional[str] = None,
+) -> Optional[Tuple[str, List[str]]]:
+    requested_dates = set(date_range(start, end))
+    blocked = set(listing.get("blocked_dates", []))
+    blocked_overlap = sorted(requested_dates.intersection(blocked))
+    if blocked_overlap:
+        return "blocked_dates", blocked_overlap
+
+    query = {
+        "listing_id": listing["id"],
+        "status": {"$in": list(ACTIVE_BOOKING_STATUSES)},
+    }
+    if exclude_booking_id:
+        query["id"] = {"$ne": exclude_booking_id}
+
+    active_bookings = await db.bookings.find(query, {"_id": 0}).to_list(200)
+    conflicting = [
+        booking["id"]
+        for booking in active_bookings
+        if overlaps(start, end, booking["start_date"], booking["end_date"])
+    ]
+    if conflicting:
+        return "bookings", conflicting
+    return None
+
+
+def stripe_is_configured() -> bool:
+    api_key = os.environ.get("STRIPE_API_KEY", "")
+    return api_key.startswith("sk_") and "CHANGE_ME" not in api_key
+
+
+def normalize_phone(phone: str) -> str:
+    value = (phone or "").strip()
+    value = value.replace("(0)", "")
+    if value.startswith("00"):
+        value = "+" + value[2:]
+    digits = re.sub(r"\D", "", value)
+    if value.startswith("+"):
+        normalized = "+" + digits
+    elif digits.startswith("0") and len(digits) == 10:
+        normalized = "+33" + digits[1:]
+    elif digits.startswith("33") and len(digits) == 11:
+        normalized = "+" + digits
+    else:
+        normalized = "+" + digits if len(digits) >= 8 else digits
+    if not re.fullmatch(r"\+\d{8,15}", normalized):
+        raise HTTPException(status_code=400, detail="Numéro de téléphone invalide")
+    return normalized
+
+
+def generate_otp_code() -> str:
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def send_otp_email(email: str, code: str) -> bool:
+    smtp_host = os.environ.get("SMTP_HOST")
+    smtp_from = os.environ.get("SMTP_FROM") or os.environ.get("SMTP_USERNAME")
+    if not smtp_host or not smtp_from:
+        return False
+
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    smtp_user = os.environ.get("SMTP_USERNAME")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    use_ssl = os.environ.get("SMTP_USE_SSL", "false").lower() == "true"
+    use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() != "false"
+
+    msg = EmailMessage()
+    msg["Subject"] = "Votre code LocaShare"
+    msg["From"] = smtp_from
+    msg["To"] = email
+    msg.set_content(
+        "Votre code de connexion LocaShare est "
+        f"{code}. Il expire dans 10 minutes."
+    )
+
+    if use_ssl:
+        server_ctx = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=8)
+    else:
+        server_ctx = smtplib.SMTP(smtp_host, smtp_port, timeout=8)
+
+    with server_ctx as server:
+        if use_tls and not use_ssl:
+            server.starttls()
+        if smtp_user and smtp_password:
+            server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+    return True
+
+
+def send_otp_sms(phone: str, code: str) -> bool:
+    account_sid = os.environ.get("TWILIO_ACCOUNT_SID")
+    auth_token = os.environ.get("TWILIO_AUTH_TOKEN")
+    from_phone = os.environ.get("TWILIO_FROM_PHONE")
+    messaging_service_sid = os.environ.get("TWILIO_MESSAGING_SERVICE_SID")
+    if not account_sid or not auth_token or not (from_phone or messaging_service_sid):
+        return False
+
+    payload = {
+        "To": phone,
+        "Body": f"LocaShare: votre code de connexion est {code}. Il expire dans 10 minutes.",
+    }
+    if messaging_service_sid:
+        payload["MessagingServiceSid"] = messaging_service_sid
+    else:
+        payload["From"] = from_phone
+
+    res = requests.post(
+        f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
+        data=payload,
+        auth=(account_sid, auth_token),
+        timeout=8,
+    )
+    if res.status_code >= 400:
+        raise RuntimeError(f"Twilio SMS failed: {res.status_code} {res.text[:200]}")
+    return True
+
+
+def deliver_otp_code(email: str, phone: str, code: str) -> dict:
+    delivery = {"email_sent": False, "sms_sent": False, "dev_mode": RETURN_DEV_OTP}
+    errors = []
+    try:
+        delivery["email_sent"] = send_otp_email(email, code)
+    except Exception as exc:
+        errors.append(f"email: {exc}")
+    try:
+        delivery["sms_sent"] = send_otp_sms(phone, code)
+    except Exception as exc:
+        errors.append(f"sms: {exc}")
+
+    if errors:
+        logger.warning("OTP delivery partial failure for %s / %s: %s", email, phone, "; ".join(errors))
+    if not RETURN_DEV_OTP and (not delivery["email_sent"] or not delivery["sms_sent"]):
+        raise HTTPException(
+            status_code=503,
+            detail="Envoi du code indisponible. Configurez SMTP et Twilio pour livrer email + SMS.",
+        )
+    return delivery
+
+
 # ---------- Auth Endpoints ----------
+@api_router.post("/auth/otp/request")
+async def request_otp(payload: OTPRequest):
+    email = payload.email.lower().strip()
+    phone = normalize_phone(payload.phone)
+    code = generate_otp_code()
+    now = datetime.now(timezone.utc)
+
+    await db.otp_codes.delete_many({"$or": [{"email": email}, {"phone": phone}]})
+    await db.otp_codes.insert_one({
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "phone": phone,
+        "code_hash": hash_password(code),
+        "attempts": 0,
+        "expires_at": now + timedelta(minutes=10),
+        "created_at": now,
+    })
+
+    try:
+        delivery = deliver_otp_code(email, phone, code)
+    except HTTPException:
+        await db.otp_codes.delete_many({"email": email, "phone": phone})
+        raise
+
+    if RETURN_DEV_OTP:
+        logger.info("OTP requested for %s / %s. Dev code: %s", email, phone, code)
+    else:
+        logger.info("OTP requested for %s / %s", email, phone)
+    response = {
+        "ok": True,
+        "message": "Code envoyé par email et SMS.",
+        "expires_in": 600,
+        "delivery": {"email": email, "phone": phone, **delivery},
+    }
+    if RETURN_DEV_OTP:
+        response["_dev_code"] = code
+    return response
+
+
+@api_router.post("/auth/otp/verify", response_model=AuthResponse)
+async def verify_otp(payload: OTPVerify):
+    email = payload.email.lower().strip()
+    phone = normalize_phone(payload.phone)
+    code = re.sub(r"\D", "", payload.code or "")
+    if len(code) != 6:
+        raise HTTPException(status_code=400, detail="Code invalide")
+
+    otp = await db.otp_codes.find_one({"email": email, "phone": phone})
+    if not otp:
+        raise HTTPException(status_code=400, detail="Aucun code actif pour ces coordonnées")
+    expires_at = otp["expires_at"]
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expires_at:
+        await db.otp_codes.delete_one({"id": otp["id"]})
+        raise HTTPException(status_code=400, detail="Code expiré")
+    if otp.get("attempts", 0) >= 5:
+        await db.otp_codes.delete_one({"id": otp["id"]})
+        raise HTTPException(status_code=429, detail="Trop de tentatives")
+    if not verify_password(code, otp["code_hash"]):
+        await db.otp_codes.update_one({"id": otp["id"]}, {"$inc": {"attempts": 1}})
+        raise HTTPException(status_code=401, detail="Code incorrect")
+
+    user = await db.users.find_one({"$or": [{"email": email}, {"phone": phone}]})
+    now = datetime.now(timezone.utc)
+    if not user:
+        name = (payload.name or email.split("@")[0]).strip() or "Utilisateur"
+        user = {
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "phone": phone,
+            "name": name,
+            "password_hash": hash_password(secrets.token_urlsafe(24)),
+            "avatar": None,
+            "verified": True,
+            "kyc_status": "verified",
+            "kyc_source": "email_phone_otp",
+            "contact_verified_at": now,
+            "referral_code": gen_referral_code(name),
+            "credit_balance": 0,
+            "referred_by": None,
+            "created_at": now,
+        }
+        await db.users.insert_one(user)
+    else:
+        await db.users.update_one(
+            {"id": user["id"]},
+            {"$set": {
+                "email": email,
+                "phone": phone,
+                "verified": True,
+                "kyc_status": "verified",
+                "kyc_source": "email_phone_otp",
+                "contact_verified_at": now,
+            }},
+        )
+        user = await db.users.find_one({"id": user["id"]})
+
+    await db.otp_codes.delete_one({"id": otp["id"]})
+    token = create_access_token(user["id"], email)
+    return {"user": serialize_user(user), "access_token": token}
+
+
 @api_router.post("/auth/register", response_model=AuthResponse)
 async def register(payload: UserCreate):
     email = payload.email.lower()
@@ -253,6 +652,7 @@ async def register(payload: UserCreate):
     user_doc = {
         "id": str(uuid.uuid4()),
         "email": email,
+        "phone": normalize_phone(payload.phone) if payload.phone else None,
         "name": payload.name,
         "password_hash": hash_password(payload.password),
         "avatar": None,
@@ -271,16 +671,13 @@ async def register(payload: UserCreate):
             {"id": sponsor["id"]},
             {"$inc": {"credit_balance": 10}},
         )
-        await db.notifications.insert_one({
-            "id": str(uuid.uuid4()),
-            "user_id": sponsor["id"],
-            "type": "referral_credit",
-            "title": "🎉 Nouveau filleul !",
-            "body": f"{payload.name} s'est inscrit avec votre code. +10€ crédités !",
-            "data": {"referred_user_id": user_doc["id"]},
-            "read": False,
-            "created_at": datetime.now(timezone.utc),
-        })
+        await notify_user(
+            sponsor["id"],
+            "referral_credit",
+            "Nouveau filleul",
+            f"{payload.name} s'est inscrit avec votre code. +10€ crédités.",
+            {"referred_user_id": user_doc["id"]},
+        )
 
     token = create_access_token(user_doc["id"], email)
     return {"user": serialize_user(user_doc), "access_token": token}
@@ -338,6 +735,7 @@ async def get_listing(listing_id: str):
 async def create_listing(
     payload: ListingCreate, current_user: dict = Depends(get_current_user)
 ):
+    ensure_marketplace_verified(current_user, "publish")
     listing = Listing(owner_id=current_user["id"], **payload.dict())
     await db.listings.insert_one(listing.dict())
     return listing.dict()
@@ -382,18 +780,37 @@ async def update_listing(
 async def create_booking(
     payload: BookingCreate, current_user: dict = Depends(get_current_user)
 ):
+    ensure_marketplace_verified(current_user, "booking")
     listing = await db.listings.find_one({"id": payload.listing_id}, {"_id": 0})
     if not listing:
         raise HTTPException(status_code=404, detail="Listing not found")
     if listing["owner_id"] == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot book your own listing")
 
-    start = datetime.fromisoformat(payload.start_date)
-    end = datetime.fromisoformat(payload.end_date)
+    start = parse_iso_date(payload.start_date, "start_date")
+    end = parse_iso_date(payload.end_date, "end_date")
+    today = datetime.now(timezone.utc).date()
+    if start < today:
+        raise HTTPException(status_code=400, detail="Start date cannot be in the past")
+    if end < start:
+        raise HTTPException(status_code=400, detail="End date must be after start date")
+    conflict = await find_availability_conflict(listing, start, end)
+    if conflict:
+        conflict_type, refs = conflict
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "detail": "Ces dates ne sont plus disponibles.",
+                "code": "DATES_UNAVAILABLE",
+                "type": conflict_type,
+                "refs": refs,
+            },
+        )
+
     days = max(1, (end - start).days + 1)
     subtotal = days * float(listing["price_per_day"])
-    service_fee = round(subtotal * 0.10, 2)
-    total = round(subtotal + service_fee, 2)
+    service_fee = 0
+    total = round(subtotal, 2)
 
     booking = Booking(
         listing_id=payload.listing_id,
@@ -403,8 +820,17 @@ async def create_booking(
         end_date=payload.end_date,
         days=days,
         total_price=total,
+        payment_method="cash",
+        payment_status="cash_to_collect",
     )
     await db.bookings.insert_one(booking.dict())
+    await notify_user(
+        listing["owner_id"],
+        "booking_request",
+        "Nouvelle demande de réservation",
+        f"{current_user['name']} souhaite louer {listing['title']}.",
+        {"booking_id": booking.id, "listing_id": listing["id"]},
+    )
     return booking.dict()
 
 
@@ -446,15 +872,43 @@ async def update_booking(
         raise HTTPException(status_code=404, detail="Booking not found")
     # Le propriétaire peut accept/refuse, le locataire peut cancel
     new_status = payload.status
+    if new_status not in BOOKING_STATUSES:
+        raise HTTPException(status_code=400, detail="Invalid status")
     if new_status in {"confirmed", "refused"} and booking["owner_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Only owner can confirm/refuse")
     if new_status == "cancelled" and booking["renter_id"] != current_user["id"]:
         raise HTTPException(status_code=403, detail="Only renter can cancel")
-    if new_status not in {"confirmed", "refused", "cancelled", "paid", "pending"}:
-        raise HTTPException(status_code=400, detail="Invalid status")
+    if new_status in {"paid", "active", "returned", "completed", "disputed"}:
+        if current_user["id"] not in {booking["owner_id"], booking["renter_id"]}:
+            raise HTTPException(status_code=403, detail="Only booking participants can update this status")
+    if new_status in ACTIVE_BOOKING_STATUSES:
+        listing = await db.listings.find_one({"id": booking["listing_id"]}, {"_id": 0})
+        if listing:
+            start = parse_iso_date(booking["start_date"], "start_date")
+            end = parse_iso_date(booking["end_date"], "end_date")
+            conflict = await find_availability_conflict(listing, start, end, exclude_booking_id=booking_id)
+            if conflict:
+                conflict_type, refs = conflict
+                raise HTTPException(
+                    status_code=409,
+                    detail={
+                        "detail": "Cette réservation chevauche déjà une période indisponible.",
+                        "code": "DATES_UNAVAILABLE",
+                        "type": conflict_type,
+                        "refs": refs,
+                    },
+                )
     await db.bookings.update_one(
         {"id": booking_id},
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}},
+    )
+    recipient = booking["renter_id"] if current_user["id"] == booking["owner_id"] else booking["owner_id"]
+    await notify_user(
+        recipient,
+        "booking_status",
+        "Réservation mise à jour",
+        f"Le statut de la réservation est maintenant {new_status}.",
+        {"booking_id": booking_id, "status": new_status},
     )
     return await db.bookings.find_one({"id": booking_id}, {"_id": 0})
 
@@ -466,14 +920,14 @@ async def send_message(
 ):
     if payload.to_id == current_user["id"]:
         raise HTTPException(status_code=400, detail="Cannot message yourself")
-    # KYC obligatoire
+    # Vérification email+téléphone obligatoire
     if not current_user.get("verified", False):
         raise HTTPException(
             status_code=403,
             detail={
-                "detail": "Vérification d'identité requise pour contacter un propriétaire.",
+                "detail": "Vérification email et téléphone requise pour contacter un propriétaire.",
                 "code": "KYC_REQUIRED",
-                "action": "/verification?reason=message",
+                "action": "/auth/otp?reason=message",
             },
         )
     msg = {
@@ -575,7 +1029,7 @@ async def create_review(payload: ReviewCreate, current_user: dict = Depends(get_
     has_booking = await db.bookings.find_one({
         "listing_id": payload.listing_id,
         "renter_id": current_user["id"],
-        "status": "paid",
+        "status": {"$in": ["paid", "returned", "completed"]},
     })
     if not has_booking:
         raise HTTPException(status_code=403, detail="You must have rented this item to review it")
@@ -606,18 +1060,31 @@ async def kyc_submit(payload: KYCSubmit, current_user: dict = Depends(get_curren
         raise HTTPException(status_code=400, detail="Invalid document type")
     if not payload.document_image or len(payload.document_image) < 100:
         raise HTTPException(status_code=400, detail="Invalid image")
+    status = "verified" if AUTO_VERIFY_KYC else "pending"
+    verified = AUTO_VERIFY_KYC
     await db.kyc_documents.insert_one({
         "id": str(uuid.uuid4()),
         "user_id": current_user["id"],
         "document_type": payload.document_type,
-        "document_image": payload.document_image,  # In production: store in S3, save URL only
-        "status": "pending",
+        "document_size": len(payload.document_image),
+        "document_preview": payload.document_image[:32],
+        "storage_note": "Document image omitted from MongoDB; store encrypted object storage URL in production.",
+        "status": status,
         "created_at": datetime.now(timezone.utc),
     })
     await db.users.update_one(
-        {"id": current_user["id"]}, {"$set": {"kyc_status": "pending"}}
+        {"id": current_user["id"]},
+        {"$set": {"kyc_status": status, "verified": verified, "kyc_source": "local_auto" if verified else "manual_review"}},
     )
-    return {"status": "pending", "message": "Document soumis, vérification sous 24h"}
+    if verified:
+        await notify_user(
+            current_user["id"],
+            "kyc_verified",
+            "Coordonnées vérifiées",
+            "Votre email et votre téléphone sont maintenant vérifiés.",
+        )
+        return {"status": "verified", "verified": True, "message": "Coordonnées vérifiées"}
+    return {"status": "pending", "verified": False, "message": "Document soumis, vérification sous 24h"}
 
 
 @api_router.get("/kyc/status")
@@ -638,17 +1105,14 @@ async def listing_availability(listing_id: str):
     blocked = listing.get("blocked_dates", [])
     # Dates bloquées par les bookings actifs
     bookings = await db.bookings.find(
-        {"listing_id": listing_id, "status": {"$in": ["confirmed", "paid"]}}, {"_id": 0}
+        {"listing_id": listing_id, "status": {"$in": list(ACTIVE_BOOKING_STATUSES)}}, {"_id": 0}
     ).to_list(200)
     booked = []
     for b in bookings:
         try:
-            start = datetime.fromisoformat(b["start_date"])
-            end = datetime.fromisoformat(b["end_date"])
-            d = start
-            while d <= end:
-                booked.append(d.date().isoformat())
-                d = d.replace() + timedelta(days=1)
+            start = parse_iso_date(b["start_date"], "start_date")
+            end = parse_iso_date(b["end_date"], "end_date")
+            booked.extend(date_range(start, end))
         except Exception:
             pass
     return {"blocked_dates": blocked, "booked_dates": booked}
@@ -740,7 +1204,7 @@ async def check_referral(payload: ReferralCheck):
 async def pending_reviews(current_user: dict = Depends(get_current_user)):
     me = current_user["id"]
     paid_bookings = await db.bookings.find(
-        {"renter_id": me, "status": "paid"}, {"_id": 0}
+        {"renter_id": me, "status": {"$in": ["paid", "returned", "completed"]}}, {"_id": 0}
     ).to_list(200)
     reviewed_listings = set(
         r["listing_id"] async for r in db.reviews.find({"author_id": me}, {"listing_id": 1})
@@ -754,6 +1218,334 @@ async def pending_reviews(current_user: dict = Depends(get_current_user)):
     return pending
 
 
+# ---------- Payment methods ----------
+@api_router.get("/payment-methods")
+async def list_payment_methods(current_user: dict = Depends(get_current_user)):
+    raise HTTPException(
+        status_code=410,
+        detail="Les paiements en ligne sont désactivés. Le règlement se fait en espèces entre utilisateurs.",
+    )
+    return await db.payment_methods.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+
+
+@api_router.post("/payment-methods")
+async def create_payment_method(
+    payload: PaymentMethodCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    raise HTTPException(
+        status_code=410,
+        detail="Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    )
+    last4 = "".join(c for c in payload.last4 if c.isdigit())
+    if len(last4) != 4:
+        raise HTTPException(status_code=400, detail="last4 must contain 4 digits")
+    if payload.exp_month < 1 or payload.exp_month > 12:
+        raise HTTPException(status_code=400, detail="Invalid expiry month")
+    if payload.exp_year < datetime.now(timezone.utc).year:
+        raise HTTPException(status_code=400, detail="Invalid expiry year")
+
+    existing_count = await db.payment_methods.count_documents({"user_id": current_user["id"]})
+    is_default = payload.is_default or existing_count == 0
+    if is_default:
+        await db.payment_methods.update_many(
+            {"user_id": current_user["id"]}, {"$set": {"is_default": False}}
+        )
+
+    method = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"],
+        "brand": payload.brand.lower().strip()[:24] or "card",
+        "last4": last4,
+        "exp_month": payload.exp_month,
+        "exp_year": payload.exp_year,
+        "holder_name": payload.holder_name,
+        "is_default": is_default,
+        "provider": "local_vault",
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.payment_methods.insert_one(method)
+    return {**method, "_id": None}
+
+
+@api_router.patch("/payment-methods/{method_id}/default")
+async def set_default_payment_method(
+    method_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    raise HTTPException(
+        status_code=410,
+        detail="Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    )
+    method = await db.payment_methods.find_one({"id": method_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not method:
+        raise HTTPException(status_code=404, detail="Payment method not found")
+    await db.payment_methods.update_many(
+        {"user_id": current_user["id"]}, {"$set": {"is_default": False}}
+    )
+    await db.payment_methods.update_one(
+        {"id": method_id, "user_id": current_user["id"]}, {"$set": {"is_default": True}}
+    )
+    return await db.payment_methods.find_one({"id": method_id}, {"_id": 0})
+
+
+@api_router.delete("/payment-methods/{method_id}")
+async def delete_payment_method(
+    method_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    raise HTTPException(
+        status_code=410,
+        detail="Les cartes ne sont pas acceptées pour le moment. Le règlement se fait en espèces.",
+    )
+    method = await db.payment_methods.find_one({"id": method_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not method:
+        raise HTTPException(status_code=404, detail="Payment method not found")
+    await db.payment_methods.delete_one({"id": method_id, "user_id": current_user["id"]})
+    if method.get("is_default"):
+        next_method = await db.payment_methods.find_one(
+            {"user_id": current_user["id"]}, sort=[("created_at", -1)]
+        )
+        if next_method:
+            await db.payment_methods.update_one({"id": next_method["id"]}, {"$set": {"is_default": True}})
+    return {"ok": True}
+
+
+# ---------- Support ----------
+@api_router.post("/support/tickets")
+async def create_support_ticket(
+    payload: SupportTicketCreate,
+    current_user: Optional[dict] = Depends(get_optional_user),
+):
+    subject = payload.subject.strip()
+    message = payload.message.strip()
+    if not subject or not message:
+        raise HTTPException(status_code=400, detail="Subject and message are required")
+    if not current_user and not payload.email:
+        raise HTTPException(status_code=401, detail="Connectez-vous ou fournissez un email")
+
+    ticket = {
+        "id": str(uuid.uuid4()),
+        "user_id": current_user["id"] if current_user else None,
+        "email": current_user["email"] if current_user else str(payload.email),
+        "name": current_user["name"] if current_user else (payload.name or ""),
+        "subject": subject,
+        "category": payload.category.strip()[:40] or "general",
+        "booking_id": payload.booking_id,
+        "status": "open",
+        "priority": "normal",
+        "messages": [
+            {
+                "id": str(uuid.uuid4()),
+                "from": "user",
+                "message": message,
+                "created_at": datetime.now(timezone.utc),
+            }
+        ],
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    await db.support_tickets.insert_one(ticket)
+    if current_user:
+        await notify_user(
+            current_user["id"],
+            "support_ticket",
+            "Demande support reçue",
+            f"Ticket {ticket['id'][:8]} ouvert: {subject}",
+            {"ticket_id": ticket["id"]},
+        )
+    return {**ticket, "_id": None, "email_queued": False}
+
+
+@api_router.get("/support/tickets/me")
+async def my_support_tickets(current_user: dict = Depends(get_current_user)):
+    return await db.support_tickets.find(
+        {"user_id": current_user["id"]}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+
+
+@api_router.post("/support/tickets/{ticket_id}/messages")
+async def add_support_message(
+    ticket_id: str,
+    payload: SupportMessageCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    message = payload.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message is required")
+    ticket = await db.support_tickets.find_one({"id": ticket_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Support ticket not found")
+    item = {
+        "id": str(uuid.uuid4()),
+        "from": "user",
+        "message": message,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.support_tickets.update_one(
+        {"id": ticket_id},
+        {"$push": {"messages": item}, "$set": {"updated_at": datetime.now(timezone.utc)}},
+    )
+    return item
+
+
+# ---------- Rental handover / disputes ----------
+def require_booking_participant(booking: dict, user: dict) -> None:
+    if user["id"] not in {booking["renter_id"], booking["owner_id"]}:
+        raise HTTPException(status_code=403, detail="Only booking participants can access this resource")
+
+
+@api_router.post("/bookings/{booking_id}/inspection")
+async def create_booking_inspection(
+    booking_id: str,
+    payload: InspectionCreate,
+    current_user: dict = Depends(get_current_user),
+):
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    require_booking_participant(booking, current_user)
+    if payload.kind not in {"pickup", "return"}:
+        raise HTTPException(status_code=400, detail="kind must be pickup or return")
+    if payload.condition not in {"ok", "issue", "damaged"}:
+        raise HTTPException(status_code=400, detail="Invalid condition")
+
+    if payload.kind == "pickup" and booking["status"] not in {"confirmed", "paid"}:
+        raise HTTPException(status_code=400, detail="Pickup can only start after confirmation or payment")
+    if payload.kind == "return" and booking["status"] != "active":
+        raise HTTPException(status_code=400, detail="Return can only be confirmed while booking is active")
+
+    new_status = "active" if payload.kind == "pickup" else "completed"
+    if payload.condition in {"issue", "damaged"}:
+        new_status = "disputed"
+
+    inspection = {
+        "id": str(uuid.uuid4()),
+        "booking_id": booking_id,
+        "user_id": current_user["id"],
+        "kind": payload.kind,
+        "condition": payload.condition,
+        "notes": payload.notes or "",
+        "photos": payload.photos,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.booking_inspections.insert_one(inspection)
+    await db.bookings.update_one(
+        {"id": booking_id},
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}},
+    )
+    other_user_id = booking["owner_id"] if current_user["id"] == booking["renter_id"] else booking["renter_id"]
+    await notify_user(
+        other_user_id,
+        "booking_inspection",
+        "État des lieux ajouté",
+        f"Un état des lieux {payload.kind} a été ajouté.",
+        {"booking_id": booking_id, "inspection_id": inspection["id"], "status": new_status},
+    )
+    return {**inspection, "_id": None, "booking_status": new_status}
+
+
+@api_router.get("/bookings/{booking_id}/inspections")
+async def list_booking_inspections(
+    booking_id: str,
+    current_user: dict = Depends(get_current_user),
+):
+    booking = await db.bookings.find_one({"id": booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    require_booking_participant(booking, current_user)
+    return await db.booking_inspections.find(
+        {"booking_id": booking_id}, {"_id": 0}
+    ).sort("created_at", 1).to_list(50)
+
+
+@api_router.post("/disputes")
+async def create_dispute(payload: DisputeCreate, current_user: dict = Depends(get_current_user)):
+    booking = await db.bookings.find_one({"id": payload.booking_id}, {"_id": 0})
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    require_booking_participant(booking, current_user)
+    if not payload.reason.strip() or not payload.description.strip():
+        raise HTTPException(status_code=400, detail="Reason and description are required")
+    dispute = {
+        "id": str(uuid.uuid4()),
+        "booking_id": payload.booking_id,
+        "listing_id": booking["listing_id"],
+        "opened_by": current_user["id"],
+        "owner_id": booking["owner_id"],
+        "renter_id": booking["renter_id"],
+        "reason": payload.reason.strip()[:80],
+        "description": payload.description.strip(),
+        "photos": payload.photos,
+        "status": "open",
+        "created_at": datetime.now(timezone.utc),
+        "updated_at": datetime.now(timezone.utc),
+    }
+    await db.disputes.insert_one(dispute)
+    await db.bookings.update_one(
+        {"id": payload.booking_id},
+        {"$set": {"status": "disputed", "updated_at": datetime.now(timezone.utc)}},
+    )
+    other_user_id = booking["owner_id"] if current_user["id"] == booking["renter_id"] else booking["renter_id"]
+    await notify_user(
+        other_user_id,
+        "dispute_opened",
+        "Litige ouvert",
+        "Un litige a été ouvert sur une réservation.",
+        {"booking_id": payload.booking_id, "dispute_id": dispute["id"]},
+    )
+    return {**dispute, "_id": None}
+
+
+@api_router.get("/disputes/me")
+async def my_disputes(current_user: dict = Depends(get_current_user)):
+    return await db.disputes.find(
+        {"$or": [{"owner_id": current_user["id"]}, {"renter_id": current_user["id"]}]},
+        {"_id": 0},
+    ).sort("created_at", -1).to_list(100)
+
+
+async def mark_booking_paid(
+    booking: dict,
+    session_id: str,
+    user_id: str,
+    amount: float,
+    provider: str,
+) -> None:
+    await db.payment_transactions.update_one(
+        {"session_id": session_id},
+        {
+            "$set": {
+                "session_id": session_id,
+                "booking_id": booking["id"],
+                "user_id": user_id,
+                "amount": amount,
+                "currency": "eur",
+                "status": "complete",
+                "payment_status": "paid",
+                "provider": provider,
+                "metadata": {"booking_id": booking["id"]},
+                "updated_at": datetime.now(timezone.utc),
+            },
+            "$setOnInsert": {"created_at": datetime.now(timezone.utc)},
+        },
+        upsert=True,
+    )
+    await db.bookings.update_one(
+        {"id": booking["id"]},
+        {"$set": {"status": "paid", "payment_session_id": session_id, "updated_at": datetime.now(timezone.utc)}},
+    )
+    await notify_user(
+        booking["owner_id"],
+        "booking_paid",
+        "Réservation payée",
+        "Le paiement de la réservation a été confirmé.",
+        {"booking_id": booking["id"], "session_id": session_id},
+    )
+
+
 # ---------- Stripe Checkout ----------
 @api_router.post("/checkout/session")
 async def create_checkout(
@@ -761,18 +1553,35 @@ async def create_checkout(
     request: Request,
     current_user: dict = Depends(get_current_user),
 ):
+    raise HTTPException(
+        status_code=410,
+        detail="Le checkout en ligne est désactivé. Cette réservation se règle en espèces à la remise.",
+    )
     booking = await db.bookings.find_one({"id": payload.booking_id}, {"_id": 0})
     if not booking or booking["renter_id"] != current_user["id"]:
         raise HTTPException(status_code=404, detail="Booking not found")
 
     amount = float(booking["total_price"])
+    origin_url = (payload.origin_url or os.environ.get("FRONTEND_URL") or "http://localhost:4174").rstrip("/")
+
+    if not stripe_is_configured():
+        if not ENABLE_LOCAL_PAYMENTS:
+            raise HTTPException(status_code=503, detail="Stripe is not configured")
+        session_id = "local_cs_" + uuid.uuid4().hex
+        await mark_booking_paid(booking, session_id, current_user["id"], amount, "local_fallback")
+        return {
+            "url": f"{origin_url}/payment-success?session_id={session_id}",
+            "session_id": session_id,
+            "provider": "local_fallback",
+        }
+
     api_key = os.environ["STRIPE_API_KEY"]
     host_url = str(request.base_url)
     webhook_url = f"{host_url}api/webhook/stripe"
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
 
-    success_url = f"{payload.origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{payload.origin_url}/payment-cancel"
+    success_url = f"{origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/payment-cancel"
 
     session_req = CheckoutSessionRequest(
         amount=amount,
@@ -784,7 +1593,19 @@ async def create_checkout(
             "user_id": current_user["id"],
         },
     )
-    session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(session_req)
+    try:
+        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(session_req)
+    except Exception as e:
+        if not ENABLE_LOCAL_PAYMENTS:
+            raise HTTPException(status_code=502, detail=f"Stripe checkout failed: {e}")
+        logger.warning(f"Stripe checkout failed, using local fallback: {e}")
+        session_id = "local_cs_" + uuid.uuid4().hex
+        await mark_booking_paid(booking, session_id, current_user["id"], amount, "local_fallback")
+        return {
+            "url": f"{origin_url}/payment-success?session_id={session_id}",
+            "session_id": session_id,
+            "provider": "local_fallback",
+        }
 
     await db.payment_transactions.insert_one({
         "session_id": session.session_id,
@@ -802,11 +1623,28 @@ async def create_checkout(
         {"id": booking["id"]}, {"$set": {"payment_session_id": session.session_id}}
     )
 
-    return {"url": session.url, "session_id": session.session_id}
+    return {"url": session.url, "session_id": session.session_id, "provider": "stripe"}
 
 
 @api_router.get("/checkout/status/{session_id}")
 async def checkout_status(session_id: str, request: Request):
+    raise HTTPException(
+        status_code=410,
+        detail="Le checkout en ligne est désactivé. Les réservations se règlent en espèces à la remise.",
+    )
+    local_tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if local_tx and (local_tx.get("provider") == "local_fallback" or not stripe_is_configured()):
+        return {
+            "status": local_tx.get("status", "complete"),
+            "payment_status": local_tx.get("payment_status", "paid"),
+            "amount_total": int(round(float(local_tx.get("amount", 0)) * 100)),
+            "currency": local_tx.get("currency", "eur"),
+            "provider": local_tx.get("provider", "local"),
+        }
+
+    if not stripe_is_configured():
+        raise HTTPException(status_code=404, detail="Session not found")
+
     api_key = os.environ["STRIPE_API_KEY"]
     host_url = str(request.base_url)
     webhook_url = f"{host_url}api/webhook/stripe"
@@ -835,7 +1673,7 @@ async def checkout_status(session_id: str, request: Request):
         logger.warning(f"Stripe status fetch failed, using local fallback: {e}")
 
     # Fallback to local transaction record
-    tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    tx = local_tx or await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if not tx:
         raise HTTPException(status_code=404, detail="Session not found")
     return {
@@ -843,11 +1681,14 @@ async def checkout_status(session_id: str, request: Request):
         "payment_status": tx.get("payment_status", "unpaid"),
         "amount_total": int(round(float(tx.get("amount", 0)) * 100)),
         "currency": tx.get("currency", "eur"),
+        "provider": tx.get("provider", "stripe"),
     }
 
 
 @api_router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
+    if not stripe_is_configured():
+        return {"received": True, "ignored": "stripe_not_configured"}
     body = await request.body()
     api_key = os.environ["STRIPE_API_KEY"]
     host_url = str(request.base_url)
@@ -861,9 +1702,20 @@ async def stripe_webhook(request: Request):
                 {"session_id": event.session_id},
                 {"$set": {"payment_status": "paid", "status": "complete"}},
             )
+            tx = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
             await db.bookings.update_one(
                 {"payment_session_id": event.session_id}, {"$set": {"status": "paid"}}
             )
+            if tx:
+                booking = await db.bookings.find_one({"id": tx["booking_id"]}, {"_id": 0})
+                if booking:
+                    await notify_user(
+                        booking["owner_id"],
+                        "booking_paid",
+                        "Réservation payée",
+                        "Le paiement de la réservation a été confirmé.",
+                        {"booking_id": booking["id"], "session_id": event.session_id},
+                    )
     except Exception as e:
         logger.error(f"Webhook error: {e}")
     return {"received": True}
@@ -974,9 +1826,19 @@ SEED_LISTINGS = [
 async def on_startup():
     # indexes
     await db.users.create_index("email", unique=True)
+    await db.users.create_index("phone", unique=True, sparse=True)
     await db.users.create_index("id", unique=True)
+    await db.otp_codes.create_index([("email", 1), ("phone", 1)])
+    await db.otp_codes.create_index("expires_at", expireAfterSeconds=0)
     await db.listings.create_index("id", unique=True)
     await db.bookings.create_index("id", unique=True)
+    await db.bookings.create_index([("listing_id", 1), ("status", 1)])
+    await db.payment_transactions.create_index("session_id", unique=True)
+    await db.payment_methods.create_index([("user_id", 1), ("created_at", -1)])
+    await db.support_tickets.create_index([("user_id", 1), ("created_at", -1)])
+    await db.booking_inspections.create_index([("booking_id", 1), ("created_at", 1)])
+    await db.disputes.create_index([("owner_id", 1), ("renter_id", 1), ("created_at", -1)])
+    await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
 
     # seed demo user
     demo_email = "demo@locashare.fr"
@@ -985,12 +1847,37 @@ async def on_startup():
         demo_user = {
             "id": str(uuid.uuid4()),
             "email": demo_email,
+            "phone": "+33600000000",
             "name": "Sophie Martin",
             "password_hash": hash_password("demo1234"),
             "avatar": None,
+            "verified": True,
+            "kyc_status": "verified",
+            "kyc_source": "email_phone_otp",
+            "contact_verified_at": datetime.now(timezone.utc),
+            "referral_code": "SOPHIE" + uuid.uuid4().hex[:3].upper(),
+            "credit_balance": 0,
+            "referred_by": None,
             "created_at": datetime.now(timezone.utc),
         }
         await db.users.insert_one(demo_user)
+    else:
+        await db.users.update_one(
+            {"id": demo_user["id"]},
+            {
+                "$set": {
+                    "verified": demo_user.get("verified", True),
+                    "kyc_status": demo_user.get("kyc_status", "verified"),
+                    "kyc_source": demo_user.get("kyc_source", "email_phone_otp"),
+                    "phone": demo_user.get("phone") or "+33600000000",
+                    "contact_verified_at": demo_user.get("contact_verified_at") or datetime.now(timezone.utc),
+                    "referral_code": demo_user.get("referral_code") or ("SOPHIE" + uuid.uuid4().hex[:3].upper()),
+                    "credit_balance": demo_user.get("credit_balance", 0),
+                    "referred_by": demo_user.get("referred_by"),
+                },
+            },
+        )
+        demo_user = await db.users.find_one({"email": demo_email})
 
     # seed listings if none
     count = await db.listings.count_documents({})
