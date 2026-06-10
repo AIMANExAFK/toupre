@@ -30,10 +30,10 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-REQUIRE_KYC = os.environ.get("LOCASHARE_REQUIRE_KYC", "true").lower() != "false"
-AUTO_VERIFY_KYC = os.environ.get("LOCASHARE_AUTO_VERIFY_KYC", "true").lower() != "false"
-ENABLE_LOCAL_PAYMENTS = os.environ.get("LOCASHARE_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
-RETURN_DEV_OTP = os.environ.get("LOCASHARE_RETURN_DEV_OTP", "true").lower() != "false"
+REQUIRE_KYC = os.environ.get("TOUPRÉ_REQUIRE_KYC", "true").lower() != "false"
+AUTO_VERIFY_KYC = os.environ.get("TOUPRÉ_AUTO_VERIFY_KYC", "true").lower() != "false"
+ENABLE_LOCAL_PAYMENTS = os.environ.get("TOUPRÉ_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
+RETURN_DEV_OTP = os.environ.get("TOUPRÉ_RETURN_DEV_OTP", "true").lower() != "false"
 
 BOOKING_STATUSES = {
     "pending",
@@ -48,7 +48,7 @@ BOOKING_STATUSES = {
 }
 ACTIVE_BOOKING_STATUSES = {"confirmed", "paid", "active"}
 
-app = FastAPI(title="LocaShare API")
+app = FastAPI(title="Toupré API")
 api_router = APIRouter(prefix="/api")
 security = HTTPBearer(auto_error=False)
 
@@ -449,11 +449,11 @@ def send_otp_email(email: str, code: str) -> bool:
     use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() != "false"
 
     msg = EmailMessage()
-    msg["Subject"] = "Votre code LocaShare"
+    msg["Subject"] = "Votre code Toupré"
     msg["From"] = smtp_from
     msg["To"] = email
     msg.set_content(
-        "Votre code de connexion LocaShare est "
+        "Votre code de connexion Toupré est "
         f"{code}. Il expire dans 10 minutes."
     )
 
@@ -481,7 +481,7 @@ def send_otp_sms(phone: str, code: str) -> bool:
 
     payload = {
         "To": phone,
-        "Body": f"LocaShare: votre code de connexion est {code}. Il expire dans 10 minutes.",
+        "Body": f"Toupré: votre code de connexion est {code}. Il expire dans 10 minutes.",
     }
     if messaging_service_sid:
         payload["MessagingServiceSid"] = messaging_service_sid
@@ -1585,7 +1585,7 @@ async def get_categories():
 # ---------- Health ----------
 @api_router.get("/")
 async def root():
-    return {"message": "LocaShare API", "status": "ok"}
+    return {"message": "Toupré API", "status": "ok"}
 
 
 # ---------- App setup ----------

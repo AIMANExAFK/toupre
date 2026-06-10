@@ -33,54 +33,56 @@ type Palette = {
   shimmer: string;
 };
 
+// Identité Toupré — "Tout se loue, tout près."
+// Crème chaleureux + corail terracotta + anthracite. Sombre chaud en option.
 const lightColors: Palette = {
-  primary: "#006C67",
-  primaryLight: "#26B8A8",
-  primaryDark: "#044B49",
-  primaryTint: "rgba(0, 108, 103, 0.10)",
-  primaryGlow: "rgba(0, 108, 103, 0.18)",
-  secondary: "#E85D3F",
-  bg: "#F4F7F5",
-  bgGradient: ["#F7FAF8", "#E7F0EC"],
+  primary: "#E2674A",
+  primaryLight: "#F08A6C",
+  primaryDark: "#C04A2E",
+  primaryTint: "rgba(226, 103, 74, 0.10)",
+  primaryGlow: "rgba(226, 103, 74, 0.18)",
+  secondary: "#2F7A6B",
+  bg: "#FFF8F3",
+  bgGradient: ["#FFFBF7", "#FCEFE6"],
   surface: "#FFFFFF",
-  surface2: "#E8F0ED",
-  surfaceGlass: "rgba(255, 255, 255, 0.88)",
-  surfaceGlassBorder: "rgba(12, 40, 37, 0.10)",
-  border: "#D7E0DC",
-  textPrimary: "#10231F",
-  textSecondary: "#53645F",
-  textTertiary: "#8B9995",
+  surface2: "#F8EBE2",
+  surfaceGlass: "rgba(255, 255, 255, 0.90)",
+  surfaceGlassBorder: "rgba(63, 42, 33, 0.10)",
+  border: "#EBDDD3",
+  textPrimary: "#2B2420",
+  textSecondary: "#6B5D54",
+  textTertiary: "#9C8D83",
   textInverse: "#FFFFFF",
-  brand: "#0B3D3A",
-  success: "#059669",
-  successBg: "#DDF6ED",
+  brand: "#C04A2E",
+  success: "#1D9E75",
+  successBg: "#E1F5EE",
   error: "#DC2626",
   errorBg: "#FCE8E4",
   warning: "#C87913",
   warningBg: "#FFF1D8",
-  overlay: "rgba(5, 20, 18, 0.48)",
+  overlay: "rgba(43, 36, 32, 0.48)",
   shimmer: "rgba(255, 255, 255, 0.72)",
 };
 
 const darkColors: Palette = {
-  primary: "#58D6C8",
-  primaryLight: "#A0F3E7",
-  primaryDark: "#1AA094",
-  primaryTint: "rgba(88, 214, 200, 0.14)",
-  primaryGlow: "rgba(88, 214, 200, 0.18)",
-  secondary: "#FF967A",
-  bg: "#0E1515",
-  bgGradient: ["#0E1515", "#162221"],
-  surface: "#172120",
-  surface2: "#202C2A",
-  surfaceGlass: "rgba(23, 33, 32, 0.90)",
+  primary: "#F08A6C",
+  primaryLight: "#FFB39C",
+  primaryDark: "#E2674A",
+  primaryTint: "rgba(240, 138, 108, 0.14)",
+  primaryGlow: "rgba(240, 138, 108, 0.18)",
+  secondary: "#6FCDBA",
+  bg: "#1A1411",
+  bgGradient: ["#1A1411", "#241B16"],
+  surface: "#241C17",
+  surface2: "#2F241E",
+  surfaceGlass: "rgba(36, 28, 23, 0.90)",
   surfaceGlassBorder: "rgba(255, 255, 255, 0.10)",
   border: "rgba(255, 255, 255, 0.10)",
-  textPrimary: "#F4FBF8",
-  textSecondary: "#C2D1CE",
-  textTertiary: "#839692",
-  textInverse: "#071313",
-  brand: "#A0F3E7",
+  textPrimary: "#FAF3EE",
+  textSecondary: "#D6C8BF",
+  textTertiary: "#9C8D83",
+  textInverse: "#241511",
+  brand: "#FFB39C",
   success: "#34D399",
   successBg: "rgba(52, 211, 153, 0.18)",
   error: "#F87171",
@@ -88,7 +90,7 @@ const darkColors: Palette = {
   warning: "#FBBF24",
   warningBg: "rgba(251, 191, 36, 0.18)",
   overlay: "rgba(0, 0, 0, 0.55)",
-  shimmer: "rgba(167, 139, 250, 0.18)",
+  shimmer: "rgba(240, 138, 108, 0.16)",
 };
 
 export const spacing = {
@@ -108,7 +110,8 @@ export const radius = {
   pill: 999,
 };
 
-const THEME_KEY = "locashare_theme";
+// Nouvelle clé depuis le rebrand Toupré : l'identité par défaut est le mode crème (light)
+const THEME_KEY = "toupre_theme";
 
 type Ctx = {
   mode: ThemeMode;
@@ -123,10 +126,10 @@ async function readMode(): Promise<ThemeMode> {
   try {
     if (Platform.OS === "web") {
       const v = localStorage.getItem(THEME_KEY);
-      return (v as ThemeMode) || "system";
+      return (v as ThemeMode) || "light";
     }
     const v = await SecureStore.getItemAsync(THEME_KEY);
-    return (v as ThemeMode) || "system";
+    return (v as ThemeMode) || "light";
   } catch {
     return "system";
   }
@@ -144,7 +147,7 @@ async function writeMode(m: ThemeMode) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const sys = useColorScheme();
-  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [mode, setModeState] = useState<ThemeMode>("light");
 
   useEffect(() => {
     (async () => {

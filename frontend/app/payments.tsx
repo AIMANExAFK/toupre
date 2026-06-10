@@ -30,7 +30,7 @@ export default function Payments() {
               </View>
               <Text style={[styles.title, { color: colors.textPrimary }]}>Paiement en espèces</Text>
               <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-                Pour le moment, LocaShare ne traite aucun paiement en ligne. Le locataire règle directement le propriétaire lors de la remise.
+                Pour le moment, Toupré ne traite aucun paiement en ligne. Le locataire règle directement le propriétaire lors de la remise.
               </Text>
             </View>
 

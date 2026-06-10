@@ -13,7 +13,7 @@ const DETAILS: Record<DetailKey, { title: string; icon: string; body: string[]; 
     title: "Confidentialité",
     icon: "shield-outline",
     body: [
-      "LocaShare utilise vos informations uniquement pour sécuriser les locations, afficher les annonces et faciliter les échanges entre utilisateurs.",
+      "Toupré utilise vos informations uniquement pour sécuriser les locations, afficher les annonces et faciliter les échanges entre utilisateurs.",
       "Les données sensibles ne sont pas revendues. Les informations de paiement restent traitées par un prestataire sécurisé.",
       "Vous pouvez demander l'export ou la suppression de vos données depuis la section Gérer mes données.",
     ],
@@ -24,7 +24,7 @@ const DETAILS: Record<DetailKey, { title: string; icon: string; body: string[]; 
     body: [
       "Chaque utilisateur s'engage à publier des annonces honnêtes, avec des photos claires, un prix réel et un lieu de retrait précis.",
       "Le locataire doit restituer le bien dans l'état initial. Le propriétaire doit fournir un objet conforme à l'annonce.",
-      "En cas de litige, LocaShare peut suspendre une annonce ou un compte le temps de vérifier la situation.",
+      "En cas de litige, Toupré peut suspendre une annonce ou un compte le temps de vérifier la situation.",
     ],
   },
   data: {
@@ -37,10 +37,10 @@ const DETAILS: Record<DetailKey, { title: string; icon: string; body: string[]; 
     action: "Demander un export",
   },
   rate: {
-    title: "Évaluer LocaShare",
+    title: "Évaluer Toupré",
     icon: "star-outline",
     body: [
-      "Merci de tester LocaShare. Votre retour aide à améliorer la recherche, les réservations et la publication d'annonce.",
+      "Merci de tester Toupré. Votre retour aide à améliorer la recherche, les réservations et la publication d'annonce.",
       "Choisissez une note rapide ci-dessous. En production, ce bouton ouvrira aussi la page App Store ou Play Store.",
     ],
     action: "Envoyer un avis",
@@ -164,7 +164,7 @@ export default function Settings() {
             <Glass borderRadius={radius.lg}>
               <LinkRow label="Version" icon="information-circle-outline" colors={colors} value="1.0.0" />
               <Divider colors={colors} />
-              <LinkRow label="Évaluer LocaShare" icon="star-outline" colors={colors} onPress={() => setDetail("rate")} />
+              <LinkRow label="Évaluer Toupré" icon="star-outline" colors={colors} onPress={() => setDetail("rate")} />
             </Glass>
           </ScrollView>
         </SafeAreaView>

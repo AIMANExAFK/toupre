@@ -196,7 +196,7 @@ export default function SecurityScreen() {
               )}
               {notifPerm === "granted" && (
                 <TouchableOpacity
-                  onPress={() => NotificationsManager.show("Test LocaShare ✓", { body: "Vos notifications fonctionnent !" })}
+                  onPress={() => NotificationsManager.show("Test Toupré ✓", { body: "Vos notifications fonctionnent !" })}
                   style={[styles.actionBtn, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1 }]}
                 >
                   <Ionicons name="paper-plane-outline" size={16} color={colors.primary} />

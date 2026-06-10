@@ -4,13 +4,21 @@ import type { PropsWithChildren } from "react";
 
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="en" style={{ height: "100%" }}>
+    <html lang="fr" style={{ height: "100%" }}>
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
+        />
+        <title>Toupré — Tout se loue, tout près.</title>
+        {/* Typo de marque Toupré : Fredoka (titres/wordmark) + Nunito (texte) */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap"
         />
         {/*
           Disable body scrolling on web to make ScrollView components work correctly.
@@ -22,6 +30,10 @@ export default function Root({ children }: PropsWithChildren) {
           dangerouslySetInnerHTML={{
             __html: `
               body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
+
+              /* ─── Typo de marque (sans écraser les polices d'icônes) ─── */
+              #root, #root *:not([style*="Ionicons"]):not([style*="ionicons"]) { font-family: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
+              [data-brand-font], [data-brand-font] * { font-family: 'Fredoka', 'Nunito', sans-serif !important; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
 

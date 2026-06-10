@@ -51,10 +51,10 @@ export default function ReferralScreen() {
 
   const shareCode = async () => {
     if (!data) return;
-    const msg = `Inscris-toi sur LocaShare avec mon code ${data.referral_code} et reçois 10€ offerts ! https://locashare.fr`;
+    const msg = `Inscris-toi sur Toupré avec mon code ${data.referral_code} et reçois 10€ offerts ! https://locashare.fr`;
     try {
       if (Platform.OS === "web" && (navigator as any).share) {
-        await (navigator as any).share({ title: "LocaShare", text: msg });
+        await (navigator as any).share({ title: "Toupré", text: msg });
       } else {
         await Share.share({ message: msg });
       }

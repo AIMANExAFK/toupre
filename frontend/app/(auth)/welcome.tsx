@@ -1,20 +1,21 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { ToupreMark } from "../../src/Brand";
 
 export default function Welcome() {
   const router = useRouter();
   const colors = useColors();
-  const { height } = useWindowDimensions();
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="welcome-screen">
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-          <View style={[styles.heroBox, { height: height * 0.58 }]}>
+          {/* Hauteur en % CSS : useWindowDimensions pouvait renvoyer 0 à l'hydratation (web) */}
+          <View style={[styles.heroBox, { height: "58%" }]}>
             <Image
               source={{ uri: "https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg" }}
               style={styles.heroImg}
@@ -24,17 +25,15 @@ export default function Welcome() {
             <View style={styles.brandBox}>
               <Glass borderRadius={20} style={styles.brandPill}>
                 <View style={styles.brandInner}>
-                  <View style={[styles.logoCircle, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.5, radius: 18, offsetY: 6 })]}>
-                    <Ionicons name="key" size={20} color={colors.textInverse} />
-                  </View>
-                  <Text style={[styles.brandText, { color: colors.textInverse }]}>LocaShare</Text>
+                  <ToupreMark size={30} color={colors.primary} />
+                  <Text dataSet={{ brandFont: "1" }} style={[styles.brandText, { color: colors.textInverse }]}>toupré</Text>
                 </View>
               </Glass>
             </View>
 
             <View style={styles.heroCopy}>
-              <Text style={styles.heroKicker}>LocaShare</Text>
-              <Text style={styles.heroTitle}>Louer local, sans friction.</Text>
+              <Text style={styles.heroKicker}>Toupré</Text>
+              <Text style={styles.heroTitle}>Tout se loue, tout près.</Text>
             </View>
 
             <View style={styles.heroFooter}>

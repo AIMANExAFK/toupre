@@ -130,7 +130,7 @@ export default function OtpFlow() {
                   </View>
                   <Text style={[styles.title, { color: colors.textPrimary }]}>Email + téléphone</Text>
                   <Text style={[styles.sub, { color: colors.textSecondary }]}>
-                    {"À chaque connexion, LocaShare envoie un code à 6 chiffres pour vérifier que c'est bien vous."}
+                    {"À chaque connexion, Toupré envoie un code à 6 chiffres pour vérifier que c'est bien vous."}
                   </Text>
                 </View>
 

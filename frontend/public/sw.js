@@ -1,4 +1,4 @@
-// Service Worker LocaShare — gestion des push notifications
+// Service Worker Toupré — gestion des push notifications
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -13,10 +13,10 @@ self.addEventListener("push", (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: "LocaShare", body: event.data ? event.data.text() : "Nouvelle notification" };
+    data = { title: "Toupré", body: event.data ? event.data.text() : "Nouvelle notification" };
   }
 
-  const title = data.title || "LocaShare";
+  const title = data.title || "Toupré";
   const options = {
     body: data.body || "",
     icon: data.icon || "/favicon.ico",

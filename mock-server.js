@@ -1,4 +1,4 @@
-// Mock backend for LocaShare — replaces FastAPI+MongoDB for local preview
+// Mock backend for Toupré — replaces FastAPI+MongoDB for local preview
 // Phase 2: messagerie, avis, accept/refuse bookings
 // Phase 3: vérification email + téléphone, calendrier de disponibilité, push notifications
 // Phase 4: système de parrainage
@@ -259,7 +259,7 @@ const server = http.createServer(async (req, res) => {
   if (method === "OPTIONS") return json(res, {});
 
   if ((path === "/" || path === "/api/" || path === "/api") && method === "GET") {
-    return json(res, { name: "LocaShare API mock", status: "ok", demo: "demo@locashare.fr / demo1234" });
+    return json(res, { name: "Toupré API mock", status: "ok", demo: "demo@locashare.fr / demo1234" });
   }
 
   // ─── AUTH ─────────────────────────────────────
@@ -1185,7 +1185,7 @@ const server = http.createServer(async (req, res) => {
     const user = userByEmail(email) || DEMO_USER;
     return json(res, {
       challenge: Buffer.from(genToken()).toString("base64"),
-      rp: { name: "LocaShare", id: "locashare.fr" },
+      rp: { name: "Toupré", id: "locashare.fr" },
       user: { id: user.id, name: user.email, displayName: user.name },
       pubKeyCredParams: [
         { type: "public-key", alg: -7 },   // ES256
@@ -1293,7 +1293,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n✅ Mock LocaShare API on http://localhost:${PORT}`);
+  console.log(`\n✅ Mock Toupré API on http://localhost:${PORT}`);
   console.log(`   Demo OTP: demo@locashare.fr +33600000000`);
   console.log(`   Active: OTP email+téléphone, réservations cash, messages, avis, support\n`);
 });

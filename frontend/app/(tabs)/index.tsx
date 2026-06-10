@@ -128,7 +128,7 @@ export default function Explore() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
             <View>
-              <Text style={[styles.greeting, { color: colors.textSecondary }]}>LocaShare</Text>
+              <Text dataSet={{ brandFont: "1" }} style={[styles.greeting, { color: colors.primary }]}>toupré</Text>
               <Text style={[styles.brand, { color: colors.textPrimary }]} testID="explore-title">
                 Louer près de vous
               </Text>
