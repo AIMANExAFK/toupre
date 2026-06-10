@@ -63,7 +63,7 @@ export default function Welcome() {
                 { backgroundColor: colors.primary },
                 shadowStyle({ color: colors.primary, opacity: 0.45, radius: 22, offsetY: 10 }),
               ]}
-              onPress={() => router.push("/auth/identify")}
+              onPress={() => router.push("/auth/otp")}
               testID="welcome-identify-btn"
             >
               <Ionicons name="finger-print" size={20} color={colors.textInverse} style={{ marginRight: 8 }} />

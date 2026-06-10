@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { AuthProvider, useAuth, BACKEND_URL } from "../src/auth";
 import { ThemeProvider, useTheme, shadowStyle } from "../src/theme";
@@ -54,8 +54,6 @@ function useNoFocusOutline() {
 // ─── Push notifications : SW + polling backend ───
 function useNotifications() {
   const { token, user } = useAuth();
-  const lastSeen = useRef<Set<string>>(new Set());
-  const initialized = useRef(false);
 
   // Enregistre le service worker au mount
   useEffect(() => {
@@ -79,44 +77,12 @@ function useNotifications() {
     })();
   }, [user, token]);
 
-  // Poll les notifications backend toutes les 8s et affiche les nouvelles
+  // Poll des notifications délégué au singleton de NotificationsManager :
+  // une seule boucle pour toute l'app, même si ce hook est monté plusieurs fois
   useEffect(() => {
-    if (!user || !token || Platform.OS !== "web") return;
-    let stopped = false;
-
-    const pollOnce = async () => {
-      try {
-        const r = await fetch(`${BACKEND_URL}/api/notifications`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!r.ok) return;
-        const items = await r.json();
-        if (stopped) return;
-
-        // Première initialisation : on note ce qu'on a déjà vu sans rien afficher
-        if (!initialized.current) {
-          for (const n of items) lastSeen.current.add(n.id);
-          initialized.current = true;
-          return;
-        }
-
-        // Affiche les nouvelles non-lues
-        for (const n of items) {
-          if (lastSeen.current.has(n.id)) continue;
-          lastSeen.current.add(n.id);
-          if (n.read) continue;
-          NotificationsManager.show(n.title, {
-            body: n.body,
-            tag: n.id,
-            data: n.data,
-          });
-        }
-      } catch {}
-    };
-
-    pollOnce();
-    const t = setInterval(pollOnce, 8000);
-    return () => { stopped = true; clearInterval(t); };
+    if (!user || !token) return;
+    NotificationsManager.startPolling(token, BACKEND_URL);
+    return () => NotificationsManager.stopPolling();
   }, [user, token]);
 }
 
@@ -155,7 +121,6 @@ function RootShell() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="listing/[id]" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="booking/[id]" options={{ animation: "slide_from_bottom" }} />
-          <Stack.Screen name="payment-success" />
           <Stack.Screen name="settings" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="payments" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="help" options={{ animation: "slide_from_right" }} />

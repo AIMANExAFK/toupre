@@ -105,7 +105,7 @@ export default function Profile() {
             </View>
 
             {/* Contact verification banner */}
-            <TouchableOpacity onPress={() => router.push("/auth/otp")} style={styles.menu} activeOpacity={0.8}>
+            <TouchableOpacity onPress={() => router.push(me?.kyc_status === "verified" ? "/security" : "/auth/otp")} style={styles.menu} activeOpacity={0.8}>
               <Glass borderRadius={radius.lg} style={[styles.trustCard, { borderColor: colors.surfaceGlassBorder }]}>
                 <View style={[styles.trustIcon, {
                   backgroundColor: me?.kyc_status === "verified" ? colors.successBg : colors.primaryTint,
