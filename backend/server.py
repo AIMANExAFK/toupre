@@ -23,13 +23,6 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
 
-from emergentintegrations.payments.stripe.checkout import (
-    StripeCheckout,
-    CheckoutSessionResponse,
-    CheckoutStatusResponse,
-    CheckoutSessionRequest,
-)
-
 # ---------- MongoDB ----------
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -1557,73 +1550,6 @@ async def create_checkout(
         status_code=410,
         detail="Le checkout en ligne est désactivé. Cette réservation se règle en espèces à la remise.",
     )
-    booking = await db.bookings.find_one({"id": payload.booking_id}, {"_id": 0})
-    if not booking or booking["renter_id"] != current_user["id"]:
-        raise HTTPException(status_code=404, detail="Booking not found")
-
-    amount = float(booking["total_price"])
-    origin_url = (payload.origin_url or os.environ.get("FRONTEND_URL") or "http://localhost:4174").rstrip("/")
-
-    if not stripe_is_configured():
-        if not ENABLE_LOCAL_PAYMENTS:
-            raise HTTPException(status_code=503, detail="Stripe is not configured")
-        session_id = "local_cs_" + uuid.uuid4().hex
-        await mark_booking_paid(booking, session_id, current_user["id"], amount, "local_fallback")
-        return {
-            "url": f"{origin_url}/payment-success?session_id={session_id}",
-            "session_id": session_id,
-            "provider": "local_fallback",
-        }
-
-    api_key = os.environ["STRIPE_API_KEY"]
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-
-    success_url = f"{origin_url}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
-    cancel_url = f"{origin_url}/payment-cancel"
-
-    session_req = CheckoutSessionRequest(
-        amount=amount,
-        currency="eur",
-        success_url=success_url,
-        cancel_url=cancel_url,
-        metadata={
-            "booking_id": booking["id"],
-            "user_id": current_user["id"],
-        },
-    )
-    try:
-        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(session_req)
-    except Exception as e:
-        if not ENABLE_LOCAL_PAYMENTS:
-            raise HTTPException(status_code=502, detail=f"Stripe checkout failed: {e}")
-        logger.warning(f"Stripe checkout failed, using local fallback: {e}")
-        session_id = "local_cs_" + uuid.uuid4().hex
-        await mark_booking_paid(booking, session_id, current_user["id"], amount, "local_fallback")
-        return {
-            "url": f"{origin_url}/payment-success?session_id={session_id}",
-            "session_id": session_id,
-            "provider": "local_fallback",
-        }
-
-    await db.payment_transactions.insert_one({
-        "session_id": session.session_id,
-        "booking_id": booking["id"],
-        "user_id": current_user["id"],
-        "amount": amount,
-        "currency": "eur",
-        "status": "initiated",
-        "payment_status": "unpaid",
-        "metadata": {"booking_id": booking["id"]},
-        "created_at": datetime.now(timezone.utc),
-    })
-
-    await db.bookings.update_one(
-        {"id": booking["id"]}, {"$set": {"payment_session_id": session.session_id}}
-    )
-
-    return {"url": session.url, "session_id": session.session_id, "provider": "stripe"}
 
 
 @api_router.get("/checkout/status/{session_id}")
@@ -1632,93 +1558,6 @@ async def checkout_status(session_id: str, request: Request):
         status_code=410,
         detail="Le checkout en ligne est désactivé. Les réservations se règlent en espèces à la remise.",
     )
-    local_tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
-    if local_tx and (local_tx.get("provider") == "local_fallback" or not stripe_is_configured()):
-        return {
-            "status": local_tx.get("status", "complete"),
-            "payment_status": local_tx.get("payment_status", "paid"),
-            "amount_total": int(round(float(local_tx.get("amount", 0)) * 100)),
-            "currency": local_tx.get("currency", "eur"),
-            "provider": local_tx.get("provider", "local"),
-        }
-
-    if not stripe_is_configured():
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    api_key = os.environ["STRIPE_API_KEY"]
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-
-    try:
-        status: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
-        if status:
-            tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
-            if tx and tx["payment_status"] != "paid":
-                await db.payment_transactions.update_one(
-                    {"session_id": session_id},
-                    {"$set": {"status": status.status, "payment_status": status.payment_status}},
-                )
-                if status.payment_status == "paid":
-                    await db.bookings.update_one(
-                        {"payment_session_id": session_id}, {"$set": {"status": "paid"}}
-                    )
-            return {
-                "status": status.status,
-                "payment_status": status.payment_status,
-                "amount_total": status.amount_total,
-                "currency": status.currency,
-            }
-    except Exception as e:
-        logger.warning(f"Stripe status fetch failed, using local fallback: {e}")
-
-    # Fallback to local transaction record
-    tx = local_tx or await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
-    if not tx:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return {
-        "status": tx.get("status", "open"),
-        "payment_status": tx.get("payment_status", "unpaid"),
-        "amount_total": int(round(float(tx.get("amount", 0)) * 100)),
-        "currency": tx.get("currency", "eur"),
-        "provider": tx.get("provider", "stripe"),
-    }
-
-
-@api_router.post("/webhook/stripe")
-async def stripe_webhook(request: Request):
-    if not stripe_is_configured():
-        return {"received": True, "ignored": "stripe_not_configured"}
-    body = await request.body()
-    api_key = os.environ["STRIPE_API_KEY"]
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url}api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-    sig = request.headers.get("Stripe-Signature", "")
-    try:
-        event = await stripe_checkout.handle_webhook(body, sig)
-        if event.payment_status == "paid":
-            await db.payment_transactions.update_one(
-                {"session_id": event.session_id},
-                {"$set": {"payment_status": "paid", "status": "complete"}},
-            )
-            tx = await db.payment_transactions.find_one({"session_id": event.session_id}, {"_id": 0})
-            await db.bookings.update_one(
-                {"payment_session_id": event.session_id}, {"$set": {"status": "paid"}}
-            )
-            if tx:
-                booking = await db.bookings.find_one({"id": tx["booking_id"]}, {"_id": 0})
-                if booking:
-                    await notify_user(
-                        booking["owner_id"],
-                        "booking_paid",
-                        "Réservation payée",
-                        "Le paiement de la réservation a été confirmé.",
-                        {"booking_id": booking["id"], "session_id": event.session_id},
-                    )
-    except Exception as e:
-        logger.error(f"Webhook error: {e}")
-    return {"received": True}
 
 
 # ---------- Categories ----------

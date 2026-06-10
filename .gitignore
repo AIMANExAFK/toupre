@@ -52,6 +52,9 @@ __pycache__/
 venv/
 .venv/
 
+# MongoDB local (binaires téléchargés + données) — ne pas versionner
+.mongo/
+
 # Development tools
 chainlit.md
 .chainlit
