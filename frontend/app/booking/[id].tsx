@@ -10,6 +10,14 @@ import { ApiError, apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 
+// Date locale au format AAAA-MM-JJ, sans le décalage UTC de toISOString()
+function toLocalISODate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 export default function BookingFlow() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { token } = useAuth();
@@ -68,8 +76,8 @@ export default function BookingFlow() {
         "/api/bookings",
         { method: "POST", body: JSON.stringify({
           listing_id: listing.id,
-          start_date: startDate.toISOString().split("T")[0],
-          end_date: endDate.toISOString().split("T")[0],
+          start_date: toLocalISODate(startDate),
+          end_date: toLocalISODate(endDate),
         }) },
         token
       );
