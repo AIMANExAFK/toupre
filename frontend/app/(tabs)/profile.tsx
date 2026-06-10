@@ -8,26 +8,35 @@ import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 
 export default function Profile() {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const router = useRouter();
   const colors = useColors();
   const [unread, setUnread] = useState(0);
   const [notifUnread, setNotifUnread] = useState(0);
   const [me, setMe] = useState<any>(null);
+  const [stats, setStats] = useState<{ rentals: number; listings: number; rating: number | null }>({ rentals: 0, listings: 0, rating: null });
 
   const loadAll = useCallback(async () => {
     if (!user) return;
     try {
-      const [msgs, notifs, fullMe] = await Promise.all([
-        apiFetch("/api/messages/unread-count").catch(() => ({ count: 0 })),
-        apiFetch("/api/notifications").catch(() => []),
-        apiFetch("/api/auth/me").catch(() => null),
+      const [msgs, notifs, fullMe, rentals, myListings] = await Promise.all([
+        apiFetch("/api/messages/unread-count", {}, token).catch(() => ({ count: 0 })),
+        apiFetch("/api/notifications", {}, token).catch(() => []),
+        apiFetch("/api/auth/me", {}, token).catch(() => null),
+        apiFetch("/api/bookings/me", {}, token).catch(() => []),
+        apiFetch("/api/listings/owner/me", {}, token).catch(() => []),
       ]);
       setUnread(msgs.count || 0);
       setNotifUnread((notifs || []).filter((n: any) => !n.read).length);
       setMe(fullMe);
+      const rated = (myListings || []).filter((l: any) => l.rating);
+      setStats({
+        rentals: (rentals || []).length,
+        listings: (myListings || []).length,
+        rating: rated.length ? rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length : null,
+      });
     } catch {}
-  }, [user]);
+  }, [user, token]);
 
   useFocusEffect(useCallback(() => { loadAll(); }, [loadAll]));
 
@@ -79,17 +88,17 @@ export default function Profile() {
             <View style={styles.statsWrap}>
               <Glass borderRadius={radius.lg} style={styles.statsCard}>
                 <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>0</Text>
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.rentals}</Text>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Locations</Text>
                 </View>
                 <View style={[styles.statSep, { backgroundColor: colors.border }]} />
                 <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>0</Text>
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.listings}</Text>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Annonces</Text>
                 </View>
                 <View style={[styles.statSep, { backgroundColor: colors.border }]} />
                 <View style={styles.statBox}>
-                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>5.0</Text>
+                  <Text style={[styles.statValue, { color: colors.textPrimary }]}>{stats.rating ? stats.rating.toFixed(1) : "—"}</Text>
                   <Text style={[styles.statLabel, { color: colors.textSecondary }]}>★ Note</Text>
                 </View>
               </Glass>
