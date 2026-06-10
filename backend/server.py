@@ -700,13 +700,17 @@ async def list_listings(category: Optional[str] = None, q: Optional[str] = None)
     if q:
         query["title"] = {"$regex": q, "$options": "i"}
     items = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
-    # attach owner basic info
+    # attach owner basic info + note moyenne (le front lit item.rating / item.count / owner.verified)
     for item in items:
         owner = await db.users.find_one({"id": item["owner_id"]}, {"_id": 0, "password_hash": 0})
         item["owner"] = (
-            {"id": owner["id"], "name": owner["name"], "avatar": owner.get("avatar")}
+            {"id": owner["id"], "name": owner["name"], "avatar": owner.get("avatar"),
+             "verified": owner.get("verified", False)}
             if owner else None
         )
+        ratings = await db.reviews.find({"listing_id": item["id"]}, {"_id": 0, "rating": 1}).to_list(500)
+        item["count"] = len(ratings)
+        item["rating"] = round(sum(r["rating"] for r in ratings) / len(ratings), 1) if ratings else None
     return items
 
 
@@ -718,7 +722,7 @@ async def get_listing(listing_id: str):
     owner = await db.users.find_one({"id": item["owner_id"]}, {"_id": 0, "password_hash": 0})
     item["owner"] = (
         {"id": owner["id"], "name": owner["name"], "avatar": owner.get("avatar"),
-         "created_at": owner["created_at"]}
+         "verified": owner.get("verified", False), "created_at": owner["created_at"]}
         if owner else None
     )
     return item
@@ -739,6 +743,10 @@ async def my_listings(current_user: dict = Depends(get_current_user)):
     items = await db.listings.find(
         {"owner_id": current_user["id"]}, {"_id": 0}
     ).sort("created_at", -1).to_list(200)
+    for item in items:
+        ratings = await db.reviews.find({"listing_id": item["id"]}, {"_id": 0, "rating": 1}).to_list(500)
+        item["count"] = len(ratings)
+        item["rating"] = round(sum(r["rating"] for r in ratings) / len(ratings), 1) if ratings else None
     return items
 
 
@@ -1601,6 +1609,7 @@ SEED_LISTINGS = [
         "price_per_day": 89.0,
         "photos": ["https://images.pexels.com/photos/24376862/pexels-photo-24376862.jpeg"],
         "location": {"lat": 48.8566, "lng": 2.3522, "address": "Paris 11ème"},
+        "owner_key": "demo",
     },
     {
         "title": "VTT électrique Trek",
@@ -1609,6 +1618,7 @@ SEED_LISTINGS = [
         "price_per_day": 25.0,
         "photos": ["https://images.pexels.com/photos/90454/pexels-photo-90454.jpeg"],
         "location": {"lat": 48.8606, "lng": 2.3376, "address": "Paris 1er"},
+        "owner_key": "sophie",
     },
     {
         "title": "Perceuse Bosch sans fil 18V",
@@ -1617,6 +1627,7 @@ SEED_LISTINGS = [
         "price_per_day": 8.0,
         "photos": ["https://images.pexels.com/photos/30413428/pexels-photo-30413428.jpeg"],
         "location": {"lat": 48.8738, "lng": 2.2950, "address": "Paris 17ème"},
+        "owner_key": "thomas",
     },
     {
         "title": "Tente 4 places Quechua",
@@ -1625,6 +1636,7 @@ SEED_LISTINGS = [
         "price_per_day": 15.0,
         "photos": ["https://images.unsplash.com/photo-1624923686627-514dd5e57bae"],
         "location": {"lat": 48.8462, "lng": 2.3464, "address": "Paris 5ème"},
+        "owner_key": "marie",
     },
     {
         "title": "Canon EOS R6 + Objectif 24-70mm",
@@ -1633,6 +1645,7 @@ SEED_LISTINGS = [
         "price_per_day": 45.0,
         "photos": ["https://images.pexels.com/photos/51383/photo-camera-subject-photographer-51383.jpeg"],
         "location": {"lat": 48.8848, "lng": 2.3441, "address": "Paris 18ème"},
+        "owner_key": "demo",
     },
     {
         "title": "Renault Zoé électrique",
@@ -1641,6 +1654,7 @@ SEED_LISTINGS = [
         "price_per_day": 49.0,
         "photos": ["https://images.pexels.com/photos/24376862/pexels-photo-24376862.jpeg"],
         "location": {"lat": 48.8420, "lng": 2.3230, "address": "Paris 14ème"},
+        "owner_key": "sophie",
     },
     {
         "title": "Vélo de ville Décathlon",
@@ -1649,6 +1663,7 @@ SEED_LISTINGS = [
         "price_per_day": 12.0,
         "photos": ["https://images.pexels.com/photos/90454/pexels-photo-90454.jpeg"],
         "location": {"lat": 48.8534, "lng": 2.3488, "address": "Paris 4ème"},
+        "owner_key": "marie",
     },
     {
         "title": "GoPro Hero 12 Black",
@@ -1657,6 +1672,7 @@ SEED_LISTINGS = [
         "price_per_day": 20.0,
         "photos": ["https://images.pexels.com/photos/51383/photo-camera-subject-photographer-51383.jpeg"],
         "location": {"lat": 48.8700, "lng": 2.3100, "address": "Paris 8ème"},
+        "owner_key": "thomas",
     },
 ]
 
@@ -1687,14 +1703,14 @@ async def on_startup():
             "id": str(uuid.uuid4()),
             "email": demo_email,
             "phone": "+33600000000",
-            "name": "Sophie Martin",
+            "name": "Alexandre D.",
             "password_hash": hash_password("demo1234"),
             "avatar": None,
             "verified": True,
             "kyc_status": "verified",
             "kyc_source": "email_phone_otp",
             "contact_verified_at": datetime.now(timezone.utc),
-            "referral_code": "SOPHIE" + uuid.uuid4().hex[:3].upper(),
+            "referral_code": "ALEX" + uuid.uuid4().hex[:4].upper(),
             "credit_balance": 0,
             "referred_by": None,
             "created_at": datetime.now(timezone.utc),
@@ -1710,7 +1726,7 @@ async def on_startup():
                     "kyc_source": demo_user.get("kyc_source", "email_phone_otp"),
                     "phone": demo_user.get("phone") or "+33600000000",
                     "contact_verified_at": demo_user.get("contact_verified_at") or datetime.now(timezone.utc),
-                    "referral_code": demo_user.get("referral_code") or ("SOPHIE" + uuid.uuid4().hex[:3].upper()),
+                    "referral_code": demo_user.get("referral_code") or ("ALEX" + uuid.uuid4().hex[:4].upper()),
                     "credit_balance": demo_user.get("credit_balance", 0),
                     "referred_by": demo_user.get("referred_by"),
                 },
@@ -1718,13 +1734,84 @@ async def on_startup():
         )
         demo_user = await db.users.find_one({"email": demo_email})
 
+    # seed co-propriétaires : la démo doit montrer plusieurs vendeurs,
+    # et le compte démo doit pouvoir réserver chez les autres
+    seed_owners = {"demo": demo_user}
+    for key, name, email, phone, verified in [
+        ("sophie", "Sophie M.", "sophie@locashare.fr", "+33611111111", True),
+        ("thomas", "Thomas B.", "thomas@locashare.fr", "+33622222222", False),
+        ("marie", "Marie L.", "marie@locashare.fr", "+33633333333", True),
+    ]:
+        u = await db.users.find_one({"email": email})
+        if not u:
+            u = {
+                "id": str(uuid.uuid4()),
+                "email": email,
+                "phone": phone,
+                "name": name,
+                "password_hash": hash_password(uuid.uuid4().hex),
+                "avatar": None,
+                "verified": verified,
+                "kyc_status": "verified" if verified else "none",
+                "kyc_source": "email_phone_otp" if verified else None,
+                "contact_verified_at": datetime.now(timezone.utc) if verified else None,
+                "referral_code": key.upper() + uuid.uuid4().hex[:4].upper(),
+                "credit_balance": 0,
+                "referred_by": None,
+                "created_at": datetime.now(timezone.utc),
+            }
+            await db.users.insert_one(u)
+        seed_owners[key] = u
+
     # seed listings if none
     count = await db.listings.count_documents({})
     if count == 0:
+        seeded = {}
         for seed in SEED_LISTINGS:
-            listing = Listing(owner_id=demo_user["id"], **seed)
+            data = dict(seed)
+            owner = seed_owners[data.pop("owner_key", "demo")]
+            listing = Listing(owner_id=owner["id"], **data)
             await db.listings.insert_one(listing.dict())
+            seeded[listing.title] = listing
         logger.info(f"Seeded {len(SEED_LISTINGS)} demo listings")
+
+        # une demande en attente sur la Tesla du compte démo (côté "Mes biens → Demandes")
+        tesla = seeded.get("Tesla Model 3 - Berline électrique")
+        if tesla and await db.bookings.count_documents({}) == 0:
+            start = (datetime.now(timezone.utc) + timedelta(days=10)).date()
+            end = (datetime.now(timezone.utc) + timedelta(days=12)).date()
+            booking = Booking(
+                listing_id=tesla.id,
+                renter_id=seed_owners["sophie"]["id"],
+                owner_id=demo_user["id"],
+                start_date=start.isoformat(),
+                end_date=end.isoformat(),
+                days=3,
+                total_price=round(3 * tesla.price_per_day, 2),
+            )
+            await db.bookings.insert_one(booking.dict())
+
+        # quelques avis pour que les notes s'affichent sur les cartes
+        if await db.reviews.count_documents({}) == 0:
+            for title, author_key, rating, comment in [
+                ("Tesla Model 3 - Berline électrique", "sophie", 5, "Voiture impeccable, propriétaire très arrangeant."),
+                ("VTT électrique Trek", "marie", 5, "Super vélo, batterie au top."),
+                ("VTT électrique Trek", "thomas", 4, "Très bon état, selle un peu dure."),
+                ("Canon EOS R6 + Objectif 24-70mm", "marie", 5, "Matériel pro, comme neuf."),
+            ]:
+                l = seeded.get(title)
+                if not l:
+                    continue
+                await db.reviews.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "listing_id": l.id,
+                    "booking_id": None,
+                    "author_id": seed_owners[author_key]["id"],
+                    "rating": rating,
+                    "comment": comment,
+                    "created_at": datetime.now(timezone.utc),
+                })
+        logger.info("Seeded demo owners, booking request and reviews")
 
 
 @app.on_event("shutdown")
