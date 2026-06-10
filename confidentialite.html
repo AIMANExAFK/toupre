@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Politique de Confidentialité — LocaShare</title>
+<meta name="description" content="Politique de confidentialité et protection des données personnelles de la plateforme LocaShare."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#7C3AED;--primary-light:#A78BFA;--accent:#6366F1;
+  --bg:#09090F;--bg2:#0F0F1A;
+  --surface:rgba(255,255,255,0.04);--border:rgba(255,255,255,0.08);
+  --text:#FAFAFA;--text-2:#A1A1AA;--text-3:#52525B;
+  --radius:16px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+
+/* Noise */
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* Orbs */
+.orb{display:none}
+
+/* Nav */
+nav:not(.toc){position:fixed;top:0;left:0;right:0;z-index:100;padding:0 24px;background:rgba(9,9,15,0.85);backdrop-filter:blur(24px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:64px}
+.nav-logo{display:flex;align-items:center;gap:10px;font-size:18px;font-weight:800;letter-spacing:-.5px}
+.logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#fff;box-shadow:0 4px 14px rgba(124,58,237,0.5)}
+.nav-back{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:var(--text-2);padding:8px 16px;border-radius:8px;background:var(--surface);border:1px solid var(--border);transition:all .2s;cursor:pointer}
+.nav-back:hover{color:var(--text);border-color:rgba(124,58,237,0.4)}
+
+/* Layout */
+.layout{max-width:1240px;margin:0 auto;padding:96px 32px 80px;display:grid;grid-template-columns:220px 1fr;gap:52px;align-items:start;position:relative;z-index:1}
+.toc-sidebar{position:sticky;top:84px;max-height:calc(100vh - 104px);overflow-y:auto}
+.toc-sidebar::-webkit-scrollbar{width:3px}
+.toc-sidebar::-webkit-scrollbar-track{background:transparent}
+.toc-sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.content{min-width:0;max-width:720px}
+
+/* Header */
+.page-header{margin-bottom:56px}
+.page-badge{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--primary-light);background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.25);padding:5px 12px;border-radius:999px;margin-bottom:20px}
+.page-title{font-size:clamp(32px,5vw,48px);font-weight:900;letter-spacing:-1.5px;line-height:1.1;margin-bottom:16px}
+.gradient-text{background:linear-gradient(135deg,var(--primary-light),var(--accent),#C084FC);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.page-meta{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:20px}
+.page-meta-item{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-2)}
+.page-meta-dot{width:5px;height:5px;border-radius:50%;background:var(--text-3)}
+
+/* TOC */
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px}
+.toc-title{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:14px}
+.toc-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.toc-list a{font-size:14px;color:var(--text-2);transition:color .2s;display:flex;align-items:center;gap:8px}
+.toc-list a:hover{color:var(--primary-light)}
+.toc-list a::before{content:'';width:4px;height:4px;border-radius:50%;background:var(--primary);flex-shrink:0}
+
+/* Sections */
+.doc-section{margin-bottom:48px;padding-top:8px}
+.doc-section:not(:last-child){border-bottom:1px solid var(--border);padding-bottom:48px}
+.doc-section > p{font-size:15px;color:var(--text-2);line-height:1.75;margin-bottom:14px}
+.doc-section > p:last-child{margin-bottom:0}
+.doc-section ul,.doc-section ol{padding-left:20px;margin-bottom:14px}
+.doc-section li{font-size:15px;color:var(--text-2);line-height:1.7;margin-bottom:8px}
+.doc-section li::marker{color:var(--primary-light)}
+strong{color:var(--text);font-weight:600}
+.doc-section .section-num{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--primary-light);margin-bottom:10px}
+.section-title{font-size:22px;font-weight:800;letter-spacing:-.4px;color:var(--text);margin-bottom:18px}
+
+/* Highlight box */
+.highlight{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:12px;padding:16px 20px;margin:18px 0}
+.highlight p{color:var(--text-2);font-size:14px;margin:0}
+
+/* Info box */
+.info{background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:12px;padding:16px 20px;margin:18px 0;display:flex;gap:12px}
+.info-icon{font-size:18px;flex-shrink:0;line-height:1.5}
+.info p{color:#A5B4FC;font-size:14px;margin:0}
+
+/* Warning box */
+.warning{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:16px 20px;margin:18px 0;display:flex;gap:12px}
+.warning-icon{font-size:18px;flex-shrink:0;line-height:1.5}
+.warning p{color:#fbbf24;font-size:14px;margin:0}
+
+/* Data table */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:18px 0;border-radius:10px}
+.data-table{width:100%;border-collapse:collapse;font-size:14px;min-width:480px}
+.data-table th{text-align:left;padding:10px 14px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);border-bottom:1px solid var(--border)}
+.data-table td{padding:12px 14px;color:var(--text-2);border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:top;line-height:1.6}
+.data-table tr:hover td{background:rgba(255,255,255,0.02)}
+
+/* Rights grid */
+.rights-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:18px 0}
+.right-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;transition:border-color .2s}
+.right-card:hover{border-color:rgba(124,58,237,0.3)}
+.right-icon{font-size:22px;margin-bottom:8px}
+.right-label{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.right-desc{font-size:12px;color:var(--text-2);line-height:1.5}
+
+/* Contact card */
+.contact-card{background:var(--surface);border:1px solid rgba(124,58,237,0.25);border-radius:var(--radius);padding:24px;display:flex;gap:16px;align-items:flex-start;margin-top:24px}
+.contact-icon{width:44px;height:44px;border-radius:12px;background:rgba(124,58,237,0.15);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.contact-card .contact-label{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-3);margin-bottom:4px}
+.contact-card .contact-value{font-size:15px;font-weight:600;color:var(--primary-light)}
+
+/* Footer */
+footer{border-top:1px solid var(--border);padding:32px 24px;position:relative;z-index:1}
+.footer-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-copy{font-size:13px;color:var(--text-3)}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-size:13px;color:var(--text-3);transition:color .2s}
+.footer-links a:hover{color:var(--primary-light)}
+
+@media(max-width:960px){
+  .layout{grid-template-columns:1fr;gap:0;padding:84px 20px 80px}
+  .toc-sidebar{position:static;max-height:none;margin-bottom:40px}
+}
+@media(max-width:600px){
+  .page-meta{gap:10px}
+  .contact-card{flex-direction:column}
+  .rights-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+
+<nav>
+  <div class="nav-inner">
+    <a href="locashare-website.html" class="nav-logo">
+      <div class="logo-mark">L</div>
+      LocaShare
+    </a>
+    <a href="locashare-website.html" class="nav-back">
+      ← Retour au site
+    </a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <aside class="toc-sidebar">
+    <nav class="toc" aria-label="Table des matières">
+      <p class="toc-title">Sommaire</p>
+      <ol class="toc-list">
+        <li><a href="#art1">Responsable du traitement</a></li>
+        <li><a href="#art2">Données collectées</a></li>
+        <li><a href="#art3">Bases légales et finalités</a></li>
+        <li><a href="#art4">Durée de conservation</a></li>
+        <li><a href="#art5">Partage des données</a></li>
+        <li><a href="#art6">Transferts hors UE</a></li>
+        <li><a href="#art7">Cookies et traceurs</a></li>
+        <li><a href="#art8">Vos droits</a></li>
+        <li><a href="#art9">Sécurité des données</a></li>
+        <li><a href="#art10">Mineurs</a></li>
+        <li><a href="#art11">Modifications de la politique</a></li>
+        <li><a href="#art12">Contact et DPO</a></li>
+      </ol>
+    </nav>
+  </aside>
+
+  <main class="content">
+
+    <div class="page-header">
+      <div class="page-badge">🔒 Protection des données</div>
+      <h1 class="page-title">Politique de<br><span class="gradient-text">Confidentialité</span></h1>
+      <div class="page-meta">
+        <span class="page-meta-item">Version 1.0</span>
+        <span class="page-meta-dot"></span>
+        <span class="page-meta-item">En vigueur depuis le 1er mai 2025</span>
+        <span class="page-meta-dot"></span>
+        <span class="page-meta-item">Conforme RGPD</span>
+      </div>
+    </div>
+
+    <div class="info">
+      <span class="info-icon">ℹ️</span>
+      <p>LocaShare s'engage à protéger votre vie privée. Cette politique explique quelles données nous collectons, pourquoi, et comment vous pouvez exercer vos droits conformément au Règlement Général sur la Protection des Données (RGPD — UE 2016/679).</p>
+    </div>
+
+  <!-- Article 1 -->
+  <section class="doc-section" id="art1">
+    <p class="section-num">Article 1</p>
+    <h2 class="section-title">Responsable du traitement</h2>
+    <p>Le responsable du traitement de vos données personnelles est :</p>
+    <div class="contact-card">
+      <div class="contact-icon">🏢</div>
+      <div>
+        <p class="contact-label">Société</p>
+        <p class="contact-value">LocaShare SAS</p>
+        <p style="font-size:14px;color:var(--text-2);margin-top:8px">
+          Siège social : Paris, France<br/>
+          SIRET : En cours d'enregistrement<br/>
+          Email : <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Article 2 -->
+  <section class="doc-section" id="art2">
+    <p class="section-num">Article 2</p>
+    <h2 class="section-title">Données collectées</h2>
+    <p>Selon votre utilisation de LocaShare, nous collectons les catégories de données suivantes :</p>
+
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Catégorie</th>
+          <th>Données</th>
+          <th>Source</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Identité</strong></td>
+          <td>Prénom, nom, photo de profil, adresse email</td>
+          <td>Inscription directe ou OAuth (Google / Apple)</td>
+        </tr>
+        <tr>
+          <td><strong>Compte</strong></td>
+          <td>Identifiant unique, mot de passe haché, date de création, préférences</td>
+          <td>Création de compte</td>
+        </tr>
+        <tr>
+          <td><strong>Annonces</strong></td>
+          <td>Titre, description, catégorie, prix, photos, localisation approximative</td>
+          <td>Publication d'annonce par l'utilisateur</td>
+        </tr>
+        <tr>
+          <td><strong>Transactions</strong></td>
+          <td>Historique des réservations, montants, statuts de paiement</td>
+          <td>Utilisation de la plateforme</td>
+        </tr>
+        <tr>
+          <td><strong>Paiement</strong></td>
+          <td>Aucune donnée bancaire brute — tokenisation via Stripe</td>
+          <td>Stripe (sous-traitant PCI-DSS)</td>
+        </tr>
+        <tr>
+          <td><strong>Navigation</strong></td>
+          <td>Adresse IP, type d'appareil, système d'exploitation, pages visitées, durée de session</td>
+          <td>Logs serveur, cookies analytiques</td>
+        </tr>
+        <tr>
+          <td><strong>Communications</strong></td>
+          <td>Messages échangés avec le support, notifications push acceptées</td>
+          <td>Interactions avec nos équipes ou l'app</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <div class="highlight">
+      <p>🔐 Nous ne collectons <strong>jamais</strong> de données sensibles au sens de l'article 9 du RGPD (origines ethniques, opinions politiques, données de santé, etc.).</p>
+    </div>
+  </section>
+
+  <!-- Article 3 -->
+  <section class="doc-section" id="art3">
+    <p class="section-num">Article 3</p>
+    <h2 class="section-title">Bases légales et finalités</h2>
+    <p>Chaque traitement repose sur une base légale explicite :</p>
+
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Finalité</th>
+          <th>Base légale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Création et gestion de votre compte</td>
+          <td>Exécution du contrat (Art. 6.1.b RGPD)</td>
+        </tr>
+        <tr>
+          <td>Traitement des réservations et paiements</td>
+          <td>Exécution du contrat (Art. 6.1.b RGPD)</td>
+        </tr>
+        <tr>
+          <td>Envoi d'emails transactionnels (confirmation, facture)</td>
+          <td>Exécution du contrat (Art. 6.1.b RGPD)</td>
+        </tr>
+        <tr>
+          <td>Lutte contre la fraude, sécurité de la plateforme</td>
+          <td>Intérêt légitime (Art. 6.1.f RGPD)</td>
+        </tr>
+        <tr>
+          <td>Amélioration du service, statistiques d'usage</td>
+          <td>Intérêt légitime (Art. 6.1.f RGPD)</td>
+        </tr>
+        <tr>
+          <td>Envoi de newsletters et offres commerciales</td>
+          <td>Consentement (Art. 6.1.a RGPD)</td>
+        </tr>
+        <tr>
+          <td>Obligations comptables et fiscales</td>
+          <td>Obligation légale (Art. 6.1.c RGPD)</td>
+        </tr>
+        <tr>
+          <td>Cookies non essentiels (analytics, publicité)</td>
+          <td>Consentement (Art. 6.1.a RGPD)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <!-- Article 4 -->
+  <section class="doc-section" id="art4">
+    <p class="section-num">Article 4</p>
+    <h2 class="section-title">Durée de conservation</h2>
+    <p>Nous ne conservons vos données que le temps nécessaire à la finalité pour laquelle elles ont été collectées :</p>
+    <ul>
+      <li><strong>Données de compte actif :</strong> pendant toute la durée de votre relation avec LocaShare.</li>
+      <li><strong>Données de compte inactif :</strong> 3 ans après la dernière connexion, puis suppression automatique avec notification préalable.</li>
+      <li><strong>Données de transaction :</strong> 10 ans pour respecter les obligations comptables légales (Code de commerce).</li>
+      <li><strong>Logs de navigation :</strong> 13 mois maximum (recommandation CNIL).</li>
+      <li><strong>Données de support :</strong> 5 ans à compter de la clôture du ticket.</li>
+      <li><strong>Données de consentement :</strong> 3 ans à compter de l'expression du consentement.</li>
+      <li><strong>Cookies analytiques :</strong> 13 mois maximum.</li>
+    </ul>
+    <div class="warning">
+      <span class="warning-icon">⚠️</span>
+      <p>En cas de litige ou de procédure judiciaire en cours, les données concernées peuvent être conservées jusqu'à la résolution définitive de l'affaire, conformément à nos intérêts légitimes.</p>
+    </div>
+  </section>
+
+  <!-- Article 5 -->
+  <section class="doc-section" id="art5">
+    <p class="section-num">Article 5</p>
+    <h2 class="section-title">Partage des données</h2>
+    <p>Vos données ne sont <strong>jamais vendues</strong>. Elles peuvent être transmises aux sous-traitants strictement nécessaires au fonctionnement de la plateforme :</p>
+
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Partenaire</th>
+          <th>Rôle</th>
+          <th>Données transmises</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Supabase</strong></td>
+          <td>Infrastructure base de données et authentification (hébergement UE)</td>
+          <td>Toutes les données de compte et d'activité</td>
+        </tr>
+        <tr>
+          <td><strong>Stripe</strong></td>
+          <td>Traitement des paiements (PCI-DSS niveau 1)</td>
+          <td>Email, montant, identifiant de transaction</td>
+        </tr>
+        <tr>
+          <td><strong>Google</strong></td>
+          <td>Authentification OAuth (optionnel)</td>
+          <td>Email, prénom, photo de profil (si vous choisissez Google)</td>
+        </tr>
+        <tr>
+          <td><strong>Apple</strong></td>
+          <td>Authentification Sign in with Apple (optionnel)</td>
+          <td>Email (anonymisé si vous choisissez cette option), identifiant unique</td>
+        </tr>
+        <tr>
+          <td><strong>Expo / React Native</strong></td>
+          <td>Infrastructure applicative mobile</td>
+          <td>Données techniques de l'appareil</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Tous nos sous-traitants sont liés par un contrat de traitement des données (DPA) conforme à l'article 28 du RGPD.</p>
+
+    <div class="info">
+      <span class="info-icon">⚖️</span>
+      <p>LocaShare peut être tenu de divulguer vos données à des autorités compétentes (police, justice, CNIL) sur réquisition légale ou en cas d'urgence pour protéger la sécurité d'une personne.</p>
+    </div>
+  </section>
+
+  <!-- Article 6 -->
+  <section class="doc-section" id="art6">
+    <p class="section-num">Article 6</p>
+    <h2 class="section-title">Transferts hors Union Européenne</h2>
+    <p>Certains de nos sous-traitants (Stripe, Google, Apple) peuvent traiter vos données hors de l'Union Européenne, notamment aux États-Unis. Ces transferts sont encadrés par :</p>
+    <ul>
+      <li><strong>Les Clauses Contractuelles Types (CCT)</strong> adoptées par la Commission européenne, garantissant un niveau de protection équivalent au RGPD.</li>
+      <li><strong>Le Data Privacy Framework UE–États-Unis</strong> pour les sous-traitants certifiés (Stripe, Google).</li>
+    </ul>
+    <p>Supabase héberge les données sur des serveurs situés en Europe (région EU West) par défaut.</p>
+    <div class="highlight">
+      <p>Vous pouvez obtenir une copie des garanties mises en place pour ces transferts en écrivant à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>.</p>
+    </div>
+  </section>
+
+  <!-- Article 7 -->
+  <section class="doc-section" id="art7">
+    <p class="section-num">Article 7</p>
+    <h2 class="section-title">Cookies et traceurs</h2>
+    <p>LocaShare utilise des cookies et technologies similaires sur son site web et application. Ils sont classés en plusieurs catégories :</p>
+
+    <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Finalité</th>
+          <th>Consentement requis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Essentiels</strong></td>
+          <td>Session d'authentification, sécurité CSRF, préférences de langue</td>
+          <td>Non (nécessaires au fonctionnement)</td>
+        </tr>
+        <tr>
+          <td><strong>Analytiques</strong></td>
+          <td>Mesure d'audience anonymisée, amélioration du service</td>
+          <td>Oui (opt-in)</td>
+        </tr>
+        <tr>
+          <td><strong>Fonctionnels</strong></td>
+          <td>Mémorisation de vos préférences (thème, filtres)</td>
+          <td>Oui (opt-in)</td>
+        </tr>
+        <tr>
+          <td><strong>Marketing</strong></td>
+          <td>Publicités ciblées, retargeting (non actif actuellement)</td>
+          <td>Oui (opt-in)</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>Vous pouvez gérer vos préférences cookies à tout moment via le panneau de gestion accessible dans les paramètres du site ou en bas de chaque page.</p>
+    <p>La durée de vie des cookies analytiques est limitée à <strong>13 mois</strong> conformément aux recommandations de la CNIL.</p>
+  </section>
+
+  <!-- Article 8 -->
+  <section class="doc-section" id="art8">
+    <p class="section-num">Article 8</p>
+    <h2 class="section-title">Vos droits</h2>
+    <p>Conformément au RGPD, vous disposez des droits suivants sur vos données personnelles :</p>
+
+    <div class="rights-grid">
+      <div class="right-card">
+        <div class="right-icon">👁️</div>
+        <div class="right-label">Droit d'accès</div>
+        <div class="right-desc">Obtenir une copie de toutes vos données que nous détenons</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">✏️</div>
+        <div class="right-label">Droit de rectification</div>
+        <div class="right-desc">Corriger des données inexactes ou incomplètes</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">🗑️</div>
+        <div class="right-label">Droit à l'effacement</div>
+        <div class="right-desc">Demander la suppression de vos données ("droit à l'oubli")</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">⏸️</div>
+        <div class="right-label">Droit à la limitation</div>
+        <div class="right-desc">Restreindre le traitement de vos données dans certains cas</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">📦</div>
+        <div class="right-label">Droit à la portabilité</div>
+        <div class="right-desc">Récupérer vos données dans un format structuré et lisible</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">🚫</div>
+        <div class="right-label">Droit d'opposition</div>
+        <div class="right-desc">Vous opposer à un traitement basé sur l'intérêt légitime</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">🤖</div>
+        <div class="right-label">Décision automatisée</div>
+        <div class="right-desc">Ne pas faire l'objet d'une décision entièrement automatisée</div>
+      </div>
+      <div class="right-card">
+        <div class="right-icon">↩️</div>
+        <div class="right-label">Retrait du consentement</div>
+        <div class="right-desc">Retirer votre consentement à tout moment, sans effet rétroactif</div>
+      </div>
+    </div>
+
+    <p style="margin-top:20px">Pour exercer l'un de ces droits, contactez-nous par email à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light);font-weight:600">privacy@locashare.fr</a> en joignant une pièce d'identité si nécessaire pour vérifier votre identité. Nous répondrons dans un délai maximum de <strong>30 jours</strong>.</p>
+
+    <div class="warning">
+      <span class="warning-icon">⚠️</span>
+      <p>Si vous estimez que vos droits ne sont pas respectés, vous avez le droit de déposer une plainte auprès de la <strong>CNIL</strong> (Commission Nationale de l'Informatique et des Libertés) — <a href="https://www.cnil.fr" style="color:#fbbf24" target="_blank" rel="noopener">www.cnil.fr</a>.</p>
+    </div>
+  </section>
+
+  <!-- Article 9 -->
+  <section class="doc-section" id="art9">
+    <p class="section-num">Article 9</p>
+    <h2 class="section-title">Sécurité des données</h2>
+    <p>LocaShare met en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données :</p>
+    <ul>
+      <li><strong>Chiffrement en transit :</strong> toutes les communications sont chiffrées via TLS 1.3 (HTTPS).</li>
+      <li><strong>Chiffrement au repos :</strong> les bases de données sont chiffrées (AES-256) par notre infrastructure Supabase.</li>
+      <li><strong>Mots de passe :</strong> jamais stockés en clair — hachage bcrypt via Supabase Auth.</li>
+      <li><strong>Contrôle d'accès :</strong> Row Level Security (RLS) PostgreSQL — chaque utilisateur n'accède qu'à ses propres données.</li>
+      <li><strong>Authentification :</strong> JWT à durée de vie limitée + refresh tokens sécurisés.</li>
+      <li><strong>Paiements :</strong> aucune donnée bancaire ne transite sur nos serveurs — traitement direct par Stripe (PCI-DSS niveau 1).</li>
+      <li><strong>Accès employés :</strong> principe du moindre privilège — seuls les membres autorisés accèdent aux données de production.</li>
+    </ul>
+    <p>En cas de violation de données susceptible de porter atteinte à vos droits, nous nous engageons à notifier la CNIL dans les <strong>72 heures</strong> et les personnes concernées dans les meilleurs délais, conformément à l'article 33 du RGPD.</p>
+  </section>
+
+  <!-- Article 10 -->
+  <section class="doc-section" id="art10">
+    <p class="section-num">Article 10</p>
+    <h2 class="section-title">Mineurs</h2>
+    <p>LocaShare est une plateforme réservée aux personnes majeures (18 ans et plus). Nous ne collectons pas sciemment de données personnelles concernant des enfants de moins de 16 ans.</p>
+    <p>Si vous êtes un parent ou tuteur légal et que vous constatez que votre enfant a fourni des données personnelles sans votre consentement, contactez-nous immédiatement à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a> afin que nous procédions à leur suppression.</p>
+  </section>
+
+  <!-- Article 11 -->
+  <section class="doc-section" id="art11">
+    <p class="section-num">Article 11</p>
+    <h2 class="section-title">Modifications de la politique</h2>
+    <p>LocaShare peut mettre à jour cette politique de confidentialité pour refléter des changements dans nos pratiques ou des évolutions réglementaires. En cas de modification substantielle, nous vous en informerons par email ou via une notification dans l'application au moins <strong>30 jours avant</strong> l'entrée en vigueur des changements.</p>
+    <p>La date de dernière mise à jour figure toujours en haut de cette page. En continuant à utiliser LocaShare après l'entrée en vigueur de la nouvelle politique, vous en acceptez les termes.</p>
+    <div class="highlight">
+      <p>Vous pouvez consulter les versions antérieures de notre politique en nous contactant à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>.</p>
+    </div>
+  </section>
+
+  <!-- Article 12 -->
+  <section class="doc-section" id="art12">
+    <p class="section-num">Article 12</p>
+    <h2 class="section-title">Contact et DPO</h2>
+    <p>Pour toute question relative à cette politique ou à l'exercice de vos droits, vous pouvez contacter notre responsable de la protection des données (DPO) :</p>
+
+    <div class="contact-card">
+      <div class="contact-icon">📧</div>
+      <div>
+        <p class="contact-label">Email DPO</p>
+        <p class="contact-value">privacy@locashare.fr</p>
+      </div>
+    </div>
+
+    <div class="contact-card" style="margin-top:12px">
+      <div class="contact-icon">📮</div>
+      <div>
+        <p class="contact-label">Adresse postale</p>
+        <p class="contact-value">LocaShare SAS — Service Protection des Données</p>
+        <p style="font-size:14px;color:var(--text-2);margin-top:4px">Paris, France</p>
+      </div>
+    </div>
+
+    <div class="contact-card" style="margin-top:12px">
+      <div class="contact-icon">🏛️</div>
+      <div>
+        <p class="contact-label">Autorité de contrôle</p>
+        <p class="contact-value">CNIL — Commission Nationale de l'Informatique et des Libertés</p>
+        <p style="font-size:14px;color:var(--text-2);margin-top:4px">3 Place de Fontenoy, 75007 Paris — <a href="https://www.cnil.fr" style="color:var(--primary-light)" target="_blank" rel="noopener">www.cnil.fr</a></p>
+      </div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <p class="footer-copy">© 2025 LocaShare SAS — Tous droits réservés</p>
+    <div class="footer-links">
+      <a href="cgu.html">CGU</a>
+      <a href="confidentialite.html">Confidentialité</a>
+      <a href="locashare-website.html">Accueil</a>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
