@@ -100,3 +100,7 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Artefacts Playwright
+test-results/
+playwright-report/
