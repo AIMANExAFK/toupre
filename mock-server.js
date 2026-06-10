@@ -223,6 +223,9 @@ function json(res, data, status = 200) {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type,Authorization",
     "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    // Sans Max-Age le navigateur re-préflight chaque requête (cache par défaut : 5s),
+    // ce qui double le trafic visible sur les endpoints pollés
+    "Access-Control-Max-Age": "600",
   });
   res.end(JSON.stringify(data));
 }

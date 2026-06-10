@@ -4,7 +4,70 @@ import { Platform } from "react-native";
 // Sur web : utilise window.Notification + service worker pour push background
 // Sur natif : utiliserait expo-notifications
 
+// ── Poller centralisé /api/notifications ──
+// État au niveau module : une seule boucle setInterval pour toute l'app,
+// quel que soit le nombre de composants qui montent startPolling/stopPolling.
+const POLL_INTERVAL_MS = 8000;
+let pollTimer: ReturnType<typeof setInterval> | null = null;
+let pollRefs = 0;
+let pollToken: string | null = null;
+let pollBackendUrl = "";
+const pollSeen = new Set<string>();
+let pollInitialized = false;
+
+async function pollOnce() {
+  const token = pollToken;
+  if (!token) return;
+  try {
+    const r = await fetch(`${pollBackendUrl}/api/notifications`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!r.ok) return;
+    const items = await r.json();
+    if (pollToken !== token) return; // stoppé ou token changé pendant le fetch
+
+    // Première initialisation : on note ce qu'on a déjà vu sans rien afficher
+    if (!pollInitialized) {
+      for (const n of items) pollSeen.add(n.id);
+      pollInitialized = true;
+      return;
+    }
+
+    // Affiche les nouvelles non-lues
+    for (const n of items) {
+      if (pollSeen.has(n.id)) continue;
+      pollSeen.add(n.id);
+      if (n.read) continue;
+      NotificationsManager.show(n.title, { body: n.body, tag: n.id, data: n.data });
+    }
+  } catch {}
+}
+
 export const NotificationsManager = {
+  // Démarre le poll si pas déjà actif (refcompté : N appels = 1 seule boucle)
+  startPolling(token: string, backendUrl: string) {
+    if (Platform.OS !== "web") return;
+    pollRefs += 1;
+    pollBackendUrl = backendUrl;
+    if (pollToken !== token) {
+      pollToken = token;
+      pollInitialized = false;
+      pollSeen.clear();
+    }
+    if (pollTimer) return;
+    pollOnce();
+    pollTimer = setInterval(pollOnce, POLL_INTERVAL_MS);
+  },
+
+  stopPolling() {
+    if (Platform.OS !== "web") return;
+    pollRefs = Math.max(0, pollRefs - 1);
+    if (pollRefs > 0) return;
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+    pollToken = null;
+  },
+
   isSupported(): boolean {
     if (Platform.OS !== "web") return false;
     if (typeof window === "undefined") return false;
