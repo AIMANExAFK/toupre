@@ -14,7 +14,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#E2674A"
       },
       "edgeToEdgeEnabled": true
     },
@@ -42,6 +42,8 @@
       "typedRoutes": true
     },
     "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#FFF8F3"
     },
     "primaryColor": "#E2674A"
