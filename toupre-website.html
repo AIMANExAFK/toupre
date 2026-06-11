@@ -3,28 +3,28 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>LocaShare — Louez tout. Gagnez plus.</title>
+<title>Toupré — Tout se loue, tout près.</title>
 <meta name="description" content="La plateforme française de location entre particuliers. Voitures, vélos, outils, tech et bien plus — entre voisins, en toute confiance."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════
    RESET & BASE
 ══════════════════════════════════════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --primary:#7C3AED;
-  --primary-light:#A78BFA;
-  --primary-dark:#5B21B6;
-  --secondary:#FF6B6B;
-  --accent:#6366F1;
-  --bg:#09090F;
-  --bg2:#0F0F1A;
+  --primary:#E2674A;
+  --primary-light:#F08A6C;
+  --primary-dark:#C04A2E;
+  --secondary:#FF8E53;
+  --accent:#C04A2E;
+  --bg:#1A1411;
+  --bg2:#241B16;
   --surface:rgba(255,255,255,0.04);
   --surface-hover:rgba(255,255,255,0.07);
   --border:rgba(255,255,255,0.08);
-  --border-hover:rgba(124,58,237,0.4);
+  --border-hover:rgba(226,103,74,0.4);
   --text:#FAFAFA;
   --text-2:#A1A1AA;
   --text-3:#52525B;
@@ -34,8 +34,9 @@
   --radius-xl:32px;
 }
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.hero-title,.section-title,.download-title,.nav-logo,.auth-logo-name{font-family:'Fredoka','Nunito',sans-serif;font-weight:600}
 body{
-  font-family:'Inter',system-ui,sans-serif;
+  font-family:'Nunito',system-ui,sans-serif;
   background:var(--bg);
   color:var(--text);
   overflow-x:hidden;
@@ -54,8 +55,8 @@ button{cursor:pointer;border:none;font-family:inherit}
   display:inline-flex;align-items:center;gap:8px;
   font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
   color:var(--primary-light);
-  background:rgba(124,58,237,0.12);
-  border:1px solid rgba(124,58,237,0.25);
+  background:rgba(226,103,74,0.12);
+  border:1px solid rgba(226,103,74,0.25);
   padding:6px 14px;border-radius:999px;
   margin-bottom:20px;
 }
@@ -68,7 +69,7 @@ button{cursor:pointer;border:none;font-family:inherit}
   font-size:17px;color:var(--text-2);max-width:560px;line-height:1.7;
 }
 .gradient-text{
-  background:linear-gradient(135deg,var(--primary-light),var(--accent),#C084FC);
+  background:linear-gradient(135deg,var(--primary-light),var(--accent),#FFB39C);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
@@ -84,7 +85,7 @@ button{cursor:pointer;border:none;font-family:inherit}
   border-color:var(--border-hover);
 }
 .glow{
-  box-shadow:0 0 40px rgba(124,58,237,0.25),0 0 80px rgba(124,58,237,0.1);
+  box-shadow:0 0 40px rgba(226,103,74,0.25),0 0 80px rgba(226,103,74,0.1);
 }
 
 /* ══════════════════════════════════════════
@@ -101,7 +102,7 @@ body::before{
    AMBIENT ORBS
 ══════════════════════════════════════════ */
 .orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(80px);z-index:0}
-.orb-1{width:500px;height:500px;background:rgba(124,58,237,0.15);top:-150px;right:-100px;animation:float1 18s ease-in-out infinite}
+.orb-1{width:500px;height:500px;background:rgba(226,103,74,0.15);top:-150px;right:-100px;animation:float1 18s ease-in-out infinite}
 .orb-2{width:400px;height:400px;background:rgba(99,102,241,0.1);bottom:-100px;left:-80px;animation:float2 22s ease-in-out infinite}
 .orb-3{width:300px;height:300px;background:rgba(255,107,107,0.08);top:50%;left:50%;animation:float3 15s ease-in-out infinite}
 @keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,30px)}}
@@ -136,7 +137,7 @@ nav.scrolled{
   background:linear-gradient(135deg,var(--primary),var(--accent));
   display:flex;align-items:center;justify-content:center;
   font-size:16px;font-weight:900;color:#fff;
-  box-shadow:0 4px 16px rgba(124,58,237,0.5);
+  box-shadow:0 4px 16px rgba(226,103,74,0.5);
 }
 .nav-links{
   display:flex;align-items:center;gap:8px;
@@ -156,10 +157,10 @@ nav.scrolled{
   padding:9px 22px;border-radius:10px;
   background:linear-gradient(135deg,var(--primary),var(--accent));
   color:#fff;
-  box-shadow:0 4px 20px rgba(124,58,237,0.4);
+  box-shadow:0 4px 20px rgba(226,103,74,0.4);
   transition:all .25s;
 }
-.btn-nav:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(124,58,237,0.5)}
+.btn-nav:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(226,103,74,0.5)}
 .btn-nav:active{transform:translateY(0)}
 .hamburger{
   display:none;flex-direction:column;gap:5px;
@@ -188,8 +189,8 @@ nav.scrolled{
 }
 .hero-badge{
   display:inline-flex;align-items:center;gap:8px;
-  background:rgba(124,58,237,0.12);
-  border:1px solid rgba(124,58,237,0.3);
+  background:rgba(226,103,74,0.12);
+  border:1px solid rgba(226,103,74,0.3);
   padding:6px 14px 6px 8px;
   border-radius:999px;
   font-size:13px;font-weight:600;color:var(--primary-light);
@@ -217,10 +218,10 @@ nav.scrolled{
   padding:15px 32px;border-radius:14px;
   background:linear-gradient(135deg,var(--primary),var(--accent));
   color:#fff;
-  box-shadow:0 8px 32px rgba(124,58,237,0.45);
+  box-shadow:0 8px 32px rgba(226,103,74,0.45);
   transition:all .25s;
 }
-.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(124,58,237,0.55)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(226,103,74,0.55)}
 .btn-primary:active{transform:translateY(0)}
 .btn-ghost{
   display:inline-flex;align-items:center;gap:10px;
@@ -343,7 +344,7 @@ nav.scrolled{
 @keyframes chipFloat2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
 @keyframes chipFloat3{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 .chip-icon{font-size:16px;margin-right:6px}
-.chip-green{color:#34D399}
+.chip-green{color:#6FCDBA}
 .chip-yellow{color:#FBBF24}
 
 /* Stats row */
@@ -388,7 +389,7 @@ nav.scrolled{
 .step-card::before{
   content:'';
   position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 0%,rgba(124,58,237,0.1),transparent 70%);
+  background:radial-gradient(ellipse at 50% 0%,rgba(226,103,74,0.1),transparent 70%);
   opacity:0;transition:opacity .3s;
 }
 .step-card:hover::before{opacity:1}
@@ -399,7 +400,7 @@ nav.scrolled{
   display:flex;align-items:center;justify-content:center;
   font-size:20px;font-weight:900;color:#fff;
   margin:0 auto 24px;
-  box-shadow:0 8px 24px rgba(124,58,237,0.4);
+  box-shadow:0 8px 24px rgba(226,103,74,0.4);
 }
 .step-title{font-size:18px;font-weight:700;margin-bottom:10px;letter-spacing:-0.3px}
 .step-desc{font-size:14px;color:var(--text-2);line-height:1.7}
@@ -425,11 +426,11 @@ nav.scrolled{
 .cat-card::after{
   content:'';
   position:absolute;inset:0;
-  background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(99,102,241,0.05));
+  background:linear-gradient(135deg,rgba(226,103,74,0.15),rgba(99,102,241,0.05));
   opacity:0;transition:opacity .3s;
   border-radius:var(--radius-lg);
 }
-.cat-card:hover{transform:translateY(-6px);border-color:rgba(124,58,237,0.4)}
+.cat-card:hover{transform:translateY(-6px);border-color:rgba(226,103,74,0.4)}
 .cat-card:hover::after{opacity:1}
 .cat-emoji{
   font-size:38px;margin-bottom:14px;
@@ -465,19 +466,19 @@ nav.scrolled{
   font-size:26px;margin-bottom:24px;
   position:relative;z-index:1;
 }
-.feature-icon.violet{background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.3)}
+.feature-icon.violet{background:rgba(226,103,74,0.2);border:1px solid rgba(226,103,74,0.3)}
 .feature-icon.coral{background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.25)}
 .feature-icon.indigo{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.25)}
-.feature-icon.green{background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.25)}
+.feature-icon.green{background:rgba(52,211,153,0.15);border:1px solid rgba(111,205,186,0.25)}
 .feature-title{font-size:20px;font-weight:800;letter-spacing:-0.4px;margin-bottom:10px;position:relative;z-index:1}
 .feature-desc{font-size:14px;color:var(--text-2);line-height:1.75;position:relative;z-index:1}
 .feature-tag{
   display:inline-block;margin-top:20px;
   font-size:12px;font-weight:700;
   padding:5px 14px;border-radius:999px;
-  background:rgba(124,58,237,0.15);
+  background:rgba(226,103,74,0.15);
   color:var(--primary-light);
-  border:1px solid rgba(124,58,237,0.25);
+  border:1px solid rgba(226,103,74,0.25);
   position:relative;z-index:1;
 }
 .feature-card.big .feature-inner{
@@ -497,7 +498,7 @@ nav.scrolled{
   border:1px solid var(--border);
   transition:all .25s;
 }
-.review-item:hover{border-color:rgba(124,58,237,0.3)}
+.review-item:hover{border-color:rgba(226,103,74,0.3)}
 .review-avatar{
   width:40px;height:40px;border-radius:50%;
   background:linear-gradient(135deg,var(--primary),var(--secondary));
@@ -523,12 +524,12 @@ nav.scrolled{
   position:relative;overflow:hidden;
   transition:all .3s;
 }
-.testi-card:hover{transform:translateY(-4px);border-color:rgba(124,58,237,0.35)}
+.testi-card:hover{transform:translateY(-4px);border-color:rgba(226,103,74,0.35)}
 .testi-card::before{
   content:'❝';
   position:absolute;top:20px;right:24px;
   font-size:60px;line-height:1;
-  color:rgba(124,58,237,0.12);
+  color:rgba(226,103,74,0.12);
   font-family:Georgia,serif;
 }
 .testi-stars{color:#FBBF24;font-size:14px;margin-bottom:18px;letter-spacing:2px}
@@ -542,7 +543,7 @@ nav.scrolled{
   background:linear-gradient(135deg,var(--primary),var(--accent));
   display:flex;align-items:center;justify-content:center;
   font-size:17px;font-weight:800;color:#fff;
-  box-shadow:0 4px 14px rgba(124,58,237,0.3);
+  box-shadow:0 4px 14px rgba(226,103,74,0.3);
 }
 .testi-name{font-size:14px;font-weight:700}
 .testi-role{font-size:12px;color:var(--text-2)}
@@ -550,7 +551,7 @@ nav.scrolled{
   font-size:11px;font-weight:600;
   padding:3px 10px;border-radius:999px;
   background:rgba(52,211,153,0.15);
-  color:#34D399;border:1px solid rgba(52,211,153,0.25);
+  color:#6FCDBA;border:1px solid rgba(111,205,186,0.25);
   margin-top:4px;display:inline-block;
 }
 
@@ -563,14 +564,14 @@ nav.scrolled{
   padding:80px;
   text-align:center;
   position:relative;overflow:hidden;
-  background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(99,102,241,0.08));
-  border:1px solid rgba(124,58,237,0.25);
+  background:linear-gradient(135deg,rgba(226,103,74,0.15),rgba(99,102,241,0.08));
+  border:1px solid rgba(226,103,74,0.25);
 }
 .download-wrap::before{
   content:'';position:absolute;
   top:-100px;left:50%;transform:translateX(-50%);
   width:400px;height:400px;
-  background:radial-gradient(circle,rgba(124,58,237,0.25),transparent 70%);
+  background:radial-gradient(circle,rgba(226,103,74,0.25),transparent 70%);
   pointer-events:none;
 }
 .download-title{
@@ -642,8 +643,8 @@ nav.scrolled{
   transition:all .3s;color:var(--text-2);
 }
 .faq-item.open .faq-icon{
-  background:rgba(124,58,237,0.15);
-  border-color:rgba(124,58,237,0.3);
+  background:rgba(226,103,74,0.15);
+  border-color:rgba(226,103,74,0.3);
   color:var(--primary-light);
   transform:rotate(45deg);
 }
@@ -676,7 +677,7 @@ footer{
   display:flex;align-items:center;justify-content:center;
   font-size:16px;transition:all .2s;
 }
-.social-btn:hover{background:rgba(124,58,237,0.15);border-color:rgba(124,58,237,0.35)}
+.social-btn:hover{background:rgba(226,103,74,0.15);border-color:rgba(226,103,74,0.35)}
 .footer-col h4{font-size:13px;font-weight:700;letter-spacing:0.5px;color:var(--text);margin-bottom:18px;text-transform:uppercase}
 .footer-col ul{list-style:none}
 .footer-col ul li{margin-bottom:10px}
@@ -748,7 +749,7 @@ footer{
   max-height:90vh;border-radius:24px;overflow:hidden;
   background:#0f0f19;
   border:1px solid rgba(255,255,255,0.09);
-  box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(124,58,237,0.12);
+  box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(226,103,74,0.12);
   transform:translateY(20px) scale(0.97);
   transition:transform .35s cubic-bezier(.34,1.56,.64,1);
   margin:0 16px;
@@ -777,10 +778,10 @@ footer{
 .auth-logo-row{display:flex;align-items:center;gap:10px}
 .auth-logo-mark{
   width:34px;height:34px;border-radius:10px;
-  background:linear-gradient(135deg,#7C3AED,#6366F1);
+  background:linear-gradient(135deg,#E2674A,#C04A2E);
   display:flex;align-items:center;justify-content:center;
   font-size:17px;font-weight:900;color:#fff;
-  box-shadow:0 4px 16px rgba(124,58,237,0.5);
+  box-shadow:0 4px 16px rgba(226,103,74,0.5);
 }
 .auth-logo-name{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.4px}
 .auth-quote{
@@ -826,7 +827,7 @@ footer{
   border:1px solid rgba(255,255,255,0.1);
   color:#e4e4e7;font-size:14px;font-weight:600;
   cursor:pointer;transition:all .2s;margin-bottom:10px;
-  font-family:'Inter',sans-serif;
+  font-family:'Nunito',sans-serif;
 }
 .auth-oauth-btn:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18)}
 .auth-oauth-btn:disabled{opacity:.5;cursor:not-allowed}
@@ -855,13 +856,13 @@ footer{
   background:rgba(255,255,255,0.04);
   border:1px solid rgba(255,255,255,0.1);
   border-radius:12px;color:#fff;font-size:14px;
-  font-family:'Inter',sans-serif;
+  font-family:'Nunito',sans-serif;
   transition:border-color .2s,background .2s;
   outline:none;
 }
 .auth-input:focus{
-  border-color:rgba(124,58,237,0.6);
-  background:rgba(124,58,237,0.06);
+  border-color:rgba(226,103,74,0.6);
+  background:rgba(226,103,74,0.06);
 }
 .auth-input::placeholder{color:var(--text-3)}
 
@@ -878,13 +879,13 @@ footer{
 /* Submit */
 .auth-submit{
   width:100%;padding:14px;border-radius:12px;
-  background:linear-gradient(135deg,#7C3AED,#6366F1);
+  background:linear-gradient(135deg,#E2674A,#C04A2E);
   color:#fff;font-size:15px;font-weight:700;
   cursor:pointer;transition:all .25s;margin-bottom:18px;
-  font-family:'Inter',sans-serif;
-  box-shadow:0 8px 24px rgba(124,58,237,0.4);
+  font-family:'Nunito',sans-serif;
+  box-shadow:0 8px 24px rgba(226,103,74,0.4);
 }
-.auth-submit:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(124,58,237,0.55)}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(226,103,74,0.55)}
 .auth-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
 
 /* Footer toggle */
@@ -914,8 +915,8 @@ footer{
 <nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <div class="logo-mark">L</div>
-      LocaShare
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+      toupré
     </a>
     <ul class="nav-links">
       <li><a href="#how">Comment ça marche</a></li>
@@ -943,11 +944,11 @@ footer{
           Bêta ouverte — Rejoins-nous
         </div>
         <h1 class="hero-title">
-          Louez tout.<br>
-          <span class="gradient-text">Gagnez plus.</span>
+          Tout se loue,<br>
+          <span class="gradient-text">tout près.</span>
         </h1>
         <p class="hero-sub">
-          La plateforme française qui connecte voisins et particuliers pour louer ce qui prend la poussière — voitures, vélos, outils, tech et bien plus.
+          La plateforme française pour louer entre particuliers ce qui prend la poussière — voitures, vélos, outils, tech. Contact vérifié, 0 € de frais d'app, paiement en espèces à la remise.
         </p>
         <div class="hero-actions">
           <a href="#download" class="btn-primary">
@@ -961,8 +962,8 @@ footer{
           <div class="trust-avatars">
             <div class="trust-avatar">A</div>
             <div class="trust-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">S</div>
-            <div class="trust-avatar" style="background:linear-gradient(135deg,#34D399,#10B981)">T</div>
-            <div class="trust-avatar" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)">M</div>
+            <div class="trust-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">T</div>
+            <div class="trust-avatar" style="background:linear-gradient(135deg,#F08A6C,#E2674A)">M</div>
           </div>
           <p class="trust-text"><strong>+2 400</strong> utilisateurs en liste d'attente</p>
         </div>
@@ -977,7 +978,7 @@ footer{
           </div>
           <div>
             <div class="stat-num">0€</div>
-            <div class="stat-label">Inscription gratuite</div>
+            <div class="stat-label">Frais d'application</div>
           </div>
         </div>
       </div>
@@ -992,7 +993,7 @@ footer{
                   <div class="phone-title">Explorer</div>
                   <div class="phone-subtitle">Bonjour 👋</div>
                 </div>
-                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#7C3AED,#6366F1);display:flex;align-items:center;justify-content:center;font-size:14px">A</div>
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#E2674A,#C04A2E);display:flex;align-items:center;justify-content:center;font-size:14px">A</div>
               </div>
               <div class="phone-search">
                 <span>🔍</span> Voiture, vélo, outil…
@@ -1157,7 +1158,7 @@ footer{
               </div>
             </div>
             <div class="review-item">
-              <div class="review-avatar" style="background:linear-gradient(135deg,#34D399,#10B981)">M</div>
+              <div class="review-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">M</div>
               <div>
                 <div class="review-name">Marie L.</div>
                 <div class="review-text">"Tente impeccable, comme neuve. Merci !"</div>
@@ -1189,12 +1190,12 @@ footer{
     <div style="text-align:center">
       <span class="section-label reveal">✦ Témoignages</span>
       <h2 class="section-title reveal">Ils nous font confiance</h2>
-      <p class="section-sub reveal" style="margin:0 auto">Des milliers d'utilisateurs louent et proposent chaque semaine sur LocaShare.</p>
+      <p class="section-sub reveal" style="margin:0 auto">Des milliers d'utilisateurs louent et proposent chaque semaine sur Toupré.</p>
     </div>
     <div class="testi-grid">
       <div class="testi-card glass reveal">
         <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"J'ai mis ma perceuse sur LocaShare et j'encaisse 120€ par mois sans rien faire. L'app est ultra simple, le paiement arrivé le lendemain."</p>
+        <p class="testi-text">"J'ai mis ma perceuse sur Toupré et j'encaisse 120€ par mois sans rien faire. L'app est ultra simple, le paiement arrivé le lendemain."</p>
         <div class="testi-author">
           <div class="testi-avatar">A</div>
           <div>
@@ -1204,7 +1205,7 @@ footer{
           </div>
         </div>
       </div>
-      <div class="testi-card glass reveal" style="transition-delay:.1s;border-color:rgba(124,58,237,0.3)">
+      <div class="testi-card glass reveal" style="transition-delay:.1s;border-color:rgba(226,103,74,0.3)">
         <div class="testi-stars">★★★★★</div>
         <p class="testi-text">"Louer une voiture pour le week-end à 55€ au lieu de 200€ chez un loueur classique… et le propriétaire habitait à 200m de chez moi. Incroyable."</p>
         <div class="testi-author">
@@ -1218,9 +1219,9 @@ footer{
       </div>
       <div class="testi-card glass reveal" style="transition-delay:.2s">
         <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"On fait nos rénovations avec des outils loués sur LocaShare. On a économisé plus de 800€ en évitant l'achat de matériel qu'on n'utiliserait qu'une fois."</p>
+        <p class="testi-text">"On fait nos rénovations avec des outils loués sur Toupré. On a économisé plus de 800€ en évitant l'achat de matériel qu'on n'utiliserait qu'une fois."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,#34D399,#10B981)">J</div>
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">J</div>
           <div>
             <div class="testi-name">Julien & Emma K.</div>
             <div class="testi-role">Locataires · Bordeaux</div>
@@ -1240,7 +1241,7 @@ footer{
       <h2 class="download-title">
         Prêt à <span class="gradient-text">louer et gagner</span> ?
       </h2>
-      <p class="download-sub">Télécharge LocaShare gratuitement et rejoins des milliers de particuliers qui réinventent la consommation.</p>
+      <p class="download-sub">Télécharge Toupré gratuitement et rejoins des milliers de particuliers qui réinventent la consommation.</p>
       <div class="store-btns">
         <div class="store-btn">
           <span class="store-icon">🍎</span>
@@ -1275,10 +1276,10 @@ footer{
     <div class="faq-wrap">
       <div class="faq-item reveal">
         <button class="faq-q" onclick="toggleFaq(this)">
-          C'est gratuit de s'inscrire sur LocaShare ?
+          C'est gratuit de s'inscrire sur Toupré ?
           <span class="faq-icon">+</span>
         </button>
-        <div class="faq-a"><p>Oui, l'inscription est totalement gratuite. LocaShare prélève une commission de 10% uniquement sur les transactions réalisées, côté locataire. Publier une annonce et recevoir des revenus ne coûte rien.</p></div>
+        <div class="faq-a"><p>Oui, l'inscription est totalement gratuite. Toupré prélève une commission de 10% uniquement sur les transactions réalisées, côté locataire. Publier une annonce et recevoir des revenus ne coûte rien.</p></div>
       </div>
       <div class="faq-item reveal">
         <button class="faq-q" onclick="toggleFaq(this)">
@@ -1292,11 +1293,11 @@ footer{
           Que se passe-t-il si l'objet est endommagé ?
           <span class="faq-icon">+</span>
         </button>
-        <div class="faq-a"><p>Chaque location est couverte par notre garantie. En cas de dommage constaté et signalé dans les 48h suivant la location, LocaShare prend en charge la médiation et le remboursement selon les conditions de la plateforme.</p></div>
+        <div class="faq-a"><p>Chaque location est couverte par notre garantie. En cas de dommage constaté et signalé dans les 48h suivant la location, Toupré prend en charge la médiation et le remboursement selon les conditions de la plateforme.</p></div>
       </div>
       <div class="faq-item reveal">
         <button class="faq-q" onclick="toggleFaq(this)">
-          Quels objets peut-on louer sur LocaShare ?
+          Quels objets peut-on louer sur Toupré ?
           <span class="faq-icon">+</span>
         </button>
         <div class="faq-a"><p>Voitures, vélos (électriques ou non), outils de bricolage, matériel tech (drones, appareils photo, ordinateurs), équipement de camping et bien d'autres objets du quotidien. Les armes, substances illicites et objets dangereux sont bien sûr interdits.</p></div>
@@ -1306,7 +1307,7 @@ footer{
           L'app est disponible en dehors de Paris ?
           <span class="faq-icon">+</span>
         </button>
-        <div class="faq-a"><p>LocaShare est disponible dans toute la France métropolitaine. Nous avons des annonces dans plus de 40 villes. La carte intégrée te permet de trouver des objets disponibles autour de toi, où que tu sois.</p></div>
+        <div class="faq-a"><p>Toupré est disponible dans toute la France métropolitaine. Nous avons des annonces dans plus de 40 villes. La carte intégrée te permet de trouver des objets disponibles autour de toi, où que tu sois.</p></div>
       </div>
     </div>
   </div>
@@ -1319,7 +1320,7 @@ footer{
       <div>
         <div class="footer-brand">
           <div class="logo-mark">L</div>
-          <span style="font-size:18px;font-weight:800">LocaShare</span>
+          <span style="font-size:18px;font-weight:800">Toupré</span>
         </div>
         <p class="footer-desc">La plateforme française de location entre particuliers. Louez ce dont vous avez besoin, rentabilisez ce que vous possédez.</p>
         <div class="footer-socials">
@@ -1358,7 +1359,7 @@ footer{
       </div>
     </div>
     <div class="footer-bottom">
-      <span>© 2025 LocaShare SAS — Tous droits réservés · Paris, France 🇫🇷</span>
+      <span>© 2025 Toupré SAS — Tous droits réservés · Paris, France 🇫🇷</span>
       <div class="footer-legal">
         <a href="confidentialite.html">Confidentialité</a>
         <a href="cgu.html">CGU</a>
@@ -1375,27 +1376,27 @@ footer{
     <!-- Left decorative panel -->
     <div class="auth-left">
       <svg class="fl-svg" viewBox="0 0 696 316" fill="none" aria-hidden="true">
-        <path class="fl-p" d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875" stroke="rgba(124,58,237,0.7)" stroke-width="0.3" style="animation-duration:18s;animation-delay:0s"/>
-        <path class="fl-p" d="M-360 -171C-360 -171 -292 234 172 361C636 488 704 893 704 893" stroke="rgba(124,58,237,0.65)" stroke-width="0.35" style="animation-duration:19s;animation-delay:-1.2s"/>
+        <path class="fl-p" d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875" stroke="rgba(226,103,74,0.7)" stroke-width="0.3" style="animation-duration:18s;animation-delay:0s"/>
+        <path class="fl-p" d="M-360 -171C-360 -171 -292 234 172 361C636 488 704 893 704 893" stroke="rgba(226,103,74,0.65)" stroke-width="0.35" style="animation-duration:19s;animation-delay:-1.2s"/>
         <path class="fl-p" d="M-340 -153C-340 -153 -272 252 192 379C656 506 724 911 724 911" stroke="rgba(99,102,241,0.6)" stroke-width="0.4" style="animation-duration:20s;animation-delay:-2.4s"/>
-        <path class="fl-p" d="M-320 -135C-320 -135 -252 270 212 397C676 524 744 929 744 929" stroke="rgba(124,58,237,0.55)" stroke-width="0.45" style="animation-duration:21s;animation-delay:-3.6s"/>
+        <path class="fl-p" d="M-320 -135C-320 -135 -252 270 212 397C676 524 744 929 744 929" stroke="rgba(226,103,74,0.55)" stroke-width="0.45" style="animation-duration:21s;animation-delay:-3.6s"/>
         <path class="fl-p" d="M-300 -117C-300 -117 -232 288 232 415C696 542 764 947 764 947" stroke="rgba(99,102,241,0.5)" stroke-width="0.5" style="animation-duration:22s;animation-delay:-4.8s"/>
-        <path class="fl-p" d="M-280 -99C-280 -99 -212 306 252 433C716 560 784 965 784 965" stroke="rgba(124,58,237,0.45)" stroke-width="0.55" style="animation-duration:19.5s;animation-delay:-6s"/>
+        <path class="fl-p" d="M-280 -99C-280 -99 -212 306 252 433C716 560 784 965 784 965" stroke="rgba(226,103,74,0.45)" stroke-width="0.55" style="animation-duration:19.5s;animation-delay:-6s"/>
         <path class="fl-p" d="M-260 -81C-260 -81 -192 324 272 451C736 578 804 983 804 983" stroke="rgba(192,132,252,0.4)" stroke-width="0.6" style="animation-duration:23s;animation-delay:-7.2s"/>
-        <path class="fl-p" d="M-240 -63C-240 -63 -172 342 292 469C756 596 824 1001 824 1001" stroke="rgba(124,58,237,0.35)" stroke-width="0.65" style="animation-duration:24s;animation-delay:-8.4s"/>
+        <path class="fl-p" d="M-240 -63C-240 -63 -172 342 292 469C756 596 824 1001 824 1001" stroke="rgba(226,103,74,0.35)" stroke-width="0.65" style="animation-duration:24s;animation-delay:-8.4s"/>
         <path class="fl-p" d="M-220 -45C-220 -45 -152 360 312 487C776 614 844 1019 844 1019" stroke="rgba(99,102,241,0.3)" stroke-width="0.7" style="animation-duration:20.5s;animation-delay:-9.6s"/>
-        <path class="fl-p" d="M-200 -27C-200 -27 -132 378 332 505C796 632 864 1037 864 1037" stroke="rgba(124,58,237,0.28)" stroke-width="0.75" style="animation-duration:21.5s;animation-delay:-10.8s"/>
+        <path class="fl-p" d="M-200 -27C-200 -27 -132 378 332 505C796 632 864 1037 864 1037" stroke="rgba(226,103,74,0.28)" stroke-width="0.75" style="animation-duration:21.5s;animation-delay:-10.8s"/>
         <path class="fl-p" d="M-180 -9C-180 -9 -112 396 352 523C816 650 884 1055 884 1055" stroke="rgba(192,132,252,0.25)" stroke-width="0.8" style="animation-duration:25s;animation-delay:-12s"/>
-        <path class="fl-p" d="M-160 9C-160 9 -92 414 372 541C836 668 904 1073 904 1073" stroke="rgba(124,58,237,0.22)" stroke-width="0.85" style="animation-duration:22.5s;animation-delay:-13.2s"/>
+        <path class="fl-p" d="M-160 9C-160 9 -92 414 372 541C836 668 904 1073 904 1073" stroke="rgba(226,103,74,0.22)" stroke-width="0.85" style="animation-duration:22.5s;animation-delay:-13.2s"/>
       </svg>
       <div class="auth-left-top">
         <div class="auth-logo-row">
-          <div class="auth-logo-mark">L</div>
-          <span class="auth-logo-name">LocaShare</span>
+          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+          <span class="auth-logo-name">toupré</span>
         </div>
       </div>
       <div class="auth-left-bottom">
-        <p class="auth-quote" id="auth-quote">"LocaShare m'a permis de louer ma voiture en quelques minutes. Un service incroyable !"</p>
+        <p class="auth-quote" id="auth-quote">"Toupré m'a permis de louer ma voiture en quelques minutes. Un service incroyable !"</p>
         <p class="auth-quote-author" id="auth-quote-author">~ Sophie M.</p>
       </div>
     </div>
@@ -1407,11 +1408,11 @@ footer{
       <!-- Logo (mobile only) -->
       <div class="auth-logo-mobile">
         <div class="auth-logo-mark">L</div>
-        <span class="auth-logo-name" style="color:#fff">LocaShare</span>
+        <span class="auth-logo-name" style="color:#fff">Toupré</span>
       </div>
 
       <h2 class="auth-title" id="auth-title">Bon retour 👋</h2>
-      <p class="auth-sub" id="auth-sub">Connectez-vous ou créez votre compte LocaShare</p>
+      <p class="auth-sub" id="auth-sub">Connectez-vous ou créez votre compte Toupré</p>
 
       <!-- Google OAuth -->
       <button class="auth-oauth-btn" onclick="authGoogle()" id="btn-google">
@@ -1543,7 +1544,7 @@ async function getSB() {
 let authMode = 'login'; // 'login' | 'register'
 
 const QUOTES = {
-  login:    { text: '"LocaShare m\'a permis de louer ma voiture en quelques minutes. Un service incroyable !"', author: '~ Sophie M.' },
+  login:    { text: '"Toupré m\'a permis de louer ma voiture en quelques minutes. Un service incroyable !"', author: '~ Sophie M.' },
   register: { text: '"J\'ai mis ma perceuse en location le jour même. Simple, rapide et rentable !"', author: '~ Thomas B.' },
 };
 
@@ -1571,7 +1572,7 @@ function setAuthMode(mode) {
   authMode = mode;
   const isReg = mode === 'register';
   document.getElementById('auth-title').textContent    = isReg ? 'Créer un compte ✨' : 'Bon retour 👋';
-  document.getElementById('auth-sub').textContent      = isReg ? 'Rejoignez la communauté LocaShare' : 'Connectez-vous ou créez votre compte LocaShare';
+  document.getElementById('auth-sub').textContent      = isReg ? 'Rejoignez la communauté Toupré' : 'Connectez-vous ou créez votre compte Toupré';
   document.getElementById('auth-helper').textContent   = isReg ? 'Créez votre compte avec email et mot de passe' : 'Entrez votre email pour vous connecter';
   document.getElementById('auth-name-wrap').style.display = isReg ? 'block' : 'none';
   document.getElementById('auth-submit').textContent   = isReg ? 'Créer mon compte' : 'Continuer avec l\'email';
@@ -1673,9 +1674,9 @@ function showAuthSuccess(isNewUser) {
   const toast = document.createElement('div');
   toast.style.cssText = `
     position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
-    background:linear-gradient(135deg,#7C3AED,#6366F1);
+    background:linear-gradient(135deg,#E2674A,#C04A2E);
     color:#fff;padding:14px 24px;border-radius:14px;font-weight:600;font-size:14px;
-    box-shadow:0 8px 32px rgba(124,58,237,0.5);z-index:2000;
+    box-shadow:0 8px 32px rgba(226,103,74,0.5);z-index:2000;
     transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;
   `;
   toast.textContent = isNewUser ? '🎉 Compte créé avec succès !' : '✅ Connexion réussie !';
