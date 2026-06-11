@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Toupré — Tout se loue, tout près.</title>
+<meta name="description" content="La plateforme française de location entre particuliers. Voitures, vélos, outils, tech et bien plus — entre voisins, en toute confiance."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+/* ══════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#E2674A;
+  --primary-light:#F08A6C;
+  --primary-dark:#C04A2E;
+  --secondary:#FF8E53;
+  --accent:#C04A2E;
+  --bg:#1A1411;
+  --bg2:#241B16;
+  --surface:rgba(255,255,255,0.04);
+  --surface-hover:rgba(255,255,255,0.07);
+  --border:rgba(255,255,255,0.08);
+  --border-hover:rgba(226,103,74,0.4);
+  --text:#FAFAFA;
+  --text-2:#A1A1AA;
+  --text-3:#52525B;
+  --radius:16px;
+  --radius-sm:10px;
+  --radius-lg:24px;
+  --radius-xl:32px;
+}
+html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.hero-title,.section-title,.download-title,.nav-logo,.auth-logo-name{font-family:'Fredoka','Nunito',sans-serif;font-weight:600}
+body{
+  font-family:'Nunito',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  overflow-x:hidden;
+  line-height:1.6;
+}
+img{max-width:100%;display:block}
+a{text-decoration:none;color:inherit}
+button{cursor:pointer;border:none;font-family:inherit}
+
+/* ══════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════ */
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.section{padding:100px 0}
+.section-label{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--primary-light);
+  background:rgba(226,103,74,0.12);
+  border:1px solid rgba(226,103,74,0.25);
+  padding:6px 14px;border-radius:999px;
+  margin-bottom:20px;
+}
+.section-title{
+  font-size:clamp(32px,5vw,52px);
+  font-weight:800;letter-spacing:-1.5px;line-height:1.1;
+  color:var(--text);margin-bottom:18px;
+}
+.section-sub{
+  font-size:17px;color:var(--text-2);max-width:560px;line-height:1.7;
+}
+.gradient-text{
+  background:linear-gradient(135deg,var(--primary-light),var(--accent),#FFB39C);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.glass{
+  background:var(--surface);
+  border:1px solid var(--border);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  transition:all .3s ease;
+}
+.glass:hover{
+  background:var(--surface-hover);
+  border-color:var(--border-hover);
+}
+.glow{
+  box-shadow:0 0 40px rgba(226,103,74,0.25),0 0 80px rgba(226,103,74,0.1);
+}
+
+/* ══════════════════════════════════════════
+   NOISE OVERLAY
+══════════════════════════════════════════ */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.4;
+}
+
+/* ══════════════════════════════════════════
+   AMBIENT ORBS
+══════════════════════════════════════════ */
+.orb{position:fixed;border-radius:50%;pointer-events:none;filter:blur(80px);z-index:0}
+.orb-1{width:500px;height:500px;background:rgba(226,103,74,0.15);top:-150px;right:-100px;animation:float1 18s ease-in-out infinite}
+.orb-2{width:400px;height:400px;background:rgba(99,102,241,0.1);bottom:-100px;left:-80px;animation:float2 22s ease-in-out infinite}
+.orb-3{width:300px;height:300px;background:rgba(255,107,107,0.08);top:50%;left:50%;animation:float3 15s ease-in-out infinite}
+@keyframes float1{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,30px)}}
+@keyframes float2{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-40px)}}
+@keyframes float3{0%,100%{transform:translate(-50%,-50%)}50%{transform:translate(-52%,-48%)}}
+
+/* ══════════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  padding:0 24px;
+  transition:all .4s ease;
+}
+nav.scrolled{
+  background:rgba(9,9,15,0.85);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:1100px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:68px;
+}
+.nav-logo{
+  display:flex;align-items:center;gap:10px;
+  font-size:20px;font-weight:800;letter-spacing:-0.5px;
+}
+.logo-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:#fff;
+  box-shadow:0 4px 16px rgba(226,103,74,0.5);
+}
+.nav-links{
+  display:flex;align-items:center;gap:8px;
+  list-style:none;
+}
+.nav-links a{
+  font-size:14px;font-weight:500;color:var(--text-2);
+  padding:8px 16px;border-radius:8px;
+  transition:all .2s;
+}
+.nav-links a:hover{color:var(--text);background:var(--surface)}
+.nav-cta{
+  display:flex;align-items:center;gap:12px;
+}
+.btn-nav{
+  font-size:14px;font-weight:600;
+  padding:9px 22px;border-radius:10px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  box-shadow:0 4px 20px rgba(226,103,74,0.4);
+  transition:all .25s;
+}
+.btn-nav:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(226,103,74,0.5)}
+.btn-nav:active{transform:translateY(0)}
+.hamburger{
+  display:none;flex-direction:column;gap:5px;
+  background:none;padding:4px;
+}
+.hamburger span{
+  display:block;width:22px;height:2px;
+  background:var(--text-2);border-radius:2px;
+  transition:all .3s;
+}
+
+/* ══════════════════════════════════════════
+   HERO
+══════════════════════════════════════════ */
+#hero{
+  position:relative;z-index:1;
+  min-height:100vh;
+  display:flex;align-items:center;
+  padding:120px 0 80px;
+  overflow:hidden;
+}
+.hero-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:60px;align-items:center;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(226,103,74,0.12);
+  border:1px solid rgba(226,103,74,0.3);
+  padding:6px 14px 6px 8px;
+  border-radius:999px;
+  font-size:13px;font-weight:600;color:var(--primary-light);
+  margin-bottom:28px;
+}
+.hero-badge-dot{
+  width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;
+}
+.hero-title{
+  font-size:clamp(44px,6vw,72px);
+  font-weight:900;letter-spacing:-2.5px;line-height:1.0;
+  margin-bottom:24px;
+}
+.hero-sub{
+  font-size:18px;color:var(--text-2);line-height:1.7;
+  max-width:480px;margin-bottom:40px;
+}
+.hero-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:16px;font-weight:700;
+  padding:15px 32px;border-radius:14px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  color:#fff;
+  box-shadow:0 8px 32px rgba(226,103,74,0.45);
+  transition:all .25s;
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(226,103,74,0.55)}
+.btn-primary:active{transform:translateY(0)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:16px;font-weight:600;
+  padding:15px 28px;border-radius:14px;
+  color:var(--text-2);
+  border:1px solid var(--border);
+  background:var(--surface);
+  backdrop-filter:blur(10px);
+  transition:all .25s;
+}
+.btn-ghost:hover{color:var(--text);border-color:var(--border-hover);background:var(--surface-hover)}
+.hero-trust{
+  display:flex;align-items:center;gap:16px;
+  margin-top:36px;
+}
+.trust-avatars{display:flex}
+.trust-avatar{
+  width:32px;height:32px;border-radius:50%;
+  border:2px solid var(--bg);
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  margin-left:-8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;
+}
+.trust-avatar:first-child{margin-left:0}
+.trust-text{font-size:13px;color:var(--text-2)}
+.trust-text strong{color:var(--text)}
+
+/* Hero visual */
+.hero-visual{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;
+}
+.phone-mockup{
+  width:260px;height:540px;
+  background:linear-gradient(145deg,#1a1a2e,#16213e);
+  border-radius:44px;
+  border:2px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 40px 80px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+  position:relative;overflow:hidden;
+  animation:phoneFloat 6s ease-in-out infinite;
+}
+@keyframes phoneFloat{
+  0%,100%{transform:translateY(0) rotate(-2deg)}
+  50%{transform:translateY(-16px) rotate(-2deg)}
+}
+.phone-screen{
+  position:absolute;inset:12px;
+  border-radius:34px;overflow:hidden;
+  background:linear-gradient(180deg,#0F0F1A 0%,#1a1032 100%);
+}
+.phone-island{
+  position:absolute;top:14px;left:50%;transform:translateX(-50%);
+  width:100px;height:28px;background:#000;border-radius:16px;z-index:10;
+}
+.phone-content{padding:60px 16px 20px;height:100%}
+.phone-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.phone-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.phone-subtitle{font-size:11px;color:var(--text-2)}
+.phone-search{
+  background:rgba(255,255,255,0.06);
+  border-radius:12px;padding:10px 14px;
+  font-size:12px;color:var(--text-3);
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:16px;
+}
+.phone-cats{display:flex;gap:8px;margin-bottom:16px;overflow:hidden}
+.phone-cat{
+  flex-shrink:0;
+  font-size:10px;font-weight:700;
+  padding:6px 12px;border-radius:999px;
+  white-space:nowrap;
+}
+.phone-cat.active{background:var(--primary);color:#fff}
+.phone-cat:not(.active){background:rgba(255,255,255,0.06);color:var(--text-2)}
+.phone-card{
+  background:rgba(255,255,255,0.05);
+  border-radius:16px;overflow:hidden;
+  margin-bottom:10px;
+}
+.phone-card-img{
+  height:100px;width:100%;
+  background:linear-gradient(135deg,#2d1b69,#4c1d95);
+  display:flex;align-items:center;justify-content:center;
+  font-size:36px;
+  position:relative;overflow:hidden;
+}
+.phone-card-img::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:40px;
+  background:linear-gradient(transparent,rgba(0,0,0,0.5));
+}
+.phone-card-price{
+  position:absolute;bottom:8px;right:10px;
+  font-size:13px;font-weight:800;color:#fff;z-index:1;
+}
+.phone-card-body{padding:10px 12px}
+.phone-card-title{font-size:12px;font-weight:700;margin-bottom:3px}
+.phone-card-loc{font-size:10px;color:var(--text-2)}
+
+/* Floating chips */
+.float-chip{
+  position:absolute;
+  background:rgba(9,9,15,0.9);
+  border:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  border-radius:14px;
+  padding:12px 16px;
+  font-size:12px;font-weight:600;
+  white-space:nowrap;
+  box-shadow:0 20px 40px rgba(0,0,0,0.4);
+}
+.chip-1{top:60px;right:-60px;animation:chipFloat1 8s ease-in-out infinite}
+.chip-2{bottom:80px;left:-80px;animation:chipFloat2 10s ease-in-out infinite}
+.chip-3{bottom:200px;right:-50px;animation:chipFloat3 7s ease-in-out infinite}
+@keyframes chipFloat1{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes chipFloat2{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+@keyframes chipFloat3{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.chip-icon{font-size:16px;margin-right:6px}
+.chip-green{color:#6FCDBA}
+.chip-yellow{color:#FBBF24}
+
+/* Stats row */
+.hero-stats{
+  display:flex;gap:32px;
+  margin-top:52px;padding-top:44px;
+  border-top:1px solid var(--border);
+}
+.stat-num{
+  font-size:30px;font-weight:900;letter-spacing:-1px;
+  background:linear-gradient(135deg,#fff,var(--primary-light));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.stat-label{font-size:13px;color:var(--text-2);margin-top:2px}
+
+/* ══════════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════════ */
+#how{position:relative;z-index:1}
+.steps-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+  margin-top:60px;
+  position:relative;
+}
+.steps-grid::before{
+  content:'';
+  position:absolute;top:44px;left:calc(16.66% + 24px);right:calc(16.66% + 24px);
+  height:1px;
+  background:linear-gradient(90deg,var(--primary),var(--accent),var(--primary));
+  opacity:0.3;
+}
+.step-card{
+  border-radius:var(--radius-lg);
+  padding:36px 28px;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+  transition:all .3s;
+}
+.step-card::before{
+  content:'';
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 0%,rgba(226,103,74,0.1),transparent 70%);
+  opacity:0;transition:opacity .3s;
+}
+.step-card:hover::before{opacity:1}
+.step-card:hover{transform:translateY(-4px)}
+.step-num{
+  width:52px;height:52px;border-radius:16px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:900;color:#fff;
+  margin:0 auto 24px;
+  box-shadow:0 8px 24px rgba(226,103,74,0.4);
+}
+.step-title{font-size:18px;font-weight:700;margin-bottom:10px;letter-spacing:-0.3px}
+.step-desc{font-size:14px;color:var(--text-2);line-height:1.7}
+
+/* ══════════════════════════════════════════
+   CATEGORIES
+══════════════════════════════════════════ */
+#categories{position:relative;z-index:1}
+.cats-grid{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:16px;
+  margin-top:56px;
+}
+.cat-card{
+  border-radius:var(--radius-lg);
+  padding:28px 16px;
+  text-align:center;
+  cursor:pointer;
+  transition:all .3s;
+  position:relative;overflow:hidden;
+}
+.cat-card::after{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(226,103,74,0.15),rgba(99,102,241,0.05));
+  opacity:0;transition:opacity .3s;
+  border-radius:var(--radius-lg);
+}
+.cat-card:hover{transform:translateY(-6px);border-color:rgba(226,103,74,0.4)}
+.cat-card:hover::after{opacity:1}
+.cat-emoji{
+  font-size:38px;margin-bottom:14px;
+  display:block;
+  filter:drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+  transition:transform .3s;
+}
+.cat-card:hover .cat-emoji{transform:scale(1.15)}
+.cat-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.cat-count{font-size:11px;color:var(--text-2)}
+
+/* ══════════════════════════════════════════
+   FEATURES
+══════════════════════════════════════════ */
+#features{position:relative;z-index:1}
+.features-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:24px;
+  margin-top:60px;
+}
+.feature-card{
+  border-radius:var(--radius-xl);
+  padding:40px;
+  position:relative;overflow:hidden;
+  transition:all .3s;
+}
+.feature-card.big{grid-column:span 2}
+.feature-card:hover{transform:translateY(-4px)}
+.feature-icon{
+  width:56px;height:56px;border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;margin-bottom:24px;
+  position:relative;z-index:1;
+}
+.feature-icon.violet{background:rgba(226,103,74,0.2);border:1px solid rgba(226,103,74,0.3)}
+.feature-icon.coral{background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.25)}
+.feature-icon.indigo{background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.25)}
+.feature-icon.green{background:rgba(52,211,153,0.15);border:1px solid rgba(111,205,186,0.25)}
+.feature-title{font-size:20px;font-weight:800;letter-spacing:-0.4px;margin-bottom:10px;position:relative;z-index:1}
+.feature-desc{font-size:14px;color:var(--text-2);line-height:1.75;position:relative;z-index:1}
+.feature-tag{
+  display:inline-block;margin-top:20px;
+  font-size:12px;font-weight:700;
+  padding:5px 14px;border-radius:999px;
+  background:rgba(226,103,74,0.15);
+  color:var(--primary-light);
+  border:1px solid rgba(226,103,74,0.25);
+  position:relative;z-index:1;
+}
+.feature-card.big .feature-inner{
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:40px;align-items:center;
+}
+.feature-card.big .feature-visual{
+  background:rgba(255,255,255,0.03);
+  border-radius:var(--radius-lg);
+  padding:24px;
+  border:1px solid var(--border);
+}
+.review-item{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:16px;background:rgba(255,255,255,0.04);
+  border-radius:var(--radius);margin-bottom:12px;
+  border:1px solid var(--border);
+  transition:all .25s;
+}
+.review-item:hover{border-color:rgba(226,103,74,0.3)}
+.review-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--secondary));
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.review-name{font-size:13px;font-weight:700}
+.review-text{font-size:12px;color:var(--text-2);margin-top:2px}
+.review-stars{color:#FBBF24;font-size:11px;margin-top:4px}
+
+/* ══════════════════════════════════════════
+   TESTIMONIALS
+══════════════════════════════════════════ */
+#testimonials{position:relative;z-index:1}
+.testi-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;margin-top:60px;
+}
+.testi-card{
+  border-radius:var(--radius-xl);
+  padding:36px;
+  position:relative;overflow:hidden;
+  transition:all .3s;
+}
+.testi-card:hover{transform:translateY(-4px);border-color:rgba(226,103,74,0.35)}
+.testi-card::before{
+  content:'❝';
+  position:absolute;top:20px;right:24px;
+  font-size:60px;line-height:1;
+  color:rgba(226,103,74,0.12);
+  font-family:Georgia,serif;
+}
+.testi-stars{color:#FBBF24;font-size:14px;margin-bottom:18px;letter-spacing:2px}
+.testi-text{
+  font-size:15px;color:var(--text-2);line-height:1.75;
+  margin-bottom:28px;font-style:italic;
+}
+.testi-author{display:flex;align-items:center;gap:14px}
+.testi-avatar{
+  width:46px;height:46px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:800;color:#fff;
+  box-shadow:0 4px 14px rgba(226,103,74,0.3);
+}
+.testi-name{font-size:14px;font-weight:700}
+.testi-role{font-size:12px;color:var(--text-2)}
+.testi-badge{
+  font-size:11px;font-weight:600;
+  padding:3px 10px;border-radius:999px;
+  background:rgba(52,211,153,0.15);
+  color:#6FCDBA;border:1px solid rgba(111,205,186,0.25);
+  margin-top:4px;display:inline-block;
+}
+
+/* ══════════════════════════════════════════
+   APP DOWNLOAD
+══════════════════════════════════════════ */
+#download{position:relative;z-index:1}
+.download-wrap{
+  border-radius:var(--radius-xl);
+  padding:80px;
+  text-align:center;
+  position:relative;overflow:hidden;
+  background:linear-gradient(135deg,rgba(226,103,74,0.15),rgba(99,102,241,0.08));
+  border:1px solid rgba(226,103,74,0.25);
+}
+.download-wrap::before{
+  content:'';position:absolute;
+  top:-100px;left:50%;transform:translateX(-50%);
+  width:400px;height:400px;
+  background:radial-gradient(circle,rgba(226,103,74,0.25),transparent 70%);
+  pointer-events:none;
+}
+.download-title{
+  font-size:clamp(32px,5vw,52px);
+  font-weight:900;letter-spacing:-1.5px;
+  margin-bottom:18px;position:relative;z-index:1;
+}
+.download-sub{
+  font-size:17px;color:var(--text-2);max-width:500px;
+  margin:0 auto 48px;line-height:1.7;position:relative;z-index:1;
+}
+.store-btns{
+  display:flex;align-items:center;justify-content:center;
+  gap:16px;flex-wrap:wrap;position:relative;z-index:1;
+}
+.store-btn{
+  display:flex;align-items:center;gap:14px;
+  background:rgba(255,255,255,0.08);
+  border:1px solid rgba(255,255,255,0.15);
+  border-radius:16px;padding:14px 28px;
+  backdrop-filter:blur(10px);
+  transition:all .25s;cursor:pointer;
+}
+.store-btn:hover{
+  background:rgba(255,255,255,0.13);
+  border-color:rgba(255,255,255,0.25);
+  transform:translateY(-2px);
+}
+.store-icon{font-size:32px}
+.store-text-top{font-size:11px;color:var(--text-2);font-weight:500}
+.store-text-bottom{font-size:17px;font-weight:800;margin-top:1px}
+.store-soon{
+  margin-top:20px;
+  font-size:13px;color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  position:relative;z-index:1;
+}
+.soon-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:#FBBF24;
+  box-shadow:0 0 8px rgba(251,191,36,0.6);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ══════════════════════════════════════════
+   FAQ
+══════════════════════════════════════════ */
+#faq{position:relative;z-index:1}
+.faq-wrap{max-width:700px;margin:60px auto 0}
+.faq-item{
+  border-bottom:1px solid var(--border);
+  overflow:hidden;
+}
+.faq-q{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:24px 0;
+  font-size:16px;font-weight:600;text-align:left;
+  color:var(--text);background:none;
+  cursor:pointer;transition:color .2s;
+  gap:16px;
+}
+.faq-q:hover{color:var(--primary-light)}
+.faq-icon{
+  width:28px;height:28px;border-radius:8px;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;font-size:16px;
+  transition:all .3s;color:var(--text-2);
+}
+.faq-item.open .faq-icon{
+  background:rgba(226,103,74,0.15);
+  border-color:rgba(226,103,74,0.3);
+  color:var(--primary-light);
+  transform:rotate(45deg);
+}
+.faq-a{
+  max-height:0;overflow:hidden;
+  transition:max-height .4s ease,padding .3s;
+}
+.faq-item.open .faq-a{max-height:200px;padding-bottom:24px}
+.faq-a p{font-size:15px;color:var(--text-2);line-height:1.75}
+
+/* ══════════════════════════════════════════
+   FOOTER
+══════════════════════════════════════════ */
+footer{
+  position:relative;z-index:1;
+  border-top:1px solid var(--border);
+  padding:64px 0 32px;
+}
+.footer-grid{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:48px;margin-bottom:56px;
+}
+.footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.footer-desc{font-size:14px;color:var(--text-2);line-height:1.7;max-width:280px;margin-bottom:24px}
+.footer-socials{display:flex;gap:10px}
+.social-btn{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--surface);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;transition:all .2s;
+}
+.social-btn:hover{background:rgba(226,103,74,0.15);border-color:rgba(226,103,74,0.35)}
+.footer-col h4{font-size:13px;font-weight:700;letter-spacing:0.5px;color:var(--text);margin-bottom:18px;text-transform:uppercase}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:10px}
+.footer-col ul a{font-size:14px;color:var(--text-2);transition:color .2s}
+.footer-col ul a:hover{color:var(--primary-light)}
+.footer-bottom{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:32px;border-top:1px solid var(--border);
+  font-size:13px;color:var(--text-3);flex-wrap:wrap;gap:12px;
+}
+.footer-legal{display:flex;gap:24px}
+.footer-legal a{color:var(--text-3);transition:color .2s}
+.footer-legal a:hover{color:var(--text-2)}
+
+/* ══════════════════════════════════════════
+   ANIMATIONS
+══════════════════════════════════════════ */
+.reveal{
+  opacity:0;transform:translateY(28px);
+  transition:opacity .7s ease,transform .7s ease;
+}
+.reveal.visible{opacity:1;transform:translateY(0)}
+
+/* ══════════════════════════════════════════
+   RESPONSIVE
+══════════════════════════════════════════ */
+@media(max-width:1024px){
+  .cats-grid{grid-template-columns:repeat(3,1fr)}
+  .hero-grid{grid-template-columns:1fr;text-align:center}
+  .hero-sub{margin:0 auto 40px}
+  .hero-actions{justify-content:center}
+  .hero-trust{justify-content:center}
+  .hero-stats{justify-content:center}
+  .hero-visual{display:none}
+  .features-grid{grid-template-columns:1fr}
+  .feature-card.big{grid-column:span 1}
+  .feature-card.big .feature-inner{grid-template-columns:1fr}
+  .testi-grid{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .section{padding:70px 0}
+  .steps-grid{grid-template-columns:1fr;gap:16px}
+  .steps-grid::before{display:none}
+  .cats-grid{grid-template-columns:repeat(2,1fr)}
+  .download-wrap{padding:48px 28px}
+  .footer-grid{grid-template-columns:1fr}
+  .footer-bottom{flex-direction:column;text-align:center}
+  .nav-links,.nav-cta{display:none}
+  .hamburger{display:flex}
+  .hero-stats{flex-wrap:wrap;gap:24px}
+}
+
+/* ══════════════════════════════════════════
+   AUTH MODAL
+══════════════════════════════════════════ */
+.auth-overlay{
+  position:fixed;inset:0;z-index:1000;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.7);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  opacity:0;visibility:hidden;
+  transition:opacity .3s ease,visibility .3s ease;
+}
+.auth-overlay.open{opacity:1;visibility:visible}
+.auth-box{
+  display:flex;width:100%;max-width:860px;
+  max-height:90vh;border-radius:24px;overflow:hidden;
+  background:#0f0f19;
+  border:1px solid rgba(255,255,255,0.09);
+  box-shadow:0 32px 80px rgba(0,0,0,0.7),0 0 0 1px rgba(226,103,74,0.12);
+  transform:translateY(20px) scale(0.97);
+  transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+  margin:0 16px;
+}
+.auth-overlay.open .auth-box{transform:translateY(0) scale(1)}
+
+/* Left panel */
+.auth-left{
+  width:380px;flex-shrink:0;
+  background:#07070c;
+  border-right:1px solid rgba(255,255,255,0.06);
+  display:flex;flex-direction:column;
+  justify-content:space-between;
+  padding:40px;position:relative;overflow:hidden;
+}
+.auth-left svg.fl-svg{
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+}
+@keyframes fl-draw{
+  0%  {stroke-dashoffset:1500;opacity:.1}
+  50% {opacity:.4}
+  100%{stroke-dashoffset:-1500;opacity:.1}
+}
+.fl-p{stroke-dasharray:400 600;animation:fl-draw linear infinite}
+.auth-left-top,.auth-left-bottom{position:relative;z-index:1}
+.auth-logo-row{display:flex;align-items:center;gap:10px}
+.auth-logo-mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,#E2674A,#C04A2E);
+  display:flex;align-items:center;justify-content:center;
+  font-size:17px;font-weight:900;color:#fff;
+  box-shadow:0 4px 16px rgba(226,103,74,0.5);
+}
+.auth-logo-name{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.4px}
+.auth-quote{
+  font-size:17px;color:rgba(255,255,255,0.88);
+  line-height:1.65;font-weight:500;font-style:italic;
+  margin-bottom:14px;
+}
+.auth-quote-author{
+  font-size:12px;color:rgba(255,255,255,0.38);
+  font-family:'JetBrains Mono',monospace;font-weight:600;
+}
+
+/* Right panel */
+.auth-right{
+  flex:1;padding:40px;overflow-y:auto;
+  position:relative;
+  scrollbar-width:none;
+}
+.auth-right::-webkit-scrollbar{display:none}
+.auth-close{
+  position:absolute;top:18px;right:18px;
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.1);
+  color:rgba(255,255,255,0.55);
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;
+}
+.auth-close:hover{background:rgba(255,255,255,0.1);color:#fff}
+.auth-logo-mobile{
+  display:none;align-items:center;gap:10px;margin-bottom:24px;
+}
+.auth-title{
+  font-size:24px;font-weight:800;letter-spacing:-.6px;color:#fff;margin-bottom:6px;
+}
+.auth-sub{font-size:14px;color:var(--text-2);margin-bottom:24px;line-height:1.5}
+
+/* OAuth buttons */
+.auth-oauth-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:13px 16px;border-radius:12px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  color:#e4e4e7;font-size:14px;font-weight:600;
+  cursor:pointer;transition:all .2s;margin-bottom:10px;
+  font-family:'Nunito',sans-serif;
+}
+.auth-oauth-btn:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.18)}
+.auth-oauth-btn:disabled{opacity:.5;cursor:not-allowed}
+.auth-oauth-btn svg{flex-shrink:0}
+
+/* Separator */
+.auth-sep{
+  display:flex;align-items:center;gap:10px;
+  margin:18px 0;
+}
+.auth-sep hr{flex:1;border:none;border-top:1px solid rgba(255,255,255,0.08)}
+.auth-sep span{font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.5px}
+
+/* Inputs */
+.auth-helper{font-size:12px;color:var(--text-3);margin-bottom:10px}
+.auth-input-wrap{
+  position:relative;margin-bottom:10px;
+}
+.auth-input-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  color:var(--text-3);pointer-events:none;font-size:16px;
+  display:flex;align-items:center;
+}
+.auth-input{
+  width:100%;padding:13px 14px 13px 44px;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);
+  border-radius:12px;color:#fff;font-size:14px;
+  font-family:'Nunito',sans-serif;
+  transition:border-color .2s,background .2s;
+  outline:none;
+}
+.auth-input:focus{
+  border-color:rgba(226,103,74,0.6);
+  background:rgba(226,103,74,0.06);
+}
+.auth-input::placeholder{color:var(--text-3)}
+
+/* Error */
+.auth-error{
+  display:none;align-items:center;gap:8px;
+  padding:11px 14px;border-radius:10px;
+  background:rgba(239,68,68,0.12);
+  border:1px solid rgba(239,68,68,0.25);
+  color:#fca5a5;font-size:13px;margin-bottom:12px;
+}
+.auth-error.show{display:flex}
+
+/* Submit */
+.auth-submit{
+  width:100%;padding:14px;border-radius:12px;
+  background:linear-gradient(135deg,#E2674A,#C04A2E);
+  color:#fff;font-size:15px;font-weight:700;
+  cursor:pointer;transition:all .25s;margin-bottom:18px;
+  font-family:'Nunito',sans-serif;
+  box-shadow:0 8px 24px rgba(226,103,74,0.4);
+}
+.auth-submit:hover{transform:translateY(-1px);box-shadow:0 12px 32px rgba(226,103,74,0.55)}
+.auth-submit:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* Footer toggle */
+.auth-toggle{
+  text-align:center;font-size:13px;color:var(--text-2);margin-bottom:18px;
+}
+.auth-toggle a{color:var(--primary-light);font-weight:700;cursor:pointer}
+.auth-toggle a:hover{text-decoration:underline}
+.auth-tos{font-size:11px;color:var(--text-3);text-align:center;line-height:1.6}
+.auth-tos a{color:var(--text-2);text-decoration:underline}
+
+@media(max-width:680px){
+  .auth-left{display:none}
+  .auth-logo-mobile{display:flex}
+  .auth-right{padding:28px 24px}
+}
+</style>
+</head>
+<body>
+
+<!-- Ambient orbs -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<!-- ══════ NAVIGATION ══════ -->
+<nav id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+      toupré
+    </a>
+    <ul class="nav-links">
+      <li><a href="#how">Comment ça marche</a></li>
+      <li><a href="#categories">Catégories</a></li>
+      <li><a href="#features">Fonctionnalités</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <div class="nav-cta">
+      <button onclick="openAuth('login')" style="font-size:14px;font-weight:500;color:var(--text-2);padding:9px 16px;background:none;border:none;cursor:pointer;font-family:inherit">Se connecter</button>
+      <a href="#download" class="btn-nav">Rejoindre la bêta</a>
+    </div>
+    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ══════ HERO ══════ -->
+<section id="hero">
+  <div class="container">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-badge">
+          <span class="hero-badge-dot">✦</span>
+          Bêta ouverte — Rejoins-nous
+        </div>
+        <h1 class="hero-title">
+          Tout se loue,<br>
+          <span class="gradient-text">tout près.</span>
+        </h1>
+        <p class="hero-sub">
+          La plateforme française pour louer entre particuliers ce qui prend la poussière — voitures, vélos, outils, tech. Contact vérifié, 0 € de frais d'app, paiement en espèces à la remise.
+        </p>
+        <div class="hero-actions">
+          <a href="#download" class="btn-primary">
+            <span>📍</span> Rejoindre la bêta
+          </a>
+          <a href="#how" class="btn-ghost">
+            Comment ça marche →
+          </a>
+        </div>
+        <div class="hero-trust">
+          <div class="trust-avatars">
+            <div class="trust-avatar">A</div>
+            <div class="trust-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">S</div>
+            <div class="trust-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">T</div>
+            <div class="trust-avatar" style="background:linear-gradient(135deg,#F08A6C,#E2674A)">M</div>
+          </div>
+          <p class="trust-text"><strong>+2 400</strong> utilisateurs en liste d'attente</p>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-num">850+</div>
+            <div class="stat-label">Annonces actives</div>
+          </div>
+          <div>
+            <div class="stat-num">98%</div>
+            <div class="stat-label">Satisfaction</div>
+          </div>
+          <div>
+            <div class="stat-num">0€</div>
+            <div class="stat-label">Frais d'application</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="phone-island"></div>
+            <div class="phone-content">
+              <div class="phone-header">
+                <div>
+                  <div class="phone-title">Explorer</div>
+                  <div class="phone-subtitle">Bonjour 👋</div>
+                </div>
+                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#E2674A,#C04A2E);display:flex;align-items:center;justify-content:center;font-size:14px">A</div>
+              </div>
+              <div class="phone-search">
+                <span>🔍</span> Voiture, vélo, outil…
+              </div>
+              <div class="phone-cats">
+                <div class="phone-cat active">Tous</div>
+                <div class="phone-cat">🚗 Voitures</div>
+                <div class="phone-cat">🚲 Vélos</div>
+                <div class="phone-cat">🔧 Outils</div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-img" style="background:linear-gradient(135deg,#1e3a5f,#2d5a8e)">
+                  🚗
+                  <div class="phone-card-price">85€/j</div>
+                </div>
+                <div class="phone-card-body">
+                  <div class="phone-card-title">BMW Série 3 2021</div>
+                  <div class="phone-card-loc">📍 Paris 17ème · ⭐ 4.9</div>
+                </div>
+              </div>
+              <div class="phone-card">
+                <div class="phone-card-img" style="background:linear-gradient(135deg,#1a4a2e,#2d7a4a)">
+                  🚲
+                  <div class="phone-card-price">28€/j</div>
+                </div>
+                <div class="phone-card-body">
+                  <div class="phone-card-title">Vélo électrique Cowboy 4</div>
+                  <div class="phone-card-loc">📍 Paris 5ème · ⭐ 5.0</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Floating chips -->
+        <div class="float-chip chip-1">
+          <span class="chip-icon">✅</span><span class="chip-green">Paiement sécurisé</span>
+        </div>
+        <div class="float-chip chip-2">
+          <span class="chip-icon">⭐</span> 4.9 · 28 avis
+        </div>
+        <div class="float-chip chip-3">
+          <span class="chip-icon">💰</span><span class="chip-yellow">+340€ ce mois</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ HOW IT WORKS ══════ -->
+<section id="how" class="section">
+  <div class="container">
+    <div style="text-align:center">
+      <span class="section-label reveal">✦ Processus</span>
+      <h2 class="section-title reveal">Simple comme bonjour</h2>
+      <p class="section-sub reveal" style="margin:0 auto">Trois étapes pour louer ou mettre en location. Pas de paperasse, pas de stress.</p>
+    </div>
+    <div class="steps-grid">
+      <div class="step-card glass reveal">
+        <div class="step-num">1</div>
+        <h3 class="step-title">Publie ton annonce</h3>
+        <p class="step-desc">Prends quelques photos, fixe ton prix et décris ton objet en 2 minutes. Gratuit et sans commission à l'inscription.</p>
+      </div>
+      <div class="step-card glass reveal" style="transition-delay:.1s">
+        <div class="step-num">2</div>
+        <h3 class="step-title">Accepte la réservation</h3>
+        <p class="step-desc">Reçois une demande, vérifie le profil du locataire et confirme. Le paiement est sécurisé et garanti dès la confirmation.</p>
+      </div>
+      <div class="step-card glass reveal" style="transition-delay:.2s">
+        <div class="step-num">3</div>
+        <h3 class="step-title">Encaisse et profite</h3>
+        <p class="step-desc">L'argent est viré directement sur ton compte après la location. Suis tes revenus en temps réel depuis l'app.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ CATEGORIES ══════ -->
+<section id="categories" class="section" style="padding-top:0">
+  <div class="container">
+    <div style="text-align:center">
+      <span class="section-label reveal">✦ Catalogue</span>
+      <h2 class="section-title reveal">Louez (presque) tout</h2>
+      <p class="section-sub reveal" style="margin:0 auto">Des centaines d'objets disponibles autour de toi, dans 6 catégories.</p>
+    </div>
+    <div class="cats-grid">
+      <div class="cat-card glass reveal">
+        <span class="cat-emoji">🚗</span>
+        <div class="cat-name">Voitures</div>
+        <div class="cat-count">210+ annonces</div>
+      </div>
+      <div class="cat-card glass reveal" style="transition-delay:.05s">
+        <span class="cat-emoji">🚲</span>
+        <div class="cat-name">Vélos</div>
+        <div class="cat-count">180+ annonces</div>
+      </div>
+      <div class="cat-card glass reveal" style="transition-delay:.1s">
+        <span class="cat-emoji">🔧</span>
+        <div class="cat-name">Outils</div>
+        <div class="cat-count">320+ annonces</div>
+      </div>
+      <div class="cat-card glass reveal" style="transition-delay:.15s">
+        <span class="cat-emoji">💻</span>
+        <div class="cat-name">Tech</div>
+        <div class="cat-count">95+ annonces</div>
+      </div>
+      <div class="cat-card glass reveal" style="transition-delay:.2s">
+        <span class="cat-emoji">⛺</span>
+        <div class="cat-name">Camping</div>
+        <div class="cat-count">140+ annonces</div>
+      </div>
+      <div class="cat-card glass reveal" style="transition-delay:.25s">
+        <span class="cat-emoji">📦</span>
+        <div class="cat-name">Autres</div>
+        <div class="cat-count">500+ annonces</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ FEATURES ══════ -->
+<section id="features" class="section">
+  <div class="container">
+    <span class="section-label reveal">✦ Fonctionnalités</span>
+    <h2 class="section-title reveal">Conçu pour la confiance</h2>
+    <p class="section-sub reveal">Tout ce dont tu as besoin pour louer et proposer en toute sérénité.</p>
+    <div class="features-grid">
+      <div class="feature-card glass reveal">
+        <div class="feature-icon violet">🔒</div>
+        <h3 class="feature-title">Paiement 100% sécurisé</h3>
+        <p class="feature-desc">Chaque transaction est protégée par Stripe. Le paiement est débité à la réservation et versé après la location. Remboursement automatique en cas d'annulation.</p>
+        <span class="feature-tag">Stripe Checkout</span>
+      </div>
+      <div class="feature-card glass reveal" style="transition-delay:.1s">
+        <div class="feature-icon coral">🛡️</div>
+        <h3 class="feature-title">Profils vérifiés</h3>
+        <p class="feature-desc">Chaque utilisateur est vérifié par email. Les évaluations mutuelles après chaque location créent une communauté de confiance entre voisins.</p>
+        <span class="feature-tag">Vérification email</span>
+      </div>
+      <div class="feature-card glass big reveal" style="transition-delay:.15s">
+        <div class="feature-inner">
+          <div>
+            <div class="feature-icon green">⭐</div>
+            <h3 class="feature-title">Avis et notations mutuelles</h3>
+            <p class="feature-desc">Après chaque location, locataire et propriétaire se notent mutuellement. Un historique transparent pour décider en confiance. La réputation de chacun est visible par tous.</p>
+            <span class="feature-tag">Communauté fiable</span>
+          </div>
+          <div class="feature-visual">
+            <div class="review-item">
+              <div class="review-avatar">S</div>
+              <div>
+                <div class="review-name">Sophie M.</div>
+                <div class="review-text">"Vélo en parfait état, Sophie très réactive !"</div>
+                <div class="review-stars">★★★★★</div>
+              </div>
+            </div>
+            <div class="review-item">
+              <div class="review-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">T</div>
+              <div>
+                <div class="review-name">Thomas B.</div>
+                <div class="review-text">"Perceuse nickel, Thomas ponctuel et sympa."</div>
+                <div class="review-stars">★★★★★</div>
+              </div>
+            </div>
+            <div class="review-item">
+              <div class="review-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">M</div>
+              <div>
+                <div class="review-name">Marie L.</div>
+                <div class="review-text">"Tente impeccable, comme neuve. Merci !"</div>
+                <div class="review-stars">★★★★☆</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="feature-card glass reveal" style="transition-delay:.2s">
+        <div class="feature-icon indigo">📍</div>
+        <h3 class="feature-title">Carte interactive</h3>
+        <p class="feature-desc">Trouve des objets disponibles autour de toi sur une carte en temps réel. Filtre par catégorie, prix et disponibilité.</p>
+        <span class="feature-tag">Géolocalisation</span>
+      </div>
+      <div class="feature-card glass reveal" style="transition-delay:.25s">
+        <div class="feature-icon violet">💸</div>
+        <h3 class="feature-title">Revenus passifs</h3>
+        <p class="feature-desc">Tes objets inutilisés te rapportent de l'argent pendant que tu dors. Suivi des revenus en temps réel, virement sous 24h.</p>
+        <span class="feature-tag">Virement rapide</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TESTIMONIALS ══════ -->
+<section id="testimonials" class="section">
+  <div class="container">
+    <div style="text-align:center">
+      <span class="section-label reveal">✦ Témoignages</span>
+      <h2 class="section-title reveal">Ils nous font confiance</h2>
+      <p class="section-sub reveal" style="margin:0 auto">Des milliers d'utilisateurs louent et proposent chaque semaine sur Toupré.</p>
+    </div>
+    <div class="testi-grid">
+      <div class="testi-card glass reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"J'ai mis ma perceuse sur Toupré et j'encaisse 120€ par mois sans rien faire. L'app est ultra simple, le paiement arrivé le lendemain."</p>
+        <div class="testi-author">
+          <div class="testi-avatar">A</div>
+          <div>
+            <div class="testi-name">Alexandre D.</div>
+            <div class="testi-role">Propriétaire · Paris 17ème</div>
+            <span class="testi-badge">Propriétaire vérifié</span>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card glass reveal" style="transition-delay:.1s;border-color:rgba(226,103,74,0.3)">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Louer une voiture pour le week-end à 55€ au lieu de 200€ chez un loueur classique… et le propriétaire habitait à 200m de chez moi. Incroyable."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">C</div>
+          <div>
+            <div class="testi-name">Camille R.</div>
+            <div class="testi-role">Locataire · Lyon</div>
+            <span class="testi-badge">Compte vérifié</span>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card glass reveal" style="transition-delay:.2s">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"On fait nos rénovations avec des outils loués sur Toupré. On a économisé plus de 800€ en évitant l'achat de matériel qu'on n'utiliserait qu'une fois."</p>
+        <div class="testi-author">
+          <div class="testi-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">J</div>
+          <div>
+            <div class="testi-name">Julien & Emma K.</div>
+            <div class="testi-role">Locataires · Bordeaux</div>
+            <span class="testi-badge">Communauté active</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ APP DOWNLOAD ══════ -->
+<section id="download" class="section">
+  <div class="container">
+    <div class="download-wrap reveal">
+      <span class="section-label" style="margin-bottom:24px">✦ Rejoins-nous</span>
+      <h2 class="download-title">
+        Prêt à <span class="gradient-text">louer et gagner</span> ?
+      </h2>
+      <p class="download-sub">L'app arrive ville par ville. Inscris-toi : tu seras prévenu dès l'ouverture près de chez toi — et les premiers inscrits gardent leur badge fondateur.</p>
+      <form id="waitlist-form" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:540px;margin:0 auto 16px">
+        <input type="email" name="email" required placeholder="ton@email.fr" autocomplete="email"
+          style="flex:1;min-width:230px;padding:16px 20px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;font-family:'Nunito',sans-serif;outline:none">
+        <button type="submit" class="btn-primary" style="border:none;cursor:pointer;font-family:'Nunito',sans-serif">Rejoindre la bêta</button>
+      </form>
+      <p id="waitlist-ok" style="display:none;color:#6FCDBA;font-weight:700;margin:0 auto 16px">✓ C'est noté ! Vérifie ta boîte mail pour confirmer ton inscription.</p>
+      <div class="store-soon">
+        <div class="soon-dot"></div>
+        Bêta 2026 · Premiers quartiers : Hauts-de-Seine · 0 % de commission, pour toujours
+      </div>
+      <script>
+      document.getElementById("waitlist-form").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var f = this, btn = f.querySelector("button"), email = f.email.value.trim();
+        btn.disabled = true; btn.textContent = "…";
+        try {
+          var r = await fetch("https://assets.mailerlite.com/jsonp/2289923/forms/189984670897670141/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "fields%5Bemail%5D=" + encodeURIComponent(email) + "&ml-submit=1&anticsrf=true"
+          });
+          var d = await r.json();
+          if (!d || d.success === false) throw new Error("ml");
+          f.style.display = "none";
+          document.getElementById("waitlist-ok").style.display = "block";
+        } catch (err) {
+          window.location.href = "https://preview.mailerlite.io/forms/2289923/189984670897670141/share";
+        }
+      });
+      </script>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ FAQ ══════ -->
+<section id="faq" class="section">
+  <div class="container">
+    <div style="text-align:center">
+      <span class="section-label reveal">✦ FAQ</span>
+      <h2 class="section-title reveal">Questions fréquentes</h2>
+    </div>
+    <div class="faq-wrap">
+      <div class="faq-item reveal">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          C'est gratuit de s'inscrire sur Toupré ?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><p>Oui, l'inscription est totalement gratuite. Toupré prélève une commission de 10% uniquement sur les transactions réalisées, côté locataire. Publier une annonce et recevoir des revenus ne coûte rien.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Comment fonctionne le paiement et la sécurité ?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><p>Tous les paiements sont gérés par Stripe, la référence mondiale. Le paiement est prélevé à la réservation et versé au propriétaire après la location. En cas de litige, notre équipe intervient sous 24h.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Que se passe-t-il si l'objet est endommagé ?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><p>Chaque location est couverte par notre garantie. En cas de dommage constaté et signalé dans les 48h suivant la location, Toupré prend en charge la médiation et le remboursement selon les conditions de la plateforme.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          Quels objets peut-on louer sur Toupré ?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><p>Voitures, vélos (électriques ou non), outils de bricolage, matériel tech (drones, appareils photo, ordinateurs), équipement de camping et bien d'autres objets du quotidien. Les armes, substances illicites et objets dangereux sont bien sûr interdits.</p></div>
+      </div>
+      <div class="faq-item reveal">
+        <button class="faq-q" onclick="toggleFaq(this)">
+          L'app est disponible en dehors de Paris ?
+          <span class="faq-icon">+</span>
+        </button>
+        <div class="faq-a"><p>Toupré est disponible dans toute la France métropolitaine. Nous avons des annonces dans plus de 40 villes. La carte intégrée te permet de trouver des objets disponibles autour de toi, où que tu sois.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ FOOTER ══════ -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <div class="logo-mark">L</div>
+          <span style="font-size:18px;font-weight:800">Toupré</span>
+        </div>
+        <p class="footer-desc">La plateforme française de location entre particuliers. Louez ce dont vous avez besoin, rentabilisez ce que vous possédez.</p>
+        <div class="footer-socials">
+          <a href="#" class="social-btn" aria-label="Instagram">📸</a>
+          <a href="#" class="social-btn" aria-label="Twitter">🐦</a>
+          <a href="#" class="social-btn" aria-label="LinkedIn">💼</a>
+          <a href="#" class="social-btn" aria-label="TikTok">🎵</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Produit</h4>
+        <ul>
+          <li><a href="#">Fonctionnalités</a></li>
+          <li><a href="#">Tarifs</a></li>
+          <li><a href="#">Sécurité</a></li>
+          <li><a href="#">Application</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Ressources</h4>
+        <ul>
+          <li><a href="#">Centre d'aide</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Presse</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Légal</h4>
+        <ul>
+          <li><a href="confidentialite.html">Confidentialité</a></li>
+          <li><a href="cgu.html">CGU</a></li>
+          <li><a href="#">Mentions légales</a></li>
+          <li><a href="#">Cookies</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2025 Toupré SAS — Tous droits réservés · Paris, France 🇫🇷</span>
+      <div class="footer-legal">
+        <a href="confidentialite.html">Confidentialité</a>
+        <a href="cgu.html">CGU</a>
+        <a href="#">Cookies</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ══════ AUTH MODAL ══════ -->
+<div class="auth-overlay" id="auth-modal" role="dialog" aria-modal="true" aria-label="Connexion">
+  <div class="auth-box">
+
+    <!-- Left decorative panel -->
+    <div class="auth-left">
+      <svg class="fl-svg" viewBox="0 0 696 316" fill="none" aria-hidden="true">
+        <path class="fl-p" d="M-380 -189C-380 -189 -312 216 152 343C616 470 684 875 684 875" stroke="rgba(226,103,74,0.7)" stroke-width="0.3" style="animation-duration:18s;animation-delay:0s"/>
+        <path class="fl-p" d="M-360 -171C-360 -171 -292 234 172 361C636 488 704 893 704 893" stroke="rgba(226,103,74,0.65)" stroke-width="0.35" style="animation-duration:19s;animation-delay:-1.2s"/>
+        <path class="fl-p" d="M-340 -153C-340 -153 -272 252 192 379C656 506 724 911 724 911" stroke="rgba(99,102,241,0.6)" stroke-width="0.4" style="animation-duration:20s;animation-delay:-2.4s"/>
+        <path class="fl-p" d="M-320 -135C-320 -135 -252 270 212 397C676 524 744 929 744 929" stroke="rgba(226,103,74,0.55)" stroke-width="0.45" style="animation-duration:21s;animation-delay:-3.6s"/>
+        <path class="fl-p" d="M-300 -117C-300 -117 -232 288 232 415C696 542 764 947 764 947" stroke="rgba(99,102,241,0.5)" stroke-width="0.5" style="animation-duration:22s;animation-delay:-4.8s"/>
+        <path class="fl-p" d="M-280 -99C-280 -99 -212 306 252 433C716 560 784 965 784 965" stroke="rgba(226,103,74,0.45)" stroke-width="0.55" style="animation-duration:19.5s;animation-delay:-6s"/>
+        <path class="fl-p" d="M-260 -81C-260 -81 -192 324 272 451C736 578 804 983 804 983" stroke="rgba(192,132,252,0.4)" stroke-width="0.6" style="animation-duration:23s;animation-delay:-7.2s"/>
+        <path class="fl-p" d="M-240 -63C-240 -63 -172 342 292 469C756 596 824 1001 824 1001" stroke="rgba(226,103,74,0.35)" stroke-width="0.65" style="animation-duration:24s;animation-delay:-8.4s"/>
+        <path class="fl-p" d="M-220 -45C-220 -45 -152 360 312 487C776 614 844 1019 844 1019" stroke="rgba(99,102,241,0.3)" stroke-width="0.7" style="animation-duration:20.5s;animation-delay:-9.6s"/>
+        <path class="fl-p" d="M-200 -27C-200 -27 -132 378 332 505C796 632 864 1037 864 1037" stroke="rgba(226,103,74,0.28)" stroke-width="0.75" style="animation-duration:21.5s;animation-delay:-10.8s"/>
+        <path class="fl-p" d="M-180 -9C-180 -9 -112 396 352 523C816 650 884 1055 884 1055" stroke="rgba(192,132,252,0.25)" stroke-width="0.8" style="animation-duration:25s;animation-delay:-12s"/>
+        <path class="fl-p" d="M-160 9C-160 9 -92 414 372 541C836 668 904 1073 904 1073" stroke="rgba(226,103,74,0.22)" stroke-width="0.85" style="animation-duration:22.5s;animation-delay:-13.2s"/>
+      </svg>
+      <div class="auth-left-top">
+        <div class="auth-logo-row">
+          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+          <span class="auth-logo-name">toupré</span>
+        </div>
+      </div>
+      <div class="auth-left-bottom">
+        <p class="auth-quote" id="auth-quote">"Toupré m'a permis de louer ma voiture en quelques minutes. Un service incroyable !"</p>
+        <p class="auth-quote-author" id="auth-quote-author">~ Sophie M.</p>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="auth-right">
+      <button class="auth-close" onclick="closeAuth()" aria-label="Fermer">✕</button>
+
+      <!-- Logo (mobile only) -->
+      <div class="auth-logo-mobile">
+        <div class="auth-logo-mark">L</div>
+        <span class="auth-logo-name" style="color:#fff">Toupré</span>
+      </div>
+
+      <h2 class="auth-title" id="auth-title">Bon retour 👋</h2>
+      <p class="auth-sub" id="auth-sub">Connectez-vous ou créez votre compte Toupré</p>
+
+      <!-- Google OAuth -->
+      <button class="auth-oauth-btn" onclick="authGoogle()" id="btn-google">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12.479 14.265v-3.279h11.049c.108.571.164 1.247.164 1.979 0 2.46-.672 5.502-2.84 7.669C18.744 22.829 16.051 24 12.483 24 5.869 24 .308 18.613.308 12S5.869 0 12.483 0c3.659 0 6.265 1.436 8.223 3.307L18.392 5.62c-1.404-1.317-3.307-2.341-5.913-2.341C7.65 3.279 3.873 7.171 3.873 12s3.777 8.721 8.606 8.721c3.132 0 4.916-1.258 6.059-2.401.927-.927 1.537-2.251 1.777-4.059L12.479 14.265z"/>
+        </svg>
+        Continuer avec Google
+      </button>
+
+      <!-- Apple OAuth -->
+      <button class="auth-oauth-btn" onclick="authApple()" id="btn-apple">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.4c1.42.07 2.4.75 3.2.8 1.26-.26 2.47-.97 3.8-.84 1.6.17 2.8.77 3.57 1.95-3.28 2-2.7 6.02.36 7.55-.59 1.5-1.34 2.98-2.93 4.42zM12.03 7.25c-.14-2.5 1.97-4.63 4.3-4.82.25 2.6-2.36 4.88-4.3 4.82z"/>
+        </svg>
+        Continuer avec Apple
+      </button>
+
+      <div class="auth-sep">
+        <hr><span>OU</span><hr>
+      </div>
+
+      <p class="auth-helper" id="auth-helper">Entrez votre email pour vous connecter</p>
+
+      <!-- Name (register only) -->
+      <div class="auth-input-wrap" id="auth-name-wrap" style="display:none">
+        <span class="auth-input-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </span>
+        <input class="auth-input" id="auth-name" type="text" placeholder="Votre prénom" autocomplete="given-name"/>
+      </div>
+
+      <!-- Email -->
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 9.5 6L21 7"/></svg>
+        </span>
+        <input class="auth-input" id="auth-email" type="email" placeholder="votre.email@exemple.com" autocomplete="email"/>
+      </div>
+
+      <!-- Password -->
+      <div class="auth-input-wrap">
+        <span class="auth-input-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </span>
+        <input class="auth-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+
+      <!-- Error -->
+      <div class="auth-error" id="auth-error">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm.5 15h-1v-6h1v6zm0-8h-1V7h1v2z"/></svg>
+        <span id="auth-error-text"></span>
+      </div>
+
+      <!-- Submit -->
+      <button class="auth-submit" id="auth-submit" onclick="authSubmit()">
+        Continuer avec l'email
+      </button>
+
+      <!-- Toggle mode -->
+      <p class="auth-toggle" id="auth-toggle">
+        Pas encore de compte ? <a onclick="setAuthMode('register')">S'inscrire</a>
+      </p>
+
+      <p class="auth-tos">
+        En continuant, vous acceptez nos <a href="cgu.html" target="_blank">Conditions d'utilisation</a>
+        et notre <a href="confidentialite.html" target="_blank">Politique de confidentialité</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Navbar scroll
+const navbar = document.getElementById('navbar');
+window.addEventListener('scroll', () => {
+  navbar.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// ── Scroll reveal
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+reveals.forEach(el => io.observe(el));
+
+// ── FAQ accordion
+function toggleFaq(btn) {
+  const item = btn.closest('.faq-item');
+  const isOpen = item.classList.contains('open');
+  document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+  if (!isOpen) item.classList.add('open');
+}
+
+// ── Mobile menu (placeholder)
+function toggleMenu() {
+  // TODO: mobile drawer
+}
+
+// ── Smooth anchor scroll
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// ══════════════════════════════════════════
+//  AUTH MODAL
+// ══════════════════════════════════════════
+
+// ── Supabase (remplacer les valeurs par les vôtres) ──────────
+const SUPABASE_URL      = 'https://VOTRE_PROJECT_REF.supabase.co';
+const SUPABASE_ANON_KEY = 'VOTRE_ANON_KEY';
+
+let _sb = null;
+async function getSB() {
+  if (_sb) return _sb;
+  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+  _sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  return _sb;
+}
+
+// ── State ─────────────────────────────────────────────────────
+let authMode = 'login'; // 'login' | 'register'
+
+const QUOTES = {
+  login:    { text: '"Toupré m\'a permis de louer ma voiture en quelques minutes. Un service incroyable !"', author: '~ Sophie M.' },
+  register: { text: '"J\'ai mis ma perceuse en location le jour même. Simple, rapide et rentable !"', author: '~ Thomas B.' },
+};
+
+// ── Open / close ──────────────────────────────────────────────
+function openAuth(mode = 'login') {
+  setAuthMode(mode);
+  document.getElementById('auth-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('auth-email').focus(), 350);
+}
+function closeAuth() {
+  document.getElementById('auth-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  clearAuthError();
+}
+document.getElementById('auth-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('auth-modal')) closeAuth();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAuth();
+});
+
+// ── Toggle login / register ───────────────────────────────────
+function setAuthMode(mode) {
+  authMode = mode;
+  const isReg = mode === 'register';
+  document.getElementById('auth-title').textContent    = isReg ? 'Créer un compte ✨' : 'Bon retour 👋';
+  document.getElementById('auth-sub').textContent      = isReg ? 'Rejoignez la communauté Toupré' : 'Connectez-vous ou créez votre compte Toupré';
+  document.getElementById('auth-helper').textContent   = isReg ? 'Créez votre compte avec email et mot de passe' : 'Entrez votre email pour vous connecter';
+  document.getElementById('auth-name-wrap').style.display = isReg ? 'block' : 'none';
+  document.getElementById('auth-submit').textContent   = isReg ? 'Créer mon compte' : 'Continuer avec l\'email';
+  document.getElementById('auth-toggle').innerHTML     = isReg
+    ? 'Déjà un compte ? <a onclick="setAuthMode(\'login\')">Se connecter</a>'
+    : 'Pas encore de compte ? <a onclick="setAuthMode(\'register\')">S\'inscrire</a>';
+  const q = QUOTES[mode];
+  document.getElementById('auth-quote').textContent        = q.text;
+  document.getElementById('auth-quote-author').textContent = q.author;
+  if (isReg) document.getElementById('auth-password').setAttribute('autocomplete', 'new-password');
+  else       document.getElementById('auth-password').setAttribute('autocomplete', 'current-password');
+  clearAuthError();
+}
+
+// ── Error helpers ─────────────────────────────────────────────
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  document.getElementById('auth-error-text').textContent = msg;
+  el.classList.add('show');
+}
+function clearAuthError() {
+  document.getElementById('auth-error').classList.remove('show');
+}
+function setLoading(btn, loading) {
+  btn.disabled = loading;
+  if (loading) btn.dataset.orig = btn.textContent;
+  btn.textContent = loading ? '⏳ Chargement…' : (btn.dataset.orig || btn.textContent);
+}
+
+// ── Email / password submit ───────────────────────────────────
+async function authSubmit() {
+  clearAuthError();
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const name     = document.getElementById('auth-name').value.trim();
+  const btn      = document.getElementById('auth-submit');
+
+  if (!email || !password) { showAuthError('Veuillez remplir tous les champs.'); return; }
+  if (authMode === 'register' && !name)            { showAuthError('Entrez votre prénom.'); return; }
+  if (authMode === 'register' && password.length < 6) { showAuthError('Mot de passe : 6 caractères minimum.'); return; }
+
+  setLoading(btn, true);
+  try {
+    const sb = await getSB();
+    if (authMode === 'login') {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } else {
+      const { error } = await sb.auth.signUp({ email, password, options: { data: { name } } });
+      if (error) throw error;
+    }
+    closeAuth();
+    showAuthSuccess(authMode === 'register');
+  } catch (e) {
+    showAuthError(e.message || 'Une erreur est survenue, réessayez.');
+  } finally {
+    setLoading(btn, false);
+  }
+}
+
+// ── Google OAuth ──────────────────────────────────────────────
+async function authGoogle() {
+  clearAuthError();
+  const btn = document.getElementById('btn-google');
+  setLoading(btn, true);
+  try {
+    const sb = await getSB();
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+  } catch (e) {
+    showAuthError(e.message || 'Connexion Google impossible.');
+    setLoading(btn, false);
+  }
+}
+
+// ── Apple OAuth ───────────────────────────────────────────────
+async function authApple() {
+  clearAuthError();
+  const btn = document.getElementById('btn-apple');
+  setLoading(btn, true);
+  try {
+    const sb = await getSB();
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) throw error;
+  } catch (e) {
+    showAuthError(e.message || 'Connexion Apple impossible.');
+    setLoading(btn, false);
+  }
+}
+
+// ── Success toast ─────────────────────────────────────────────
+function showAuthSuccess(isNewUser) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:linear-gradient(135deg,#E2674A,#C04A2E);
+    color:#fff;padding:14px 24px;border-radius:14px;font-weight:600;font-size:14px;
+    box-shadow:0 8px 32px rgba(226,103,74,0.5);z-index:2000;
+    transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;
+  `;
+  toast.textContent = isNewUser ? '🎉 Compte créé avec succès !' : '✅ Connexion réussie !';
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(() => toast.remove(), 400);
+  }, 3500);
+}
+
+// ── Enter key submit ──────────────────────────────────────────
+['auth-email','auth-password','auth-name'].forEach(id => {
+  document.getElementById(id)?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') authSubmit();
+  });
+});
+</script>
+</body>
+</html>

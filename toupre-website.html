@@ -926,7 +926,7 @@ footer{
     </ul>
     <div class="nav-cta">
       <button onclick="openAuth('login')" style="font-size:14px;font-weight:500;color:var(--text-2);padding:9px 16px;background:none;border:none;cursor:pointer;font-family:inherit">Se connecter</button>
-      <a href="#download" class="btn-nav">Télécharger</a>
+      <a href="#download" class="btn-nav">Rejoindre la bêta</a>
     </div>
     <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -952,7 +952,7 @@ footer{
         </p>
         <div class="hero-actions">
           <a href="#download" class="btn-primary">
-            <span>📱</span> Télécharger l'app
+            <span>📍</span> Rejoindre la bêta
           </a>
           <a href="#how" class="btn-ghost">
             Comment ça marche →
@@ -1241,27 +1241,37 @@ footer{
       <h2 class="download-title">
         Prêt à <span class="gradient-text">louer et gagner</span> ?
       </h2>
-      <p class="download-sub">Télécharge Toupré gratuitement et rejoins des milliers de particuliers qui réinventent la consommation.</p>
-      <div class="store-btns">
-        <div class="store-btn">
-          <span class="store-icon">🍎</span>
-          <div>
-            <div class="store-text-top">Disponible sur</div>
-            <div class="store-text-bottom">App Store</div>
-          </div>
-        </div>
-        <div class="store-btn">
-          <span class="store-icon">🤖</span>
-          <div>
-            <div class="store-text-top">Disponible sur</div>
-            <div class="store-text-bottom">Google Play</div>
-          </div>
-        </div>
-      </div>
+      <p class="download-sub">L'app arrive ville par ville. Inscris-toi : tu seras prévenu dès l'ouverture près de chez toi — et les premiers inscrits gardent leur badge fondateur.</p>
+      <form id="waitlist-form" style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:540px;margin:0 auto 16px">
+        <input type="email" name="email" required placeholder="ton@email.fr" autocomplete="email"
+          style="flex:1;min-width:230px;padding:16px 20px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;font-family:'Nunito',sans-serif;outline:none">
+        <button type="submit" class="btn-primary" style="border:none;cursor:pointer;font-family:'Nunito',sans-serif">Rejoindre la bêta</button>
+      </form>
+      <p id="waitlist-ok" style="display:none;color:#6FCDBA;font-weight:700;margin:0 auto 16px">✓ C'est noté ! Vérifie ta boîte mail pour confirmer ton inscription.</p>
       <div class="store-soon">
         <div class="soon-dot"></div>
-        Lancement officiel — Printemps 2025 · Liste d'attente ouverte
+        Bêta 2026 · Premiers quartiers : Hauts-de-Seine · 0 % de commission, pour toujours
       </div>
+      <script>
+      document.getElementById("waitlist-form").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        var f = this, btn = f.querySelector("button"), email = f.email.value.trim();
+        btn.disabled = true; btn.textContent = "…";
+        try {
+          var r = await fetch("https://assets.mailerlite.com/jsonp/2289923/forms/189984670897670141/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: "fields%5Bemail%5D=" + encodeURIComponent(email) + "&ml-submit=1&anticsrf=true"
+          });
+          var d = await r.json();
+          if (!d || d.success === false) throw new Error("ml");
+          f.style.display = "none";
+          document.getElementById("waitlist-ok").style.display = "block";
+        } catch (err) {
+          window.location.href = "https://preview.mailerlite.io/forms/2289923/189984670897670141/share";
+        }
+      });
+      </script>
     </div>
   </div>
 </section>
