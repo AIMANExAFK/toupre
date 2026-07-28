@@ -1,60 +1,79 @@
 # Architecture du lab
 
+Infrastructure montée sur **matériel physique personnel** — postes récupérés et remis en
+service, switch administrable, pare-feu dédié. Le choix du physique plutôt que du tout-virtuel
+est délibéré : câblage réel, commutation réelle, pannes matérielles réelles.
+
+> **À ajuster avant publication** — les lignes marquées d'un `▸` doivent être vérifiées contre
+> votre installation réelle (modèles, quantités, adressage). Le reste de la structure est bon.
+
 ## Principes de conception
 
 1. **Refus par défaut.** Aucun trafic inter-VLAN n'est autorisé tant qu'une règle explicite ne
-   l'ouvre pas. Chaque règle ouverte est justifiée dans le tableau ci-dessous.
-2. **Séparation de l'administration.** L'accès aux interfaces d'administration (Proxmox, pfSense,
-   iDRAC) passe par le VLAN 40, joignable uniquement depuis un poste d'administration dédié.
+   l'ouvre pas. Chaque règle ouverte est justifiée dans le tableau plus bas.
+2. **Séparation de l'administration.** Les interfaces d'administration ne sont joignables que
+   depuis le VLAN de management.
 3. **La DMZ ne remonte jamais.** Un service exposé compromis ne doit pas pouvoir atteindre le
    VLAN serveurs.
-4. **Rien n'est en production sans supervision ni sauvegarde.** Un service ajouté sans sonde
-   Zabbix et sans plan de sauvegarde est considéré comme non déployé.
+4. **Rien n'est en service sans sauvegarde.** Un service ajouté sans plan de sauvegarde est
+   considéré comme non déployé.
+
+## Matériel
+
+▸ *Adapter à votre parc réel.*
+
+| Rôle | Machine | Système | Fonction |
+|---|---|---|---|
+| Pare-feu / routeur | PC dédié, 2 cartes réseau | pfSense | Routage inter-VLAN, NAT, filtrage |
+| Contrôleur de domaine | PC physique | Windows Server 2022 | AD DS, DNS, DHCP |
+| Serveur de services | PC physique | Ubuntu Server | GLPI, services internes |
+| Poste client | PC physique | Windows 11 | Poste de test joint au domaine |
+| Commutation | Switch administrable | — | Étiquetage 802.1Q, VLAN |
+
+Certaines machines virtuelles complémentaires tournent sous **VirtualBox** sur le serveur de
+services, pour les tests qui ne justifient pas une machine dédiée.
 
 ## Plan d'adressage
 
+▸ *Vérifier que ces réseaux correspondent aux vôtres.*
+
 | VLAN | Nom | Réseau | Passerelle | Contenu |
 |---|---|---|---|---|
-| 10 | Serveurs | 10.10.10.0/24 | 10.10.10.1 | AD DS, Wazuh, Zabbix, GLPI |
-| 20 | Postes clients | 10.10.20.0/24 | 10.10.20.1 | Windows 11 joints au domaine |
-| 30 | DMZ | 10.10.30.0/24 | 10.10.30.1 | Service web exposé |
-| 40 | Management | 10.10.40.0/24 | 10.10.40.1 | Proxmox, pfSense, poste d'administration |
-| 99 | Hors-bande | 10.10.99.0/24 | 10.10.99.1 | Accès de secours |
+| 10 | Serveurs | 10.10.10.0/24 | 10.10.10.1 | Contrôleur de domaine, GLPI |
+| 20 | Postes clients | 10.10.20.0/24 | 10.10.20.1 | Postes joints au domaine |
+| 30 | DMZ | 10.10.30.0/24 | 10.10.30.1 | Services exposés |
+| 40 | Management | 10.10.40.0/24 | 10.10.40.1 | pfSense, switch, poste d'administration |
 
-### Réservations
+### Conventions d'adressage
 
 | Plage | Usage |
 |---|---|
 | `.1` | Passerelle (pfSense) |
 | `.10` – `.49` | Serveurs à adresse fixe |
 | `.100` – `.199` | Étendue DHCP |
-| `.200` – `.254` | Réservé — équipements réseau |
+| `.200` – `.254` | Équipements réseau |
+
+## Commutation
+
+Le switch administrable porte les VLAN en 802.1Q. Le lien vers pfSense est un port **tagué**
+transportant tous les VLAN (trunk) ; les ports vers les machines sont **non tagués** et affectés
+au VLAN correspondant (access).
+
+C'est le point qui distingue un lab physique d'un lab virtuel : ici, une erreur de tag sur un
+port se traduit par une machine qui ne voit plus rien, et il faut savoir le diagnostiquer au
+niveau de la couche 2.
 
 ## Matrice de filtrage inter-VLAN
 
-| Source | Destination | Port / protocole | Autorisé | Justification |
+| Source | Destination | Ports | Autorisé | Justification |
 |---|---|---|---|---|
-| VLAN 20 (clients) | VLAN 10 — SRV-DC01 | 53, 88, 135, 389, 445, 464 | Oui | Résolution DNS, authentification Kerberos, partages, jonction au domaine |
-| VLAN 20 | VLAN 10 — SRV-GLPI | 443 | Oui | Portail de tickets |
-| VLAN 20 | VLAN 10 — reste | tout | **Non** | Aucun besoin métier |
-| VLAN 20 | VLAN 40 | tout | **Non** | L'administration n'est pas joignable depuis les postes |
-| VLAN 30 (DMZ) | VLAN 10 | tout | **Non** | Cloisonnement — voir INC-004 |
+| VLAN 20 | Contrôleur de domaine | 53, 88, 135, 389, 445, 464 | Oui | DNS, Kerberos, partages, jonction au domaine |
+| VLAN 20 | GLPI | 443 | Oui | Portail de tickets |
+| VLAN 20 | VLAN 10 (reste) | — | **Non** | Aucun besoin |
+| VLAN 20 | VLAN 40 | — | **Non** | L'administration n'est pas joignable depuis les postes |
+| VLAN 30 | VLAN 10 | — | **Non** | Cloisonnement de la DMZ |
 | VLAN 30 | Internet | 80, 443 sortant | Oui | Mises à jour |
-| VLAN 40 | tous | tout | Oui | Poste d'administration |
-| Tous | VLAN 10 — SRV-WAZUH | 1514, 1515 | Oui | Remontée des agents vers le SIEM |
-
-Toute règle est revue trimestriellement. La revue d'avril a produit l'incident INC-004.
-
-## Inventaire des machines virtuelles
-
-| Nom | OS | vCPU | RAM | Disque | Rôle |
-|---|---|---|---|---|---|
-| SRV-DC01 | Windows Server 2022 | 2 | 4 Go | 60 Go | AD DS, DNS, DHCP |
-| SRV-WAZUH | Debian 12 | 4 | 8 Go | 120 Go | SIEM |
-| SRV-ZABBIX | Debian 12 | 2 | 4 Go | 40 Go | Supervision |
-| SRV-GLPI | Debian 12 | 2 | 4 Go | 40 Go | Inventaire, tickets |
-| SRV-WEB01 | Debian 12 | 1 | 2 Go | 20 Go | Service exposé (DMZ) |
-| CLI-W11-01 | Windows 11 | 2 | 4 Go | 60 Go | Poste de test joint au domaine |
+| VLAN 40 | Tous | — | Oui | Poste d'administration |
 
 ## Structure de l'annuaire
 
@@ -69,27 +88,40 @@ lab.local
 │   └── OU=Groupes
 ```
 
-**Stratégies de groupe appliquées**
+**Stratégies de groupe** ▸ *ne garder que celles réellement en place.*
 
 | GPO | Cible | Effet |
 |---|---|---|
-| `GPO-Mot-de-passe` | Domaine | 12 caractères minimum, complexité activée, historique de 5 |
-| `GPO-Verrouillage-session` | OU=Postes | Verrouillage automatique après 10 minutes d'inactivité |
-| `GPO-Durcissement-poste` | OU=Postes | SMBv1 désactivé, PowerShell journalisé, pare-feu actif |
-| `GPO-Admin-locaux` | OU=Postes | Appartenance au groupe Administrateurs locaux maîtrisée |
+| `GPO-Mot-de-passe` | Domaine | Longueur minimale, complexité, historique |
+| `GPO-Verrouillage-session` | OU=Postes | Verrouillage après inactivité |
+| `GPO-Durcissement-poste` | OU=Postes | SMBv1 désactivé, pare-feu actif |
 
-## Sauvegarde et restauration
+## Services
 
-- **Fréquence** — instantané quotidien des VM via Proxmox Backup Server, conservation 7 jours ;
-  sauvegarde hebdomadaire conservée 4 semaines.
-- **Hors site** — copie chiffrée hebdomadaire vers un disque externe rotatif.
-- **Test de restauration** — une VM restaurée au hasard chaque mois, dans un réseau isolé, avec
-  compte rendu consigné. Une sauvegarde jamais restaurée n'est pas une sauvegarde.
+| Service | Hôte | Rôle |
+|---|---|---|
+| Active Directory (AD DS) | Windows Server | Annuaire, authentification Kerberos |
+| DNS | Windows Server | Résolution de la zone `lab.local` |
+| DHCP | Windows Server | Étendues par VLAN, option 006 (DNS) renseignée |
+| GLPI | Ubuntu Server | Inventaire du parc et gestion des tickets |
+| pfSense | PC dédié | Routage, NAT, filtrage, journalisation |
 
-## Supervision
+## Spécificités du matériel physique
 
-Zabbix surveille pour chaque hôte : disponibilité ICMP, charge processeur, mémoire, remplissage
-des systèmes de fichiers (alerte à 80 %, critique à 90 %), et l'état des services applicatifs
-(AD DS, MariaDB, nginx).
+Ce que le virtuel ne fait pas apprendre, et que ce lab impose :
 
-Alertes remontées par courriel. Le seuil de 80 % sur le stockage est né de l'incident INC-003.
+- **Câblage et étiquetage.** Un câble mal repéré coûte plus de temps qu'une erreur de
+  configuration.
+- **Configuration du switch.** Tags VLAN, ports trunk et access — invisible en tout-virtuel.
+- **Pannes matérielles.** Disque qui lâche, alimentation instable, carte réseau qui négocie mal
+  son débit. Ce sont des incidents que l'on ne rencontre jamais dans un hyperviseur.
+- **Contrainte de ressources.** Chaque service doit être placé sur la machine qui peut le
+  porter, ce qui oblige à arbitrer réellement.
+
+## Sauvegarde
+
+▸ *Décrire ce qui est réellement en place — ne rien annoncer qui n'existe pas.*
+
+- Sauvegarde des données du contrôleur de domaine et de la base GLPI
+- Export de la configuration pfSense après chaque modification
+- Test de restauration périodique — une sauvegarde jamais restaurée n'est pas une sauvegarde

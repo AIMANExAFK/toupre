@@ -1,8 +1,10 @@
-# Homelab — Infrastructure segmentée, supervisée et durcie
+# Homelab — Infrastructure segmentée sur matériel physique
 
-Laboratoire d'administration systèmes et réseaux que j'exploite en continu chez moi.
-Objectif : pratiquer sur une infrastructure réelle — qui tombe, qu'il faut diagnostiquer et
-remettre en service — plutôt que sur des maquettes jetables.
+Laboratoire d'administration systèmes et réseaux monté sur mes propres machines : postes
+récupérés et remis en service, switch administrable, pare-feu sur PC dédié.
+
+Le choix du matériel physique plutôt que du tout-virtuel est délibéré — câblage réel,
+commutation 802.1Q réelle, et des pannes que l'on ne rencontre jamais dans un hyperviseur.
 
 **Aïmane RAMZI** — BTS SIO option SISR · Bachelor 3 Sécurité Informatique (ESGI Paris)
 Recherche une alternance d'administrateur systèmes et réseaux en Île-de-France.
@@ -13,16 +15,14 @@ Recherche une alternance d'administrateur systèmes et réseaux en Île-de-Franc
 
 | | |
 |---|---|
-| **Hyperviseur** | Proxmox VE |
-| **Pare-feu / routeur** | pfSense — inter-VLAN, NAT, règles de filtrage |
+| **Pare-feu / routeur** | pfSense sur PC dédié — routage inter-VLAN, NAT, filtrage |
+| **Commutation** | Switch administrable — VLAN 802.1Q, ports trunk et access |
 | **Annuaire** | Windows Server 2022 — AD DS, DNS, DHCP, GPO |
-| **Services Linux** | Debian 12 — web interne, dépôt, scripts d'exploitation |
-| **Supervision** | Zabbix — hôtes, services, alertes |
-| **SIEM** | Wazuh — collecte de journaux, règles de détection |
-| **Inventaire / tickets** | GLPI |
-| **Sauvegarde** | Proxmox Backup Server + vérification de restauration mensuelle |
+| **Services** | Ubuntu Server — GLPI, services internes |
+| **Poste client** | Windows 11 physique joint au domaine |
+| **Virtualisation d'appoint** | VirtualBox pour les tests ponctuels |
 
-Segmentation en 5 VLAN, plan d'adressage documenté, règles inter-VLAN en refus par défaut.
+Segmentation en VLAN, plan d'adressage documenté, filtrage inter-VLAN en refus par défaut.
 
 ---
 
@@ -58,15 +58,8 @@ Le lab n'a d'intérêt que par ce qui casse. Chaque panne est consignée dans le
 **[journal d'incidents](docs/journal-incidents.md)** : symptôme, diagnostic, cause racine,
 correction, et mesure prise pour éviter la récidive.
 
-Quelques exemples traités :
-
-- Résolution DNS interne cassée après bascule du rôle DHCP — mauvaise option 006 distribuée.
-- Postes clients incapables de rejoindre le domaine — dérive d'horloge supérieure à 5 minutes
-  (tolérance Kerberos).
-- Saturation du stockage Proxmox par les instantanés de sauvegarde — mise en place d'une
-  rétention et d'une alerte Zabbix à 80 %.
-- Règle inter-VLAN trop permissive détectée lors d'une revue — DMZ qui pouvait joindre le VLAN
-  serveurs.
+Chaque fiche suit la même logique : symptôme observé, démarche de diagnostic avec les commandes
+utilisées, cause racine, correction, puis mesure de prévention.
 
 ---
 
