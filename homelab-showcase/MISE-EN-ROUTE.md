@@ -32,26 +32,25 @@ première semaine, retirez-le. Un lab plus modeste mais réel vaut infiniment mi
 architecture décrite qui n'existe pas. Un recruteur qui demande une capture d'écran de votre
 Zabbix ne doit pas vous mettre en difficulté.
 
-### 2. Le journal d'incidents — le point le plus sensible
+### 2. Le journal d'incidents — à relire ligne à ligne
 
-Les quatre incidents (INC-001 à INC-004) sont des **exemples pédagogiques** que j'ai rédigés.
-Ils sont réalistes — ce sont les pannes les plus courantes de ce type de lab, et vous les
-rencontrerez très probablement — mais **ce ne sont pas encore les vôtres**.
+Les trois fiches correspondent bien à des pannes que vous avez rencontrées : jonction au
+domaine impossible, flux bloqué par pfSense, panne matérielle. **Mais les détails techniques
+sont ceux de la cause la plus probable, pas nécessairement ceux que vous avez constatés.**
 
-Deux façons honnêtes de procéder :
+Relisez chaque fiche et corrigez ce qui diffère :
 
-**Option A, recommandée.** Montez le lab, notez vos vraies pannes au fil de l'eau, et remplacez
-les entrées. Vous rencontrerez presque certainement l'oubli de l'option DHCP 006 et la dérive
-d'horloge Kerberos : ce sont des grands classiques. Le jour où ça vous arrive, la fiche devient
-authentique.
+- **INC-001** — la cause retenue est le DNS non distribué par DHCP. Si c'était en réalité la
+  dérive d'horloge Kerberos, la variante est écrite en fin de fiche, il suffit de permuter.
+- **INC-002** — la cause retenue est la règle placée sur la mauvaise interface. Si c'était un
+  problème d'ordre des règles, ajustez le paragraphe « cause racine ».
+- **INC-003** — la fiche décrit une défaillance de disque. Si votre panne concernait
+  l'alimentation ou la carte réseau, les variantes sont indiquées en fin de fiche.
 
-**Option B.** Reproduisez volontairement chaque panne dans le lab pour l'étudier — c'est un
-excellent exercice — et indiquez-le : « incident reproduit volontairement à des fins
-d'apprentissage ». C'est parfaitement valorisable et parfaitement honnête.
-
-**Ce qu'il ne faut pas faire :** publier ces fiches telles quelles en laissant croire que vous
-les avez vécues. Un responsable infra qui vous demande en entretien « racontez-moi l'INC-003 »
-et qui sent le récit vaciller ne retiendra qu'une chose, et il aura raison de la retenir.
+Ce qui compte : **vous devez pouvoir raconter chaque fiche de mémoire en entretien.** C'est la
+question la plus probable qu'on vous posera sur ce dépôt. Si un détail ne vous parle pas,
+c'est qu'il faut le corriger ou le retirer — un récit qui vacille coûte plus cher que
+l'incident lui-même.
 
 ### 3. Les chiffres du README
 
