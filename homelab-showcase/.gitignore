@@ -1,0 +1,19 @@
+# Sorties de scripts — ne jamais versionner
+rapports/
+journaux/
+*.log
+
+# Contient des mots de passe en clair
+*mots-de-passe*
+*.csv
+
+# Secrets et configuration locale
+*.env
+*.key
+*.pem
+inventaire-local.ini
+vault-pass.txt
+
+# Systèmes
+.DS_Store
+Thumbs.db
