@@ -190,7 +190,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return () => listener.subscription.unsubscribe();
     } else {
-      // ── Mode backend LocaShare ──
+      // ── Mode backend Toupré ──
       const saved = mockLoad();
       if (saved) {
         setToken(saved.token);

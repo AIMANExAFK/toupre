@@ -183,7 +183,7 @@ export const PasskeyManager = {
         publicKey: {
           challenge,
           rp: {
-            name: options.rpName || "LocaShare",
+            name: options.rpName || "Toupré",
             id: options.rpId || window.location.hostname,
           },
           user: {
