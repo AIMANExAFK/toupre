@@ -29,18 +29,20 @@ OLD_PID=$(lsof -nP -iTCP:8000 -sTCP:LISTEN -t 2>/dev/null || true)
 [ -n "$OLD_PID" ] && kill $OLD_PID 2>/dev/null && sleep 1
 cd "$ROOT/backend"
 set -a; . ./.env; set +a
-./.venv/bin/python -m uvicorn server:app --host 127.0.0.1 --port 8000 > /tmp/locashare-fastapi.log 2>&1 &
-BACKEND_PID=$!
+# Sous-shell + redirections complètes : détache le serveur pour qu'il ne garde pas
+# ouvert un éventuel tube sur la sortie du script (`./run-e2e.sh | tail`).
+# (setsid n'existe pas sur macOS.)
+( ./.venv/bin/python -m uvicorn server:app --host 127.0.0.1 --port 8000 > /tmp/locashare-fastapi.log 2>&1 < /dev/null & )
 for i in $(seq 1 20); do
   curl -s -o /dev/null http://127.0.0.1:8000/api/ 2>/dev/null && break
   python3 -c "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/api/',timeout=1)" 2>/dev/null && break
   sleep 0.5
 done
-echo "✓ Backend re-seedé sur :8000 (PID $BACKEND_PID)"
+echo "✓ Backend re-seedé sur :8000"
 
 # 4. Preview (sert frontend/dist)
 if ! lsof -nP -iTCP:4174 -sTCP:LISTEN >/dev/null 2>&1; then
-  cd "$ROOT" && node preview-server.js > /tmp/locashare-preview.log 2>&1 &
+  cd "$ROOT" && ( node preview-server.js > /tmp/locashare-preview.log 2>&1 < /dev/null & )
   sleep 1
   echo "✓ Preview démarré sur :4174"
 fi

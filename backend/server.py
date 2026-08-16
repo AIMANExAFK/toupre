@@ -30,10 +30,15 @@ db = client[os.environ['DB_NAME']]
 
 JWT_SECRET = os.environ['JWT_SECRET']
 JWT_ALGORITHM = "HS256"
-REQUIRE_KYC = os.environ.get("TOUPRÉ_REQUIRE_KYC", "true").lower() != "false"
-AUTO_VERIFY_KYC = os.environ.get("TOUPRÉ_AUTO_VERIFY_KYC", "true").lower() != "false"
-ENABLE_LOCAL_PAYMENTS = os.environ.get("TOUPRÉ_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
-RETURN_DEV_OTP = os.environ.get("TOUPRÉ_RETURN_DEV_OTP", "true").lower() != "false"
+REQUIRE_KYC = os.environ.get("TOUPRE_REQUIRE_KYC", "true").lower() != "false"
+AUTO_VERIFY_KYC = os.environ.get("TOUPRE_AUTO_VERIFY_KYC", "true").lower() != "false"
+ENABLE_LOCAL_PAYMENTS = os.environ.get("TOUPRE_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
+RETURN_DEV_OTP = os.environ.get("TOUPRE_RETURN_DEV_OTP", "true").lower() != "false"
+
+# États des lieux (spec 001) : photos encodées en base64 dans le document,
+# bornes calibrées pour rester envoyables sur une connexion mobile ordinaire.
+MAX_INSPECTION_PHOTOS = 5
+MAX_INSPECTION_PHOTOS_BYTES = 3_000_000
 
 BOOKING_STATUSES = {
     "pending",
@@ -1412,6 +1417,42 @@ async def create_booking_inspection(
         raise HTTPException(status_code=400, detail="kind must be pickup or return")
     if payload.condition not in {"ok", "issue", "damaged"}:
         raise HTTPException(status_code=400, detail="Invalid condition")
+
+    # Un constat sans photo n'a aucune valeur probante : c'est la raison d'être
+    # de la fonctionnalité (spec 001, FR-001/FR-002).
+    if not payload.photos:
+        raise HTTPException(
+            status_code=400,
+            detail="Au moins une photo est requise pour valider l'état des lieux.",
+        )
+    if len(payload.photos) > MAX_INSPECTION_PHOTOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{MAX_INSPECTION_PHOTOS} photos maximum par état des lieux.",
+        )
+    total_photo_bytes = sum(len(p) for p in payload.photos)
+    if total_photo_bytes > MAX_INSPECTION_PHOTOS_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Photos trop volumineuses. Réduisez leur nombre ou leur qualité.",
+        )
+    # Déclarer un problème sans l'expliquer rend le constat inexploitable (FR-004).
+    if payload.condition != "ok" and not (payload.notes or "").strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Une note explicative est obligatoire lorsqu'un problème est signalé.",
+        )
+    # Un constat est définitif : on n'en dépose pas deux de même nature (FR-006, FR-007).
+    duplicate = await db.booking_inspections.find_one({
+        "booking_id": booking_id,
+        "user_id": current_user["id"],
+        "kind": payload.kind,
+    })
+    if duplicate:
+        raise HTTPException(
+            status_code=409,
+            detail="Vous avez déjà déposé un état des lieux pour cette étape.",
+        )
 
     if payload.kind == "pickup" and booking["status"] not in {"confirmed", "paid"}:
         raise HTTPException(status_code=400, detail="Pickup can only start after confirmation or payment")

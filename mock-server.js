@@ -109,6 +109,10 @@ const PAYMENT_METHODS = [
 ];
 const PAYMENT_TRANSACTIONS = [];
 const SUPPORT_TICKETS = [];
+// États des lieux (spec 001) : bornes alignées sur backend/server.py
+const MAX_INSPECTION_PHOTOS = 5;
+const MAX_INSPECTION_PHOTOS_BYTES = 3000000;
+
 const BOOKING_INSPECTIONS = [];
 const DISPUTES = [];
 const ACTIVE_BOOKING_STATUSES = new Set(["confirmed", "paid", "active"]);
@@ -680,6 +684,19 @@ const server = http.createServer(async (req, res) => {
     if (!["pickup", "return"].includes(body.kind)) return json(res, { detail: "kind must be pickup or return" }, 400);
     if (body.kind === "pickup" && !["confirmed", "paid"].includes(booking.status)) return json(res, { detail: "Pickup can only start after confirmation or payment" }, 400);
     if (body.kind === "return" && booking.status !== "active") return json(res, { detail: "Return can only be confirmed while booking is active" }, 400);
+    // Garde-fous alignés sur le backend réel (spec 001, FR-001/002/004/007/011)
+    const photos = Array.isArray(body.photos) ? body.photos : [];
+    if (photos.length === 0) return json(res, { detail: "Au moins une photo est requise pour valider l'état des lieux." }, 400);
+    if (photos.length > MAX_INSPECTION_PHOTOS) return json(res, { detail: `${MAX_INSPECTION_PHOTOS} photos maximum par état des lieux.` }, 400);
+    if (photos.reduce((n, p) => n + String(p).length, 0) > MAX_INSPECTION_PHOTOS_BYTES) {
+      return json(res, { detail: "Photos trop volumineuses. Réduisez leur nombre ou leur qualité." }, 413);
+    }
+    if ((body.condition || "ok") !== "ok" && !String(body.notes || "").trim()) {
+      return json(res, { detail: "Une note explicative est obligatoire lorsqu'un problème est signalé." }, 400);
+    }
+    if (BOOKING_INSPECTIONS.some((i) => i.booking_id === booking.id && i.user_id === user.id && i.kind === body.kind)) {
+      return json(res, { detail: "Vous avez déjà déposé un état des lieux pour cette étape." }, 409);
+    }
     const condition = body.condition || "ok";
     const nextStatus = ["issue", "damaged"].includes(condition) ? "disputed" : (body.kind === "pickup" ? "active" : "completed");
     const inspection = {

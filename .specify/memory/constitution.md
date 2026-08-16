@@ -72,4 +72,4 @@ doit soit être refusée, soit s'accompagner d'un amendement explicite de ce doc
 Les principes marqués **NON NÉGOCIABLE** ne peuvent pas être contournés « temporairement » :
 toute exception doit être documentée dans la spec de la fonctionnalité concernée.
 
-**Version** : 1.0.0 | **Ratifiée le** : 2026-06-17 | **Dernier amendement** : 2026-06-17
+**Version** : 1.0.0 | **Ratifiée le** : 2026-08-17 | **Dernier amendement** : 2026-08-17
