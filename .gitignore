@@ -104,3 +104,6 @@ credentials.json
 # Artefacts Playwright
 test-results/
 playwright-report/
+
+# Spec Kit — artefacts de session
+.specify/state/
