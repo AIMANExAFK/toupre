@@ -98,3 +98,109 @@ test("propriétaire : accepter une demande, profil cohérent, carte vérifiée",
   await page.getByText("Email et téléphone vérifiés").click();
   await expect(page).toHaveURL(/\/security/);
 });
+
+// ─── Spec 001 : état des lieux photo ────────────────────────────────────────
+// L'état est monté par API (rapide et déterministe), le comportement vérifié dans l'UI.
+
+const API = "http://localhost:8000/api";
+
+async function apiLogin(request: any, email: string, phone: string) {
+  const r1 = await request.post(`${API}/auth/otp/request`, { data: { email, phone } });
+  const code = (await r1.json())._dev_code;
+  const r2 = await request.post(`${API}/auth/otp/verify`, { data: { email, phone, code } });
+  return r2.json();
+}
+
+/** Crée une réservation confirmée sur une annonce du compte démo et connecte le locataire. */
+// Fenêtre de dates tirée au hasard loin dans le futur : les tests restent
+// indépendants de l'état de la base (réservations laissées par un run précédent).
+function fenetreLibre() {
+  return 120 + Math.floor(Math.random() * 600);
+}
+
+async function bookingConfirme(page: Page, request: any, renterEmail: string, renterPhone: string) {
+  const jour = fenetreLibre();
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const renter = await apiLogin(request, renterEmail, renterPhone);
+  const listings = await (await request.get(`${API}/listings`)).json();
+  const target = listings.find((l: any) => l.owner_id === owner.user.id);
+  const booking = await (await request.post(`${API}/bookings`, {
+    data: { listing_id: target.id, start_date: localISODate(jour), end_date: localISODate(jour + 1) },
+    headers: { Authorization: `Bearer ${renter.access_token}` },
+  })).json();
+  // Échoue tôt et clairement si la mise en scène n'a pas abouti
+  expect(booking.id, `réservation non créée : ${JSON.stringify(booking)}`).toBeTruthy();
+  await request.patch(`${API}/bookings/${booking.id}`, {
+    data: { status: "confirmed" },
+    headers: { Authorization: `Bearer ${owner.access_token}` },
+  });
+  await page.goto("/");
+  await page.evaluate(({ t, u }) => {
+    localStorage.setItem("ls_mock_token", t);
+    localStorage.setItem("ls_mock_user", JSON.stringify(u));
+  }, { t: renter.access_token, u: renter.user });
+  return booking.id;
+}
+
+/** Fournit une vraie image au sélecteur ouvert par expo-image-picker. */
+async function ajouterPhoto(page: Page) {
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByTestId("add-photo").click(),
+  ]);
+  await chooser.setFiles({
+    name: "constat.jpg",
+    mimeType: "image/jpeg",
+    // JPEG 1×1 minimal
+    buffer: Buffer.from(
+      "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
+      "base64",
+    ),
+  });
+  await expect(page.getByText("1/5")).toBeVisible();
+}
+
+test("constat de remise : impossible de démarrer sans photo", async ({ page, request }) => {
+  const id = await bookingConfirme(page, request, "e2e-remise@test.fr", "0788990011");
+  await page.goto(`/booking/constat?id=${id}&kind=pickup`);
+
+  // Sans photo : le bouton dit ce qui manque et refuse la validation
+  const submit = page.getByTestId("constat-submit");
+  await expect(submit).toBeVisible();
+  await expect(page.getByText("Ajoutez au moins une photo")).toBeVisible();
+  await expect(page.getByText("définitif et visible par l'autre partie")).toBeVisible();
+
+  await ajouterPhoto(page);
+  await expect(page.getByText("Valider la remise")).toBeVisible();
+  await submit.click();
+
+  // Retour à la liste, location passée en cours
+  await expect(page).toHaveURL(/\/bookings/);
+  await expect(page.getByText("En cours").first()).toBeVisible();
+});
+
+test("constat de retour : une explication est exigée si un problème est signalé", async ({ page, request }) => {
+  const id = await bookingConfirme(page, request, "e2e-retour@test.fr", "0788990022");
+  // remise faite via l'UI pour arriver à l'état « en cours »
+  await page.goto(`/booking/constat?id=${id}&kind=pickup`);
+  await ajouterPhoto(page);
+  await page.getByTestId("constat-submit").click();
+  await expect(page).toHaveURL(/\/bookings/);
+
+  await page.goto(`/booking/constat?id=${id}&kind=return`);
+  await ajouterPhoto(page);
+  await page.getByTestId("condition-damaged").click();
+
+  // Photo présente mais explication manquante → validation refusée, libellé explicite
+  await expect(page.getByText("Ajoutez une explication")).toBeVisible();
+  // React Native Web rend TouchableOpacity en <div aria-disabled>, pas en <button disabled>
+  await expect(page.getByTestId("constat-submit")).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByTestId("constat-notes").fill("Rayure neuve sur le boîtier.");
+  await expect(page.getByText("Valider le retour")).toBeVisible();
+  await page.getByTestId("constat-submit").click();
+
+  // Le litige est tracé
+  await expect(page).toHaveURL(/\/bookings/);
+  await expect(page.getByText("Litige").first()).toBeVisible();
+});

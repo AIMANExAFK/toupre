@@ -45,31 +45,10 @@ export default function Bookings() {
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
-  const createInspection = async (booking: any, kind: "pickup" | "return") => {
-    if (!token) return;
-    setUpdatingId(booking.id);
-    try {
-      await apiFetch(
-        `/api/bookings/${booking.id}/inspection`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            kind,
-            condition: "ok",
-            notes: kind === "pickup" ? "Remise confirmée par le locataire." : "Retour confirmé par le locataire.",
-            photos: [],
-          }),
-        },
-        token,
-      );
-      await load();
-      Alert.alert(kind === "pickup" ? "Location démarrée" : "Retour confirmé");
-    } catch (e: any) {
-      Alert.alert("Erreur", e.message);
-    } finally {
-      setUpdatingId(null);
-    }
-  };
+  // L'état des lieux se saisit sur son propre écran (spec 001) : photos obligatoires,
+  // état constaté et note. Plus d'envoi direct d'un constat vide depuis ici.
+  const openConstat = (booking: any, kind: "pickup" | "return") =>
+    router.push(`/booking/constat?id=${booking.id}&kind=${kind}`);
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -108,8 +87,7 @@ export default function Bookings() {
             </View>
             {item.status === "confirmed" || item.status === "paid" ? (
               <TouchableOpacity
-                onPress={() => createInspection(item, "pickup")}
-                disabled={updatingId === item.id}
+                onPress={() => openConstat(item, "pickup")}
                 style={[styles.flowBtn, { backgroundColor: colors.primary }]}
                 testID={`pickup-${item.id}`}
               >
@@ -124,8 +102,7 @@ export default function Bookings() {
               </TouchableOpacity>
             ) : item.status === "active" ? (
               <TouchableOpacity
-                onPress={() => createInspection(item, "return")}
-                disabled={updatingId === item.id}
+                onPress={() => openConstat(item, "return")}
                 style={[styles.flowBtn, { backgroundColor: colors.success }]}
                 testID={`return-${item.id}`}
               >

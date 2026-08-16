@@ -35,11 +35,11 @@
 
 **Test indépendant** : réserver → accepter → confirmer la remise ; la validation est refusée sans photo, et le constat enregistré contient bien la photo et la note.
 
-- [ ] T006 [US1] Créer l'écran de constat `frontend/app/booking/constat.tsx` : paramètres `bookingId` et `kind`, ajout de 1 à 5 photos via `expo-image-picker` (qualité 0.4, base64), aperçu et suppression d'une photo, champ de note, avertissement « définitif et partagé » avant validation (FR-001, FR-010)
-- [ ] T007 [US1] Gérer le refus d'accès à l'appareil photo : repli sur la galerie avec message explicite, sans blocage du parcours (FR-009)
-- [ ] T008 [US1] Remplacer dans `frontend/app/(tabs)/bookings.tsx` l'appel stub `createInspection` par une navigation vers l'écran de constat (supprimer `photos: []` et `condition: "ok"` en dur)
-- [ ] T009 [US1] Conserver les photos saisies et permettre une nouvelle tentative si l'envoi échoue (réseau dégradé), sans doublon côté serveur
-- [ ] T010 [US1] Vérifier en réel : parcours complet remise, refus sans photo constaté à l'écran, constat présent en base
+- [x] T006 [US1] Créer l'écran de constat `frontend/app/booking/constat.tsx` : paramètres `bookingId` et `kind`, ajout de 1 à 5 photos via `expo-image-picker` (qualité 0.4, base64), aperçu et suppression d'une photo, champ de note, avertissement « définitif et partagé » avant validation (FR-001, FR-010)
+- [x] T007 [US1] Gérer le refus d'accès à l'appareil photo : repli sur la galerie avec message explicite, sans blocage du parcours (FR-009)
+- [x] T008 [US1] Remplacer dans `frontend/app/(tabs)/bookings.tsx` l'appel stub `createInspection` par une navigation vers l'écran de constat (supprimer `photos: []` et `condition: "ok"` en dur)
+- [x] T009 [US1] Conserver les photos saisies et permettre une nouvelle tentative si l'envoi échoue (réseau dégradé), sans doublon côté serveur
+- [x] T010 [US1] Vérifier en réel : parcours complet remise, refus sans photo constaté à l'écran, constat présent en base
 
 **Checkpoint** : US1 fonctionnelle seule — la promesse « objet photographié au départ » est tenue.
 
@@ -51,9 +51,9 @@
 
 **Test indépendant** : sur une location en cours, confirmer le retour en déclarant un problème ; la note devient obligatoire et le constat reflète la qualification.
 
-- [ ] T011 [US2] Ajouter au constat le sélecteur d'état à trois niveaux (conforme / problème mineur / dégradé), affiché uniquement pour un retour (`frontend/app/booking/constat.tsx`) (FR-003)
-- [ ] T012 [US2] Rendre la note obligatoire côté interface dès que l'état déclaré n'est pas conforme, avec message d'erreur clair (FR-004)
-- [ ] T013 [US2] Refléter dans l'interface l'ordre imposé remise → retour (action de retour indisponible tant que la remise n'est pas faite) plutôt que de laisser échouer le serveur
+- [x] T011 [US2] Ajouter au constat le sélecteur d'état à trois niveaux (conforme / problème mineur / dégradé), affiché uniquement pour un retour (`frontend/app/booking/constat.tsx`) (FR-003)
+- [x] T012 [US2] Rendre la note obligatoire côté interface dès que l'état déclaré n'est pas conforme, avec message d'erreur clair (FR-004)
+- [x] T013 [US2] Refléter dans l'interface l'ordre imposé remise → retour (action de retour indisponible tant que la remise n'est pas faite) plutôt que de laisser échouer le serveur
 
 **Checkpoint** : US1 + US2 fonctionnelles ; un litige déclaré est tracé avec preuve.
 
@@ -76,11 +76,11 @@
 
 ## Phase 5 : Vérification et finition
 
-- [ ] T018 [P] Étendre `frontend/e2e/locashare.spec.ts` : validation refusée sans photo (US1)
-- [ ] T019 [P] Étendre la suite E2E : retour avec problème déclaré exigeant une note (US2)
+- [x] T018 [P] Étendre `frontend/e2e/locashare.spec.ts` : validation refusée sans photo (US1)
+- [x] T019 [P] Étendre la suite E2E : retour avec problème déclaré exigeant une note (US2)
 - [ ] T020 [P] Étendre la suite E2E : constat déposé visible par l'autre partie (US3)
-- [ ] T021 Exécuter `./run-e2e.sh` — suite entièrement verte, aucune régression
-- [ ] T022 Vérifier l'absence de nouvelle erreur console sur le parcours complet
+- [x] T021 Exécuter `./run-e2e.sh` — suite entièrement verte, aucune régression
+- [x] T022 Vérifier l'absence de nouvelle erreur console sur le parcours complet
 - [ ] T023 Mettre à jour la mémoire projet et committer avec le constat de vérification
 
 ---
