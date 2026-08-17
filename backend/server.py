@@ -17,7 +17,7 @@ from email.message import EmailMessage
 from typing import List, Optional, Tuple
 
 import requests
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Header, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -568,6 +568,15 @@ def send_otp_sms(phone: str, code: str) -> bool:
     return True
 
 
+def otp_delivery_configured() -> bool:
+    """Vrai si au moins un canal d'envoi est configuré. Contrôle local, sans réseau :
+    il permet d'échouer vite sur une erreur de configuration, alors que l'envoi
+    lui-même part en tâche de fond."""
+    smtp = bool(os.environ.get("SMTP_HOST") and (os.environ.get("SMTP_FROM") or os.environ.get("SMTP_USERNAME")))
+    twilio = bool(os.environ.get("TWILIO_ACCOUNT_SID") and os.environ.get("TWILIO_AUTH_TOKEN"))
+    return smtp or twilio
+
+
 def deliver_otp_code(email: str, phone: str, code: str) -> dict:
     delivery = {"email_sent": False, "sms_sent": False, "dev_mode": RETURN_DEV_OTP}
     errors = []
@@ -592,7 +601,7 @@ def deliver_otp_code(email: str, phone: str, code: str) -> dict:
 
 # ---------- Auth Endpoints ----------
 @api_router.post("/auth/otp/request")
-async def request_otp(payload: OTPRequest):
+async def request_otp(payload: OTPRequest, background: BackgroundTasks):
     email = payload.email.lower().strip()
     phone = normalize_phone(payload.phone)
     code = generate_otp_code()
@@ -609,11 +618,17 @@ async def request_otp(payload: OTPRequest):
         "created_at": now,
     })
 
-    try:
-        delivery = deliver_otp_code(email, phone, code)
-    except HTTPException:
+    # L'envoi SMTP prenait ~1,7 s et bloquait la réponse : l'utilisateur attendait
+    # pour rien. Il part désormais en tâche de fond, exécutée après la réponse.
+    # On garde un échec immédiat sur une configuration absente, détectable sans réseau.
+    if not RETURN_DEV_OTP and not otp_delivery_configured():
         await db.otp_codes.delete_many({"email": email, "phone": phone})
-        raise
+        raise HTTPException(
+            status_code=503,
+            detail="Envoi du code indisponible. Configurez SMTP ou Twilio.",
+        )
+    background.add_task(deliver_otp_code, email, phone, code)
+    delivery = {"queued": True, "dev_mode": RETURN_DEV_OTP}
 
     if RETURN_DEV_OTP:
         logger.info("OTP requested for %s / %s. Dev code: %s", email, phone, code)

@@ -295,3 +295,56 @@ test("accessibilité : le focus clavier est visible", async ({ page }) => {
   expect(focus.balise).not.toBe("BODY");
   expect(focus.contourVisible, "focus clavier invisible : l'app est inutilisable sans souris").toBe(true);
 });
+
+// ─── Spec 004 : dépôt d'un avis ─────────────────────────────────────────────
+
+test("avis : une location terminée peut être notée et la note de l'annonce évolue", async ({ page, request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const renter = await apiLogin(request, "e2e-avis@test.fr", "0788990044");
+  const listings = await (await request.get(`${API}/listings`)).json();
+  const cible = listings.find((l: any) => l.owner_id === owner.user.id);
+  const noteAvant = cible.rating;
+  const nbAvant = cible.count;
+
+  // Location menée jusqu'à son terme, par API pour rester rapide et déterministe
+  const jour = fenetreLibre();
+  const booking = await (await request.post(`${API}/bookings`, {
+    data: { listing_id: cible.id, start_date: localISODate(jour), end_date: localISODate(jour + 1) },
+    headers: { Authorization: `Bearer ${renter.access_token}` },
+  })).json();
+  expect(booking.id, `réservation non créée : ${JSON.stringify(booking)}`).toBeTruthy();
+  await request.patch(`${API}/bookings/${booking.id}`, {
+    data: { status: "confirmed" },
+    headers: { Authorization: `Bearer ${owner.access_token}` },
+  });
+  const photo = "data:image/jpeg;base64," + "A".repeat(400);
+  for (const kind of ["pickup", "return"]) {
+    await request.post(`${API}/bookings/${booking.id}/inspection`, {
+      data: { kind, condition: "ok", notes: "RAS", photos: [photo] },
+      headers: { Authorization: `Bearer ${renter.access_token}` },
+    });
+  }
+
+  await page.goto("/");
+  await page.evaluate(({ t, u }) => {
+    localStorage.setItem("ls_mock_token", t);
+    localStorage.setItem("ls_mock_user", JSON.stringify(u));
+  }, { t: renter.access_token, u: renter.user });
+
+  await page.goto(`/booking/avis?listingId=${cible.id}&titre=${encodeURIComponent(cible.title)}`);
+
+  // Sans note choisie, la validation est impossible et le bouton dit pourquoi
+  await expect(page.getByText("Choisissez une note").first()).toBeVisible();
+  await expect(page.getByTestId("avis-submit")).toHaveAttribute("aria-disabled", "true");
+
+  await page.getByTestId("avis-etoile-4").click();
+  await expect(page.getByText("Très bien")).toBeVisible();
+  await page.getByTestId("avis-commentaire").fill("Matériel conforme, remise rapide.");
+  await page.getByTestId("avis-submit").click();
+  await expect(page).toHaveURL(/\/bookings/);
+
+  // SC-002 : la note de l'annonce a bougé
+  const apres = (await (await request.get(`${API}/listings`)).json()).find((l: any) => l.id === cible.id);
+  expect(apres.count, "le nombre d'avis n'a pas augmenté").toBe((nbAvant ?? 0) + 1);
+  expect(apres.rating).not.toBe(noteAvant);
+});

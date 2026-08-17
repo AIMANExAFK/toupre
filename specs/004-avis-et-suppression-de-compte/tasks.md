@@ -13,6 +13,6 @@
 - [x] T008 [US2] Vérifier que les locations de l'autre partie restent consultables (SC-005)
 
 ## Phase 3 : Vérification
-- [ ] T009 Étendre la suite E2E (dépôt d'avis)
+- [x] T009 Étendre la suite E2E (dépôt d'avis)
 - [x] T010 `./run-e2e.sh` vert
 - [x] T011 Mémoire à jour et commit
