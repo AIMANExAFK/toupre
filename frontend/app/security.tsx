@@ -33,11 +33,9 @@ export default function SecurityScreen() {
 
   const refresh = useCallback(async () => {
     try {
-      const [pks, ss] = await Promise.all([
-        apiFetch("/api/auth/passkeys", {}, token).catch(() => []),
+      const [ss] = await Promise.all([
         apiFetch("/api/auth/sessions", {}, token).catch(() => []),
       ]);
-      setPasskeys(pks || []);
       setSessions(ss || []);
     } catch {}
   }, [token]);
@@ -77,70 +75,10 @@ export default function SecurityScreen() {
     }
   };
 
-  const registerPasskey = async () => {
-    if (!PasskeyManager.isSupported()) {
-      Alert.alert("Non supporté", "Votre appareil ou navigateur ne supporte pas les passkeys.");
-      return;
-    }
-    if (!user) return;
-    setBusy(true);
-    try {
-      // 1. Demande le challenge au serveur
-      const begin = await apiFetch("/api/auth/passkey/register/begin", {
-        method: "POST",
-        body: JSON.stringify({ email: user.email }),
-      }, token);
+  // Les gestionnaires de clés d'accès ont été retirés avec leur section (spec 003) :
+  // ils appelaient des routes serveur inexistantes. La logique WebAuthn réutilisable
+  // reste dans PasskeyManager (src/NotificationsManager.tsx) pour une reprise ultérieure.
 
-      // 2. Appelle navigator.credentials.create (déclenche Touch ID / Face ID / Windows Hello)
-      const credential = await PasskeyManager.register({
-        userId: user.id,
-        userName: user.email,
-        displayName: user.name,
-        challenge: begin.challenge,
-        rpName: begin.rp.name,
-        rpId: begin.rp.id || (Platform.OS === "web" ? window.location.hostname : undefined),
-      });
-
-      if (!credential) {
-        Alert.alert("Annulé", "L'enregistrement de la passkey a été annulé.");
-        return;
-      }
-
-      // 3. Envoie le résultat au serveur
-      await apiFetch("/api/auth/passkey/register/finish", {
-        method: "POST",
-        body: JSON.stringify({
-          credential_id: credential.credentialId,
-          user_id: user.id,
-          public_key: credential.attestationObject,
-          device_name: getDeviceName(),
-        }),
-      }, token);
-
-      refresh();
-      Alert.alert("✓ Passkey activée", "Vous pourrez maintenant vous connecter avec votre empreinte ou Face ID.");
-    } catch (e: any) {
-      Alert.alert("Erreur", e?.message || "Impossible d'enregistrer la passkey.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removePasskey = (credId: string) => {
-    Alert.alert("Supprimer cette passkey ?", "Vous ne pourrez plus utiliser la biométrie sur cet appareil.", [
-      { text: "Annuler", style: "cancel" },
-      {
-        text: "Supprimer",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await apiFetch(`/api/auth/passkeys/${credId}`, { method: "DELETE" }, token);
-            refresh();
-          } catch (e: any) { Alert.alert("Erreur", e.message); }
-        },
-      },
-    ]);
-  };
 
   const revokeSession = (sid: string) => {
     Alert.alert("Déconnecter cette session ?", "Cet appareil sera immédiatement déconnecté.", [
@@ -205,64 +143,12 @@ export default function SecurityScreen() {
               )}
             </Glass>
 
-            {/* ─── Passkeys ─── */}
-            <Glass borderRadius={radius.lg} style={styles.section}>
-              <View style={styles.sectionHead}>
-                <View style={[styles.sectionIco, { backgroundColor: colors.primaryTint }]}>
-                  <Ionicons name="finger-print" size={22} color={colors.primary} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Biométrie / Passkeys</Text>
-                  <Text style={[styles.sectionSub, { color: colors.textSecondary }]}>
-                    Connectez-vous sans mot de passe avec Touch ID, Face ID ou Windows Hello.
-                  </Text>
-                </View>
-              </View>
-
-              {passkeys.length > 0 ? (
-                passkeys.map((p) => (
-                  <View key={p.credential_id} style={[styles.itemRow, { borderColor: colors.border }]}>
-                    <Ionicons name="key-outline" size={18} color={colors.success} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={[styles.itemTitle, { color: colors.textPrimary }]}>{p.device_name}</Text>
-                      <Text style={[styles.itemSub, { color: colors.textSecondary }]}>
-                        Ajoutée le {new Date(p.created_at).toLocaleDateString("fr-FR")}
-                        {p.last_used_at ? ` · Utilisée ${formatRelative(p.last_used_at)}` : " · Jamais utilisée"}
-                      </Text>
-                    </View>
-                    <TouchableOpacity accessibilityLabel="Supprimer" accessibilityRole="button" onPress={() => removePasskey(p.credential_id)} style={styles.removeBtn}>
-                      <Ionicons name="trash-outline" size={16} color={colors.error} />
-                    </TouchableOpacity>
-                  </View>
-                ))
-              ) : (
-                <View style={[styles.emptyHint, { backgroundColor: colors.surface2 }]}>
-                  <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-                    Aucune passkey enregistrée sur cet appareil.
-                  </Text>
-                </View>
-              )}
-
-              <TouchableOpacity accessibilityRole="button"
-                onPress={registerPasskey}
-                disabled={busy || !hasPasskey} accessibilityState={{ disabled: busy || !hasPasskey }}
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: hasPasskey ? colors.primary : colors.border },
-                ]}
-              >
-                {busy ? (
-                  <ActivityIndicator color={colors.textInverse} />
-                ) : (
-                  <>
-                    <Ionicons name="add" size={16} color={hasPasskey ? colors.textInverse : colors.textTertiary} />
-                    <Text style={[styles.actionBtnText, { color: hasPasskey ? colors.textInverse : colors.textTertiary }]}>
-                      {hasPasskey ? "Ajouter une passkey" : "Non supporté sur cet appareil"}
-                    </Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </Glass>
+            {/* ─── Passkeys : section masquée (spec 003, FR-010) ───
+                 Le code client WebAuthn est complet mais aucun point d'entrée
+                 correspondant n'existe côté serveur : les requêtes répondaient 404
+                 et la section restait vide en permanence. Afficher une protection
+                 qui n'existe pas est plus dommageable que ne rien afficher.
+                 Rétablir cette section dès que les routes serveur existeront. */}
 
             {/* ─── Sessions actives ─── */}
             <Glass borderRadius={radius.lg} style={styles.section}>

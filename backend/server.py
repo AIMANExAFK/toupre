@@ -35,6 +35,31 @@ AUTO_VERIFY_KYC = os.environ.get("TOUPRE_AUTO_VERIFY_KYC", "true").lower() != "f
 ENABLE_LOCAL_PAYMENTS = os.environ.get("TOUPRE_ENABLE_LOCAL_PAYMENTS", "true").lower() != "false"
 RETURN_DEV_OTP = os.environ.get("TOUPRE_RETURN_DEV_OTP", "true").lower() != "false"
 
+# Modération de contenu (spec 003) — porté depuis le serveur de développement,
+# où il n'avait jamais été répliqué côté serveur réel.
+BANNED_PATTERNS = [
+    r"\b(coca[iï]ne|h[ée]ro[iï]ne|crystal\s+meth|m[ée]thamph[ée]tamine|ecstasy|mdma|lsd|dealer)\b",
+    r"\b(arme\s+(à\s+feu|de\s+poing)|pistolet|revolver|kalachnikov|ak\s*47|grenade|explosif)\b",
+    r"\b(paiement\s+direct\s+hors\s+(de\s+la\s+)?plateforme|virement\s+western\s+union)\b",
+    r"\b(whatsapp|telegram|signal|wechat)\s*[:=]?\s*[\+\d]",
+]
+SOFT_FLAG_PATTERNS = [r"\b(crypto|bitcoin|ethereum|nft|invest)\b"]
+
+
+def check_content(text: str) -> dict:
+    """Retourne {blocked, flagged} pour un texte libre saisi par un utilisateur."""
+    if not text:
+        return {"blocked": False, "flagged": False}
+    blocked = any(re.search(p, text, re.IGNORECASE) for p in BANNED_PATTERNS)
+    flagged = any(re.search(p, text, re.IGNORECASE) for p in SOFT_FLAG_PATTERNS)
+    return {"blocked": blocked, "flagged": flagged}
+
+
+# Signalements (spec 003)
+REPORT_TARGETS = {"listing", "user", "message", "review"}
+REPORT_CATEGORIES = {"scam", "inappropriate", "illegal", "spam", "fake", "harassment", "other"}
+REPORT_FLAG_THRESHOLD = 3
+
 # États des lieux (spec 001) : photos encodées en base64 dans le document,
 # bornes calibrées pour rester envoyables sur une connexion mobile ordinaire.
 MAX_INSPECTION_PHOTOS = 5
@@ -230,6 +255,13 @@ class InspectionCreate(BaseModel):
     photos: List[str] = []
 
 
+class ReportCreate(BaseModel):
+    target_type: str
+    target_id: str
+    category: str
+    reason: Optional[str] = ""
+
+
 class DisputeCreate(BaseModel):
     booking_id: str
     reason: str
@@ -254,14 +286,32 @@ def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
-def create_access_token(user_id: str, email: str) -> str:
+def create_access_token(user_id: str, email: str, session_id: Optional[str] = None) -> str:
     payload = {
         "sub": user_id,
         "email": email,
         "exp": datetime.now(timezone.utc) + timedelta(days=7),
         "type": "access",
     }
+    # sid : permet de révoquer une session précise (spec 003, FR-008).
+    # Sans lui, « fermer une session » n'aurait aucun effet réel.
+    if session_id:
+        payload["sid"] = session_id
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+async def open_session(user_id: str, device: Optional[str] = None) -> str:
+    """Enregistre une session à la connexion et renvoie son identifiant."""
+    sid = str(uuid.uuid4())
+    await db.sessions.insert_one({
+        "id": sid,
+        "user_id": user_id,
+        "device": (device or "Appareil inconnu")[:120],
+        "revoked": False,
+        "created_at": datetime.now(timezone.utc),
+        "last_seen": datetime.now(timezone.utc),
+    })
+    return sid
 
 
 async def get_current_user(
@@ -280,6 +330,18 @@ async def get_current_user(
     user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+
+    # Session révoquée = accès refusé immédiatement (FR-009). Les jetons émis avant
+    # la mise en place du suivi n'ont pas de sid : ils restent acceptés pour ne pas
+    # déconnecter tout le monde, mais ne sont pas révocables (compromis documenté).
+    sid = payload.get("sid")
+    if sid:
+        session = await db.sessions.find_one({"id": sid}, {"_id": 0, "revoked": 1})
+        if not session or session.get("revoked"):
+            raise HTTPException(status_code=401, detail="Session fermée. Reconnectez-vous.")
+        await db.sessions.update_one({"id": sid}, {"$set": {"last_seen": datetime.now(timezone.utc)}})
+        user = dict(user)
+        user["_session_id"] = sid
     return user
 
 
@@ -626,7 +688,8 @@ async def verify_otp(payload: OTPVerify):
         user = await db.users.find_one({"id": user["id"]})
 
     await db.otp_codes.delete_one({"id": otp["id"]})
-    token = create_access_token(user["id"], email)
+    sid = await open_session(user["id"], payload.name)
+    token = create_access_token(user["id"], email, sid)
     return {"user": serialize_user(user), "access_token": token}
 
 
@@ -677,7 +740,8 @@ async def register(payload: UserCreate):
             {"referred_user_id": user_doc["id"]},
         )
 
-    token = create_access_token(user_doc["id"], email)
+    sid = await open_session(user_doc["id"])
+    token = create_access_token(user_doc["id"], email, sid)
     return {"user": serialize_user(user_doc), "access_token": token}
 
 
@@ -687,7 +751,8 @@ async def login(payload: UserLogin):
     user = await db.users.find_one({"email": email})
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    token = create_access_token(user["id"], email)
+    sid = await open_session(user["id"])
+    token = create_access_token(user["id"], email, sid)
     return {"user": serialize_user(user), "access_token": token}
 
 
@@ -1629,6 +1694,93 @@ async def checkout_status(session_id: str, request: Request):
     )
 
 
+# ---------- Sessions actives (spec 003) ----------
+@api_router.get("/auth/sessions")
+async def list_sessions(current_user: dict = Depends(get_current_user)):
+    items = await db.sessions.find(
+        {"user_id": current_user["id"], "revoked": False}, {"_id": 0, "revoked": 0}
+    ).sort("last_seen", -1).to_list(50)
+    courante = current_user.get("_session_id")
+    for i in items:
+        i["current"] = i["id"] == courante
+    return items
+
+
+@api_router.delete("/auth/sessions/{session_id}")
+async def revoke_session(session_id: str, current_user: dict = Depends(get_current_user)):
+    session = await db.sessions.find_one({"id": session_id}, {"_id": 0})
+    if not session or session["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=404, detail="Session introuvable")
+    await db.sessions.update_one({"id": session_id}, {"$set": {"revoked": True}})
+    return {"ok": True, "was_current": session_id == current_user.get("_session_id")}
+
+
+# ---------- Signalements (spec 003) ----------
+@api_router.post("/reports")
+async def create_report(payload: ReportCreate, current_user: dict = Depends(get_current_user)):
+    if payload.target_type not in REPORT_TARGETS:
+        raise HTTPException(status_code=400, detail="Type de cible invalide")
+    if payload.category not in REPORT_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Catégorie invalide")
+    if not payload.target_id:
+        raise HTTPException(status_code=400, detail="Cible manquante")
+
+    # On ne signale pas son propre contenu : cela fausserait le compteur (spec 003, cas limite)
+    if payload.target_type == "listing":
+        target = await db.listings.find_one({"id": payload.target_id}, {"_id": 0, "owner_id": 1})
+        if target and target["owner_id"] == current_user["id"]:
+            raise HTTPException(status_code=400, detail="Vous ne pouvez pas signaler votre propre annonce.")
+    if payload.target_type == "user" and payload.target_id == current_user["id"]:
+        raise HTTPException(status_code=400, detail="Vous ne pouvez pas vous signaler vous-même.")
+
+    verdict = check_content(payload.reason or "")
+
+    report = {
+        "id": str(uuid.uuid4()),
+        "reporter_id": current_user["id"],
+        "target_type": payload.target_type,
+        "target_id": payload.target_id,
+        "category": payload.category,
+        "reason": payload.reason or "",
+        "reason_flagged": verdict["blocked"] or verdict["flagged"],
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc),
+    }
+    try:
+        await db.reports.insert_one(report)
+    except Exception:
+        # Index unique (auteur, type, cible) : un même utilisateur ne compte qu'une fois
+        raise HTTPException(status_code=409, detail="Vous avez déjà signalé ce contenu.")
+
+    # Marquage automatique au-delà du seuil, en comptant les auteurs distincts
+    distincts = len(await db.reports.distinct(
+        "reporter_id", {"target_type": payload.target_type, "target_id": payload.target_id}
+    ))
+    flagged = distincts >= REPORT_FLAG_THRESHOLD
+    if flagged and payload.target_type == "listing":
+        await db.listings.update_one(
+            {"id": payload.target_id}, {"$set": {"flagged_for_review": True}}
+        )
+    if flagged and payload.target_type == "user":
+        await db.users.update_one(
+            {"id": payload.target_id}, {"$set": {"flagged_for_review": True}}
+        )
+
+    logger.info(
+        "Signalement %s sur %s/%s par %s (%s au total)",
+        payload.category, payload.target_type, payload.target_id, current_user["id"], distincts,
+    )
+    return {"ok": True, "id": report["id"], "reports_count": distincts, "flagged": flagged}
+
+
+@api_router.get("/reports")
+async def list_reports(current_user: dict = Depends(get_current_user)):
+    """Lecture réservée à la modération."""
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Réservé à la modération")
+    return await db.reports.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+
+
 # ---------- Categories ----------
 @api_router.get("/categories")
 async def get_categories():
@@ -1755,6 +1907,13 @@ async def on_startup():
     await db.booking_inspections.create_index([("booking_id", 1), ("created_at", 1)])
     await db.disputes.create_index([("owner_id", 1), ("renter_id", 1), ("created_at", -1)])
     await db.notifications.create_index([("user_id", 1), ("created_at", -1)])
+    # spec 003 : un auteur ne compte qu'une fois par cible signalée (FR-003)
+    await db.reports.create_index(
+        [("reporter_id", 1), ("target_type", 1), ("target_id", 1)], unique=True
+    )
+    await db.reports.create_index([("target_type", 1), ("target_id", 1)])
+    await db.sessions.create_index("id", unique=True)
+    await db.sessions.create_index([("user_id", 1), ("last_seen", -1)])
 
     # seed demo user
     demo_email = "demo@locashare.fr"

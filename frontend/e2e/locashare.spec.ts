@@ -19,17 +19,19 @@ function localISODate(offsetDays: number): string {
 
 async function loginDemo(page: Page) {
   await page.goto("/auth/otp");
-  await page.getByPlaceholder("vous@exemple.com").fill(DEMO_EMAIL);
-  await page.getByPlaceholder("06 12 34 56 78").fill(DEMO_PHONE);
-  await page.getByText("Envoyer le code", { exact: true }).click();
-  // En mode démo le backend renvoie le code, affiché à l'écran
+  await page.getByTestId("otp-email-input").fill(DEMO_EMAIL);
+  await page.getByTestId("otp-phone-input").fill(DEMO_PHONE);
+  await page.getByTestId("otp-send-btn").click();
+  // L'envoi passe par SMTP et prend ~1,7 s : on attend explicitement le code,
+  // sinon la suite part trop tôt et le test devient instable.
   const codeEl = page.getByText(/^\d{6}$/);
-  await expect(codeEl).toBeVisible();
+  await expect(codeEl).toBeVisible({ timeout: 20_000 });
   const code = (await codeEl.textContent())!.trim();
-  const boxes = page.locator("input");
-  for (let i = 0; i < 6; i++) await boxes.nth(i).fill(code[i]);
-  await page.getByText("Vérifier le code", { exact: true }).click();
-  await expect(page.getByText("Louer près de vous")).toBeVisible();
+  for (let i = 0; i < 6; i++) await page.getByTestId(`otp-digit-${i}`).fill(code[i]);
+  // Le bouton ne s'active qu'une fois les 6 chiffres saisis
+  await expect(page.getByTestId("otp-verify-btn")).not.toHaveAttribute("aria-disabled", "true");
+  await page.getByTestId("otp-verify-btn").click();
+  await expect(page.getByText("Louer près de vous")).toBeVisible({ timeout: 15_000 });
 }
 
 test("connexion OTP et Explorer : annonces, notes et badges", async ({ page }) => {

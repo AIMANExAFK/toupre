@@ -1028,6 +1028,8 @@ const server = http.createServer(async (req, res) => {
   // category: "scam" | "inappropriate" | "illegal" | "spam" | "fake" | "harassment" | "other"
   // reason: string (libre, optionnel mais recommandé)
   if (path === "/api/reports" && method === "POST") {
+    const user = requireUser(req, res);
+    if (!user) return;
     const body = await parseBody(req);
     const validTargets = ["listing", "user", "message", "review"];
     const validCategories = ["scam", "inappropriate", "illegal", "spam", "fake", "harassment", "other"];
@@ -1039,12 +1041,26 @@ const server = http.createServer(async (req, res) => {
     }
     if (!body.target_id) return json(res, { detail: "target_id requis" }, 400);
 
+    // Alignement sur le serveur réel (spec 003) : ni auto-signalement, ni doublon
+    if (body.target_type === "listing") {
+      const l = LISTINGS.find((x) => x.id === body.target_id);
+      if (l && l.owner_id === user.id) {
+        return json(res, { detail: "Vous ne pouvez pas signaler votre propre annonce." }, 400);
+      }
+    }
+    if (body.target_type === "user" && body.target_id === user.id) {
+      return json(res, { detail: "Vous ne pouvez pas vous signaler vous-même." }, 400);
+    }
+    if (REPORTS.some((r) => r.reporter_id === user.id && r.target_type === body.target_type && r.target_id === body.target_id)) {
+      return json(res, { detail: "Vous avez déjà signalé ce contenu." }, 409);
+    }
+
     // Filtre le motif libre aussi
     const reasonCheck = checkContent(body.reason || "");
 
     const report = {
       id: "rep_" + Date.now(),
-      reporter_id: DEMO_USER.id,
+      reporter_id: user.id,
       target_type: body.target_type,
       target_id: body.target_id,
       category: body.category,
@@ -1056,9 +1072,10 @@ const server = http.createServer(async (req, res) => {
     REPORTS.push(report);
 
     // Auto-flag : si 3+ signalements sur la même cible, on flag automatiquement
-    const sameTargetCount = REPORTS.filter(
-      (r) => r.target_type === body.target_type && r.target_id === body.target_id
-    ).length;
+    const sameTargetCount = new Set(
+      REPORTS.filter((r) => r.target_type === body.target_type && r.target_id === body.target_id)
+        .map((r) => r.reporter_id)
+    ).size;
     if (sameTargetCount >= 3) {
       if (body.target_type === "listing") {
         const l = LISTINGS.find((x) => x.id === body.target_id);
