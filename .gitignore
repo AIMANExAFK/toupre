@@ -107,3 +107,7 @@ playwright-report/
 
 # Spec Kit — artefacts de session
 .specify/state/
+
+# Caches de build Expo/Metro — jamais versionnés
+frontend/.metro-cache/
+frontend/.expo/
