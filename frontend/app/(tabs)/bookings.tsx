@@ -116,6 +116,16 @@ export default function Bookings() {
                 )}
               </TouchableOpacity>
             ) : null}
+            {["active", "completed", "returned", "disputed"].includes(item.status) && (
+              <TouchableOpacity
+                onPress={() => router.push(`/booking/constats?id=${item.id}`)}
+                style={styles.constatsLink}
+                testID={`constats-${item.id}`}
+              >
+                <Ionicons name="images-outline" size={14} color={colors.primary} />
+                <Text style={[styles.constatsTxt, { color: colors.primary }]}>États des lieux</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Glass>
@@ -212,6 +222,8 @@ function statusBg(s: string, colors: any) {
 }
 
 const styles = StyleSheet.create({
+  constatsLink: { flexDirection: "row", alignItems: "center", gap: 5, marginLeft: 10 },
+  constatsTxt: { fontSize: 12.5, fontWeight: "800" },
   heading: {
     fontSize: 30,
     fontWeight: "800",

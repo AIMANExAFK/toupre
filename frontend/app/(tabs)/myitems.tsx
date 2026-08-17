@@ -268,6 +268,17 @@ export default function MyItems() {
                           </View>
                         )}
 
+                        {["active", "completed", "returned", "disputed"].includes(b.status) && (
+                          <TouchableOpacity
+                            onPress={() => router.push(`/booking/constats?id=${b.id}`)}
+                            style={[styles.btnMessage, { borderColor: colors.border, marginBottom: 8 }]}
+                            testID={`owner-constats-${b.id}`}
+                          >
+                            <Ionicons name="images-outline" size={15} color={colors.primary} />
+                            <Text style={[styles.btnText, { color: colors.primary }]}>Voir les états des lieux</Text>
+                          </TouchableOpacity>
+                        )}
+
                         <TouchableOpacity
                           onPress={() => router.push(`/messages/${b.renter_id || b.user_id || b.renter?.id}?listingId=${b.listing_id}`)}
                           style={[styles.btnMessage, { borderColor: colors.border }]}

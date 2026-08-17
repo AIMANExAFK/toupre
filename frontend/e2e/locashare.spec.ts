@@ -204,3 +204,45 @@ test("constat de retour : une explication est exigée si un problème est signal
   await expect(page).toHaveURL(/\/bookings/);
   await expect(page.getByText("Litige").first()).toBeVisible();
 });
+
+test("consultation partagée : le propriétaire voit le constat du locataire et peut le compléter", async ({ page, request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const renter = await apiLogin(request, "e2e-vue@test.fr", "0788990033");
+  const listings = await (await request.get(`${API}/listings`)).json();
+  const target = listings.find((l: any) => l.owner_id === owner.user.id);
+  const jour = fenetreLibre();
+  const booking = await (await request.post(`${API}/bookings`, {
+    data: { listing_id: target.id, start_date: localISODate(jour), end_date: localISODate(jour + 1) },
+    headers: { Authorization: `Bearer ${renter.access_token}` },
+  })).json();
+  expect(booking.id, `réservation non créée : ${JSON.stringify(booking)}`).toBeTruthy();
+  await request.patch(`${API}/bookings/${booking.id}`, {
+    data: { status: "confirmed" },
+    headers: { Authorization: `Bearer ${owner.access_token}` },
+  });
+  // Le locataire dépose son constat de remise
+  const posted = await request.post(`${API}/bookings/${booking.id}/inspection`, {
+    data: {
+      kind: "pickup", condition: "ok", notes: "Boîtier nickel, sangle incluse.",
+      photos: ["data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//2wBDAf//wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAn/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="],
+    },
+    headers: { Authorization: `Bearer ${renter.access_token}` },
+  });
+  expect(posted.status()).toBe(200);
+
+  // Le PROPRIÉTAIRE consulte : symétrie exigée par le principe I
+  await page.goto("/");
+  await page.evaluate(({ t, u }) => {
+    localStorage.setItem("ls_mock_token", t);
+    localStorage.setItem("ls_mock_user", JSON.stringify(u));
+  }, { t: owner.access_token, u: owner.user });
+  await page.goto(`/booking/constats?id=${booking.id}`);
+
+  await expect(page.getByText("Ces constats sont définitifs et visibles par les deux parties.")).toBeVisible();
+  await expect(page.getByTestId("inspection-pickup")).toBeVisible();
+  await expect(page.getByText("Boîtier nickel, sangle incluse.")).toBeVisible();
+  // Attribution nominative (FR-005)
+  await expect(page.getByText(/locataire/)).toBeVisible();
+  // Et il peut ajouter sa propre observation sans écraser celle du locataire
+  await expect(page.getByTestId("add-counter-pickup")).toBeVisible();
+});

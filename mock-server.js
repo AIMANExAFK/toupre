@@ -682,8 +682,12 @@ const server = http.createServer(async (req, res) => {
     if (![booking.owner_id, booking.renter_id || booking.user_id].includes(user.id)) return json(res, { detail: "Forbidden" }, 403);
     const body = await parseBody(req);
     if (!["pickup", "return"].includes(body.kind)) return json(res, { detail: "kind must be pickup or return" }, 400);
-    if (body.kind === "pickup" && !["confirmed", "paid"].includes(booking.status)) return json(res, { detail: "Pickup can only start after confirmation or payment" }, 400);
-    if (body.kind === "return" && booking.status !== "active") return json(res, { detail: "Return can only be confirmed while booking is active" }, 400);
+    // Contre-observation : l'autre partie a déjà documenté cette étape (cf. backend réel)
+    const isCounter = BOOKING_INSPECTIONS.some((i) => i.booking_id === booking.id && i.kind === body.kind);
+    if (!isCounter) {
+      if (body.kind === "pickup" && !["confirmed", "paid"].includes(booking.status)) return json(res, { detail: "Pickup can only start after confirmation or payment" }, 400);
+      if (body.kind === "return" && booking.status !== "active") return json(res, { detail: "Return can only be confirmed while booking is active" }, 400);
+    }
     // Garde-fous alignés sur le backend réel (spec 001, FR-001/002/004/007/011)
     const photos = Array.isArray(body.photos) ? body.photos : [];
     if (photos.length === 0) return json(res, { detail: "Au moins une photo est requise pour valider l'état des lieux." }, 400);
@@ -698,7 +702,9 @@ const server = http.createServer(async (req, res) => {
       return json(res, { detail: "Vous avez déjà déposé un état des lieux pour cette étape." }, 409);
     }
     const condition = body.condition || "ok";
-    const nextStatus = ["issue", "damaged"].includes(condition) ? "disputed" : (body.kind === "pickup" ? "active" : "completed");
+    const nextStatus = ["issue", "damaged"].includes(condition)
+      ? "disputed"
+      : isCounter ? booking.status : (body.kind === "pickup" ? "active" : "completed");
     const inspection = {
       id: "insp_" + Date.now(),
       booking_id: booking.id,

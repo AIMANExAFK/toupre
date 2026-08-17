@@ -8,13 +8,16 @@ type Props = {
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
   borderRadius?: number;
+  /** Permet de cibler l'élément dans les tests (RN et web). */
+  testID?: string;
 };
 
-export function Glass({ intensity = 35, style, children, borderRadius = 8 }: Props) {
+export function Glass({ intensity = 35, style, children, borderRadius = 8, testID }: Props) {
   const { isDark, colors } = useTheme();
   if (Platform.OS === "web") {
     return (
       <View
+        testID={testID}
         style={[
           {
             backgroundColor: colors.surfaceGlass,
@@ -38,6 +41,7 @@ export function Glass({ intensity = 35, style, children, borderRadius = 8 }: Pro
   }
   return (
     <BlurView
+      testID={testID}
       intensity={intensity}
       tint={isDark ? "dark" : "light"}
       style={[

@@ -1454,14 +1454,28 @@ async def create_booking_inspection(
             detail="Vous avez déjà déposé un état des lieux pour cette étape.",
         )
 
-    if payload.kind == "pickup" and booking["status"] not in {"confirmed", "paid"}:
-        raise HTTPException(status_code=400, detail="Pickup can only start after confirmation or payment")
-    if payload.kind == "return" and booking["status"] != "active":
-        raise HTTPException(status_code=400, detail="Return can only be confirmed while booking is active")
+    # Un constat déjà déposé pour cette étape par l'autre partie rend celui-ci
+    # « contre-observation » : il documente le même moment sans le rejouer.
+    # Sans cette distinction, le premier constat fait avancer le statut et
+    # verrouille définitivement l'autre partie (asymétrie interdite, principe I).
+    is_counter = await db.booking_inspections.find_one(
+        {"booking_id": booking_id, "kind": payload.kind}
+    ) is not None
 
-    new_status = "active" if payload.kind == "pickup" else "completed"
-    if payload.condition in {"issue", "damaged"}:
-        new_status = "disputed"
+    if not is_counter:
+        if payload.kind == "pickup" and booking["status"] not in {"confirmed", "paid"}:
+            raise HTTPException(status_code=400, detail="Pickup can only start after confirmation or payment")
+        if payload.kind == "return" and booking["status"] != "active":
+            raise HTTPException(status_code=400, detail="Return can only be confirmed while booking is active")
+
+    if is_counter:
+        # Une contre-observation ne rejoue pas la transition déjà faite ; elle peut
+        # en revanche faire basculer la réservation en litige si elle signale un problème.
+        new_status = "disputed" if payload.condition in {"issue", "damaged"} else booking["status"]
+    else:
+        new_status = "active" if payload.kind == "pickup" else "completed"
+        if payload.condition in {"issue", "damaged"}:
+            new_status = "disputed"
 
     inspection = {
         "id": str(uuid.uuid4()),
@@ -1498,9 +1512,15 @@ async def list_booking_inspections(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     require_booking_participant(booking, current_user)
-    return await db.booking_inspections.find(
+    items = await db.booking_inspections.find(
         {"booking_id": booking_id}, {"_id": 0}
     ).sort("created_at", 1).to_list(50)
+    # FR-005 : un constat doit être attribué nominativement, pas à un identifiant.
+    for i in items:
+        author = await db.users.find_one({"id": i["user_id"]}, {"_id": 0, "name": 1})
+        i["author_name"] = author["name"] if author else "Utilisateur supprimé"
+        i["author_role"] = "owner" if i["user_id"] == booking["owner_id"] else "renter"
+    return items
 
 
 @api_router.post("/disputes")

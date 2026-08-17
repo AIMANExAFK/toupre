@@ -65,10 +65,10 @@
 
 **Test indépendant** : en tant que propriétaire, ouvrir la réservation et voir les constats du locataire, puis ajouter sa propre observation.
 
-- [ ] T014 [P] [US3] Créer `frontend/src/InspectionView.tsx` : affichage lecture seule d'un constat (auteur, horodatage, qualification, note, vignettes photo) (FR-005, FR-006)
-- [ ] T015 [US3] Afficher les constats existants dans le détail d'une réservation, côté locataire (`frontend/app/(tabs)/bookings.tsx`)
-- [ ] T016 [US3] Donner au propriétaire l'accès aux constats et à l'ajout d'une contre-observation depuis `frontend/app/(tabs)/myitems.tsx`
-- [ ] T017 [US3] Vérifier qu'aucune modification ni suppression n'est possible après validation, des deux côtés (FR-006)
+- [x] T014 [P] [US3] Créer `frontend/src/InspectionView.tsx` : affichage lecture seule d'un constat (auteur, horodatage, qualification, note, vignettes photo) (FR-005, FR-006)
+- [x] T015 [US3] Afficher les constats existants dans le détail d'une réservation, côté locataire (`frontend/app/(tabs)/bookings.tsx`)
+- [x] T016 [US3] Donner au propriétaire l'accès aux constats et à l'ajout d'une contre-observation depuis `frontend/app/(tabs)/myitems.tsx`
+- [x] T017 [US3] Vérifier qu'aucune modification ni suppression n'est possible après validation, des deux côtés (FR-006)
 
 **Checkpoint** : les trois stories sont fonctionnelles et indépendantes.
 
@@ -78,10 +78,10 @@
 
 - [x] T018 [P] Étendre `frontend/e2e/locashare.spec.ts` : validation refusée sans photo (US1)
 - [x] T019 [P] Étendre la suite E2E : retour avec problème déclaré exigeant une note (US2)
-- [ ] T020 [P] Étendre la suite E2E : constat déposé visible par l'autre partie (US3)
+- [x] T020 [P] Étendre la suite E2E : constat déposé visible par l'autre partie (US3)
 - [x] T021 Exécuter `./run-e2e.sh` — suite entièrement verte, aucune régression
 - [x] T022 Vérifier l'absence de nouvelle erreur console sur le parcours complet
-- [ ] T023 Mettre à jour la mémoire projet et committer avec le constat de vérification
+- [x] T023 Mettre à jour la mémoire projet et committer avec le constat de vérification
 
 ---
 
