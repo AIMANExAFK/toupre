@@ -25,6 +25,7 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [aNoter, setANoter] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     if (!token) {
@@ -33,8 +34,13 @@ export default function Bookings() {
       return;
     }
     try {
-      const data = await apiFetch("/api/bookings/me", {}, token);
+      const [data, aNoter] = await Promise.all([
+        apiFetch("/api/bookings/me", {}, token),
+        // Locations terminées non encore notées (spec 004, FR-001)
+        apiFetch("/api/reviews/pending", {}, token).catch(() => []),
+      ]);
       setBookings(data);
+      setANoter(new Set((aNoter || []).map((b: any) => b.listing_id)));
     } catch (e) {
       console.log(e);
     } finally {
@@ -116,6 +122,18 @@ export default function Bookings() {
                 )}
               </TouchableOpacity>
             ) : null}
+            {aNoter.has(item.listing_id) && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Noter ${item.listing?.title ?? "cette location"}`}
+                onPress={() => router.push(`/booking/avis?listingId=${item.listing_id}&titre=${encodeURIComponent(item.listing?.title ?? "")}`)}
+                style={[styles.flowBtn, { backgroundColor: colors.warning }]}
+                testID={`noter-${item.id}`}
+              >
+                <Ionicons name="star-outline" size={15} color={colors.textInverse} />
+                <Text style={[styles.flowBtnText, { color: colors.textInverse }]}>Noter</Text>
+              </TouchableOpacity>
+            )}
             {["active", "completed", "returned", "disputed"].includes(item.status) && (
               <TouchableOpacity accessibilityRole="button"
                 onPress={() => router.push(`/booking/constats?id=${item.id}`)}

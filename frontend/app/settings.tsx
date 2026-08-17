@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Switch, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useColors, spacing, radius, ThemeMode } from "../src/theme";
+import { apiFetch, useAuth } from "../src/auth";
 import { Glass, GradientBg } from "../src/Glass";
 
 type DetailKey = "privacy" | "terms" | "data" | "rate";
@@ -49,8 +50,37 @@ const DETAILS: Record<DetailKey, { title: string; icon: string; body: string[]; 
 
 export default function Settings() {
   const router = useRouter();
+  const { token, logout } = useAuth();
   const colors = useColors();
   const { mode, setMode } = useTheme();
+  const [suppression, setSuppression] = useState(false);
+
+  // Suppression de compte (spec 004, US2) : double confirmation, car irréversible.
+  const supprimerCompte = () => {
+    Alert.alert(
+      "Supprimer votre compte ?",
+      "Vos annonces seront retirées et votre identité n'apparaîtra plus. Les locations déjà réalisées resteront visibles par l'autre partie, sans votre nom. Cette action est définitive.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            setSuppression(true);
+            try {
+              await apiFetch("/api/auth/me", { method: "DELETE" }, token);
+              await logout();
+              router.replace("/(auth)/welcome");
+            } catch (e: any) {
+              setSuppression(false);
+              Alert.alert("Suppression impossible", e?.message ?? "Réessayez plus tard.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const [detail, setDetail] = useState<DetailKey | null>(null);
   const [rating, setRating] = useState(0);
 
@@ -160,6 +190,29 @@ export default function Settings() {
               <LinkRow label="Gérer mes données" icon="lock-closed-outline" colors={colors} onPress={() => setDetail("data")} />
             </Glass>
 
+            <Text style={[styles.section, { color: colors.error }]}>COMPTE</Text>
+            <Glass borderRadius={radius.lg}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Supprimer définitivement mon compte"
+                onPress={supprimerCompte}
+                disabled={suppression}
+                accessibilityState={{ disabled: suppression }}
+                style={styles.dangerRow}
+                testID="delete-account-btn"
+              >
+                <Ionicons name="trash-outline" size={19} color={colors.error} />
+                <Text style={[styles.dangerTxt, { color: colors.error }]}>
+                  {suppression ? "Suppression en cours…" : "Supprimer mon compte"}
+                </Text>
+              </TouchableOpacity>
+            </Glass>
+            <Text style={[styles.dangerNote, { color: colors.textTertiary }]}>
+              Vos annonces sont retirées et votre identité n'apparaît plus nulle part. Les locations
+              déjà réalisées restent visibles par l'autre partie, sans votre nom, car ce sont aussi
+              ses preuves. Cette action est définitive.
+            </Text>
+
             <Text style={[styles.section, { color: colors.textSecondary }]}>À PROPOS</Text>
             <Glass borderRadius={radius.lg}>
               <LinkRow label="Version" icon="information-circle-outline" colors={colors} value="1.0.0" />
@@ -227,6 +280,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   headerTitle: { fontSize: 18, fontWeight: "800" },
+  dangerRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 16 },
+  dangerTxt: { fontSize: 15, fontWeight: "800" },
+  dangerNote: { fontSize: 12, lineHeight: 17, paddingHorizontal: 4, marginTop: 8 },
   section: { fontSize: 11, fontWeight: "800", letterSpacing: 1, marginTop: spacing.lg, marginBottom: spacing.sm, paddingHorizontal: 4 },
   row: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: spacing.md },
   iconBox: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },

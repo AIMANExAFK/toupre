@@ -330,6 +330,8 @@ async def get_current_user(
     user = await db.users.find_one({"id": payload["sub"]}, {"_id": 0, "password_hash": 0})
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
+    if user.get("deleted"):
+        raise HTTPException(status_code=401, detail="Ce compte a été supprimé.")
 
     # Session révoquée = accès refusé immédiatement (FR-009). Les jetons émis avant
     # la mise en place du suivi n'ont pas de sid : ils restent acceptés pour ne pas
@@ -1111,6 +1113,13 @@ async def create_review(payload: ReviewCreate, current_user: dict = Depends(get_
     })
     if existing:
         raise HTTPException(status_code=400, detail="You already reviewed this listing")
+    # Même filtrage que les autres textes libres de la plateforme (spec 004, FR-005)
+    verdict = check_content(payload.comment or "")
+    if verdict["blocked"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Votre commentaire contient un contenu interdit. Reformulez-le.",
+        )
     review = {
         "id": str(uuid.uuid4()),
         "listing_id": payload.listing_id,
@@ -1118,6 +1127,7 @@ async def create_review(payload: ReviewCreate, current_user: dict = Depends(get_
         "author_id": current_user["id"],
         "rating": payload.rating,
         "comment": payload.comment or "",
+        "comment_flagged": verdict["flagged"],
         "created_at": datetime.now(timezone.utc),
     }
     await db.reviews.insert_one(review)
@@ -1277,9 +1287,11 @@ async def pending_reviews(current_user: dict = Depends(get_current_user)):
     paid_bookings = await db.bookings.find(
         {"renter_id": me, "status": {"$in": ["paid", "returned", "completed"]}}, {"_id": 0}
     ).to_list(200)
-    reviewed_listings = set(
-        r["listing_id"] async for r in db.reviews.find({"author_id": me}, {"listing_id": 1})
-    )
+    # set() ne consomme pas un générateur asynchrone : il faut matérialiser la liste.
+    reviewed_listings = {
+        r["listing_id"]
+        for r in await db.reviews.find({"author_id": me}, {"_id": 0, "listing_id": 1}).to_list(500)
+    }
     pending = []
     for b in paid_bookings:
         if b["listing_id"] in reviewed_listings:
@@ -1693,6 +1705,51 @@ async def checkout_status(session_id: str, request: Request):
         detail="Le checkout en ligne est désactivé. Les réservations se règlent en espèces à la remise.",
     )
 
+
+
+@api_router.delete("/auth/me")
+async def delete_my_account(current_user: dict = Depends(get_current_user)):
+    """Suppression de compte par anonymisation (spec 004, US2).
+
+    On n'efface pas la ligne : réservations et états des lieux engagent DEUX parties,
+    et les supprimer priverait l'autre de ses propres preuves. On retire donc toute
+    donnée identifiante et on rend le compte inutilisable (FR-008, FR-010).
+    """
+    uid = current_user["id"]
+
+    # On ne disparaît pas au milieu d'un engagement (FR-011)
+    en_cours = await db.bookings.count_documents({
+        "$or": [{"renter_id": uid}, {"owner_id": uid}],
+        "status": {"$in": ["pending", "confirmed", "paid", "active", "disputed"]},
+    })
+    if en_cours:
+        raise HTTPException(
+            status_code=409,
+            detail=f"{en_cours} location(s) en cours. Terminez-les avant de supprimer votre compte.",
+        )
+
+    # Les annonces n'engagent que leur auteur : elles disparaissent
+    supprimees = (await db.listings.delete_many({"owner_id": uid})).deleted_count
+
+    # Anonymisation : plus aucune donnée identifiante, et une adresse unique pour
+    # ne pas heurter l'index d'unicité si la personne se réinscrit plus tard.
+    await db.users.update_one({"id": uid}, {"$set": {
+        "name": "Utilisateur supprimé",
+        "email": f"supprime-{uuid.uuid4().hex[:12]}@toupre.invalid",
+        "phone": None,
+        "avatar": None,
+        "password_hash": "",
+        "push_token": None,
+        "referral_code": None,
+        "deleted": True,
+        "deleted_at": datetime.now(timezone.utc),
+    }})
+
+    # Toutes les sessions tombent (FR-009)
+    await db.sessions.update_many({"user_id": uid}, {"$set": {"revoked": True}})
+
+    logger.info("Compte %s supprimé (anonymisé), %s annonce(s) retirée(s)", uid, supprimees)
+    return {"ok": True, "listings_removed": supprimees}
 
 # ---------- Sessions actives (spec 003) ----------
 @api_router.get("/auth/sessions")
