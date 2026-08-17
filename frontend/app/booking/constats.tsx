@@ -45,7 +45,7 @@ export default function Constats() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} testID="constats-back">
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="constats-back">
               <Glass borderRadius={22} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
@@ -78,7 +78,7 @@ export default function Constats() {
             {/* Contre-observation : l'autre partie a documenté une étape, pas moi */}
             {(["pickup", "return"] as const).map((kind) =>
               exists(kind) && !mine(kind) ? (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={kind}
                   onPress={() => router.push(`/booking/constat?id=${id}&kind=${kind}`)}
                   testID={`add-counter-${kind}`}

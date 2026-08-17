@@ -26,7 +26,7 @@ export default function LoginRedirect() {
           <Text style={[styles.sub, { color: colors.textSecondary }]}>
             Entrez votre email et votre numéro pour recevoir un code de vérification.
           </Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             onPress={() => router.replace("/auth/otp")}
             style={[
               styles.btn,

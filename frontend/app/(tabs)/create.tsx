@@ -143,7 +143,7 @@ export default function Create() {
             </Glass>
             <Text style={[styles.guestTitle, { color: colors.textPrimary }]}>Connectez-vous</Text>
             <Text style={[styles.guestSub, { color: colors.textSecondary }]}>Pour publier une annonce</Text>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[styles.btn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.4, radius: 16, offsetY: 6 })]}
               onPress={() => router.push("/auth/otp")}
             >
@@ -162,7 +162,7 @@ export default function Create() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.push("/(tabs)")} testID="create-back-btn">
+                <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.push("/(tabs)")} testID="create-back-btn">
                   <Glass borderRadius={22} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
                   </Glass>
@@ -199,10 +199,10 @@ export default function Create() {
                 </View>
               </Glass>
 
-              <TouchableOpacity onPress={pickImage} testID="pick-image-btn" style={{ marginTop: spacing.lg }}>
+              <TouchableOpacity accessibilityRole="button" onPress={pickImage} testID="pick-image-btn" style={{ marginTop: spacing.lg }}>
                 <Glass borderRadius={radius.lg} style={[styles.imageBox, { borderColor: colors.primary }]}>
                   {photo ? (
-                    <Image source={{ uri: photo }} style={styles.image} />
+                    <Image source={{ uri: photo }} style={styles.image} alt="Photo choisie pour votre annonce" />
                   ) : (
                     <View style={styles.placeholder}>
                       <Ionicons name="camera-outline" size={36} color={colors.primary} />
@@ -221,7 +221,7 @@ export default function Create() {
                 {CATEGORIES.map((c) => {
                   const active = category === c.id;
                   return (
-                    <TouchableOpacity key={c.id} onPress={() => setCategory(c.id)} testID={`create-cat-${c.id}`} style={{ marginRight: 8 }}>
+                    <TouchableOpacity accessibilityRole="button" key={c.id} onPress={() => setCategory(c.id)} testID={`create-cat-${c.id}`} style={{ marginRight: 8 }}>
                       {active ? (
                         <View style={[styles.catChip, { backgroundColor: colors.primary, borderColor: colors.primary }]}>
                           <Ionicons name={c.icon as any} size={16} color={colors.textInverse} />
@@ -280,7 +280,7 @@ export default function Create() {
                 testID="create-address-input"
               />
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={[
                   styles.submitBtn,
                   { backgroundColor: isReady ? colors.primary : colors.surface2 },
@@ -288,7 +288,7 @@ export default function Create() {
                   isReady && shadowStyle({ color: colors.primary, opacity: 0.32, radius: 14, offsetY: 6 }),
                 ]}
                 onPress={submit}
-                disabled={loading || !isReady}
+                disabled={loading || !isReady} accessibilityState={{ disabled: loading || !isReady }}
                 testID="create-submit-btn"
               >
                 {loading ? (

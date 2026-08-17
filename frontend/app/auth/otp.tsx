@@ -110,7 +110,7 @@ export default function OtpFlow() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
 
           <View style={styles.header}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button"
               onPress={() => step === "code" ? setStep("contact") : router.back()}
               style={styles.iconBtn}
             >
@@ -176,9 +176,9 @@ export default function OtpFlow() {
                   </View>
                 )}
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   onPress={requestOTP}
-                  disabled={!contactValid || loading}
+                  disabled={!contactValid || loading} accessibilityState={{ disabled: !contactValid || loading }}
                   style={[
                     styles.primaryBtn,
                     { backgroundColor: contactValid ? colors.primary : colors.border },
@@ -258,9 +258,9 @@ export default function OtpFlow() {
                   </View>
                 )}
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   onPress={verifyOTP}
-                  disabled={!codeValid || loading}
+                  disabled={!codeValid || loading} accessibilityState={{ disabled: !codeValid || loading }}
                   style={[
                     styles.primaryBtn,
                     { backgroundColor: codeValid ? colors.primary : colors.border },
@@ -284,7 +284,7 @@ export default function OtpFlow() {
                       Renvoyer dans {resendIn}s
                     </Text>
                   ) : (
-                    <TouchableOpacity onPress={requestOTP}>
+                    <TouchableOpacity accessibilityRole="button" onPress={requestOTP}>
                       <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "800" }}>Renvoyer</Text>
                     </TouchableOpacity>
                   )}

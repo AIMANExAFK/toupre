@@ -19,6 +19,7 @@ export default function Welcome() {
             <Image
               source={{ uri: "https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg" }}
               style={styles.heroImg}
+              alt=""
             />
             <View style={[styles.overlay, { backgroundColor: colors.overlay }]} />
 
@@ -56,7 +57,7 @@ export default function Welcome() {
               Réservez une voiture, un vélo, un outil ou du matériel pour quelques heures ou quelques jours, sans achat inutile.
             </Text>
 
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[
                 styles.primaryBtn,
                 { backgroundColor: colors.primary },
@@ -71,7 +72,7 @@ export default function Welcome() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => router.push("/auth/otp")} testID="welcome-login-btn">
+            <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/auth/otp")} testID="welcome-login-btn">
               <Glass borderRadius={radius.md} style={styles.secondaryGlass}>
                 <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
                   {"J'ai déjà un compte · Recevoir un code"}

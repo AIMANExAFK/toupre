@@ -14,7 +14,7 @@ export default function Payments() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()}>
               <Glass borderRadius={22} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>

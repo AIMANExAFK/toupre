@@ -57,7 +57,7 @@ export default function Profile() {
             <Text style={[styles.guestSub, { color: colors.textSecondary }]}>
               Connectez-vous pour louer ou publier
             </Text>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               style={[styles.btn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 })]}
               onPress={() => router.push("/auth/otp")}
               testID="profile-login-btn"
@@ -105,7 +105,7 @@ export default function Profile() {
             </View>
 
             {/* Contact verification banner */}
-            <TouchableOpacity onPress={() => router.push(me?.kyc_status === "verified" ? "/security" : "/auth/otp")} style={styles.menu} activeOpacity={0.8}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => router.push(me?.kyc_status === "verified" ? "/security" : "/auth/otp")} style={styles.menu} activeOpacity={0.8}>
               <Glass borderRadius={radius.lg} style={[styles.trustCard, { borderColor: colors.surfaceGlassBorder }]}>
                 <View style={[styles.trustIcon, {
                   backgroundColor: me?.kyc_status === "verified" ? colors.successBg : colors.primaryTint,
@@ -130,7 +130,7 @@ export default function Profile() {
 
             {/* Parrainage banner */}
             {me?.credit_balance != null && (
-              <TouchableOpacity onPress={() => router.push("/referral")} style={styles.menu} activeOpacity={0.8}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/referral")} style={styles.menu} activeOpacity={0.8}>
                 <Glass borderRadius={radius.lg} style={[styles.trustCard, { backgroundColor: colors.primaryTint + "30" }]}>
                   <View style={[styles.trustIcon, { backgroundColor: colors.primary }]}>
                     <Ionicons name="gift" size={22} color={colors.textInverse} />
@@ -188,7 +188,7 @@ export default function Profile() {
               </Glass>
             </View>
 
-            <TouchableOpacity onPress={onLogout} testID="logout-btn" style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg }}>
+            <TouchableOpacity accessibilityRole="button" onPress={onLogout} testID="logout-btn" style={{ marginHorizontal: spacing.lg, marginTop: spacing.lg }}>
               <Glass borderRadius={radius.md} style={{ paddingVertical: 16, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 8 }}>
                 <Ionicons name="log-out-outline" size={20} color={colors.error} />
                 <Text style={[styles.logoutText, { color: colors.error }]}>Se déconnecter</Text>
@@ -207,7 +207,7 @@ function Divider({ colors }: { colors: any }) {
 
 function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
   return (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress} testID={testID}>
+    <TouchableOpacity accessibilityRole="button" style={styles.menuItem} onPress={onPress} testID={testID}>
       <View style={[styles.menuIcon, { backgroundColor: colors.primaryTint }]}>
         <Ionicons name={icon} size={20} color={colors.primary} />
       </View>

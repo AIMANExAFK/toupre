@@ -174,7 +174,7 @@ function MapFallback({ colors, items, style }: { colors: any; items: MapItem[]; 
         Vérifiez votre connexion, puis rechargez la page. Les biens restent accessibles ci-dessous.
       </Text>
       {items.slice(0, 4).map((item) => (
-        <Pressable key={item.id} onPress={item.onPress} style={[styles.fallbackRow, { borderColor: colors.border }]}>
+        <Pressable accessibilityRole="button" key={item.id} onPress={item.onPress} style={[styles.fallbackRow, { borderColor: colors.border }]}>
           <Ionicons name="location" size={16} color={colors.primary} />
           <Text style={[styles.fallbackItem, { color: colors.textPrimary }]} numberOfLines={1}>
             {item.title}

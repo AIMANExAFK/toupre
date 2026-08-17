@@ -163,7 +163,7 @@ export default function SecurityScreen() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
               <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Sécurité & Sessions</Text>
@@ -187,7 +187,7 @@ export default function SecurityScreen() {
                 {notifPerm === "granted" && <View style={styles.statusDot} />}
               </View>
               {notifPerm !== "granted" && notifPerm !== "unsupported" && (
-                <TouchableOpacity onPress={askNotifications} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
+                <TouchableOpacity accessibilityRole="button" onPress={askNotifications} style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
                   <Ionicons name="notifications" size={16} color={colors.textInverse} />
                   <Text style={[styles.actionBtnText, { color: colors.textInverse }]}>
                     {notifPerm === "denied" ? "Réactiver les notifications" : "Activer les notifications"}
@@ -195,7 +195,7 @@ export default function SecurityScreen() {
                 </TouchableOpacity>
               )}
               {notifPerm === "granted" && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   onPress={() => NotificationsManager.show("Test Toupré ✓", { body: "Vos notifications fonctionnent !" })}
                   style={[styles.actionBtn, { backgroundColor: colors.surface2, borderColor: colors.border, borderWidth: 1 }]}
                 >
@@ -230,7 +230,7 @@ export default function SecurityScreen() {
                         {p.last_used_at ? ` · Utilisée ${formatRelative(p.last_used_at)}` : " · Jamais utilisée"}
                       </Text>
                     </View>
-                    <TouchableOpacity onPress={() => removePasskey(p.credential_id)} style={styles.removeBtn}>
+                    <TouchableOpacity accessibilityLabel="Supprimer" accessibilityRole="button" onPress={() => removePasskey(p.credential_id)} style={styles.removeBtn}>
                       <Ionicons name="trash-outline" size={16} color={colors.error} />
                     </TouchableOpacity>
                   </View>
@@ -243,9 +243,9 @@ export default function SecurityScreen() {
                 </View>
               )}
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={registerPasskey}
-                disabled={busy || !hasPasskey}
+                disabled={busy || !hasPasskey} accessibilityState={{ disabled: busy || !hasPasskey }}
                 style={[
                   styles.actionBtn,
                   { backgroundColor: hasPasskey ? colors.primary : colors.border },
@@ -297,7 +297,7 @@ export default function SecurityScreen() {
                       </Text>
                     </View>
                     {!isThis && (
-                      <TouchableOpacity onPress={() => revokeSession(s.id)} style={styles.removeBtn}>
+                      <TouchableOpacity accessibilityLabel="Se déconnecter" accessibilityRole="button" onPress={() => revokeSession(s.id)} style={styles.removeBtn}>
                         <Ionicons name="log-out-outline" size={16} color={colors.error} />
                       </TouchableOpacity>
                     )}

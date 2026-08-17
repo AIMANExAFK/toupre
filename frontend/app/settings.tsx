@@ -61,7 +61,7 @@ export default function Settings() {
         <GradientBg>
           <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
             <View style={styles.header}>
-              <TouchableOpacity onPress={() => setDetail(null)} testID="settings-detail-back">
+              <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => setDetail(null)} testID="settings-detail-back">
                 <Glass borderRadius={22} style={styles.backBtn}>
                   <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
                 </Glass>
@@ -85,7 +85,7 @@ export default function Settings() {
                 {detail === "rate" && (
                   <View style={styles.stars}>
                     {[1, 2, 3, 4, 5].map((value) => (
-                      <TouchableOpacity key={value} onPress={() => setRating(value)} testID={`rate-${value}`}>
+                      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`Noter ${value} sur 5`} key={value} onPress={() => setRating(value)} testID={`rate-${value}`}>
                         <Ionicons
                           name={value <= rating ? "star" : "star-outline"}
                           size={30}
@@ -97,7 +97,7 @@ export default function Settings() {
                 )}
 
                 {!!current.action && (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
                     onPress={() => {
                       if (detail === "data") setDetail("privacy");
@@ -123,7 +123,7 @@ export default function Settings() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")} testID="settings-back">
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.replace("/(tabs)/profile")} testID="settings-back">
               <Glass borderRadius={22} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
@@ -176,7 +176,7 @@ export default function Settings() {
 function ThemeRow({ label, value, current, onSelect, icon, colors }: any) {
   const active = current === value;
   return (
-    <TouchableOpacity style={styles.row} onPress={() => onSelect(value as ThemeMode)} testID={`theme-${value}`}>
+    <TouchableOpacity accessibilityRole="button" style={styles.row} onPress={() => onSelect(value as ThemeMode)} testID={`theme-${value}`}>
       <View style={[styles.iconBox, { backgroundColor: colors.primaryTint }]}>
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>
@@ -205,7 +205,7 @@ function ToggleRow({ label, icon, defaultOn, colors }: any) {
 
 function LinkRow({ label, icon, colors, onPress, value }: any) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} disabled={!onPress}>
+    <TouchableOpacity accessibilityRole="button" style={styles.row} onPress={onPress} disabled={!onPress}>
       <View style={[styles.iconBox, { backgroundColor: colors.primaryTint }]}>
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>

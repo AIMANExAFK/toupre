@@ -61,7 +61,7 @@ export default function MessagesScreen() {
       <SafeAreaView style={[styles.empty, { backgroundColor: colors.bg }]}>
         <Ionicons name="lock-closed-outline" size={52} color={colors.textTertiary} />
         <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>Connexion requise</Text>
-        <TouchableOpacity onPress={() => router.push("/auth/otp")}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/auth/otp")}>
           <Text style={[styles.emptyLink, { color: colors.primary }]}>Se connecter</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -72,7 +72,7 @@ export default function MessagesScreen() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <SafeAreaView edges={["top"]} style={styles.headerWrap}>
         <Glass borderRadius={0} style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+          <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Messages</Text>
@@ -93,7 +93,7 @@ export default function MessagesScreen() {
           <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
             Vos échanges avec les propriétaires apparaîtront ici.
           </Text>
-          <TouchableOpacity onPress={() => router.push("/(tabs)")}>
+          <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/(tabs)")}>
             <Text style={[styles.emptyLink, { color: colors.primary }]}>Explorer les annonces</Text>
           </TouchableOpacity>
         </View>
@@ -104,7 +104,7 @@ export default function MessagesScreen() {
           contentContainerStyle={{ padding: spacing.lg, gap: spacing.sm }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           renderItem={({ item }) => (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => router.push(`/messages/${item.peer_id}${item.listing ? `?listingId=${item.listing.id}` : ""}`)}
               activeOpacity={0.7}
               testID={`conv-${item.peer_id}`}

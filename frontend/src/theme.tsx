@@ -36,9 +36,11 @@ type Palette = {
 // Identité Toupré — "Tout se loue, tout près."
 // Crème chaleureux + corail terracotta + anthracite. Sombre chaud en option.
 const lightColors: Palette = {
-  primary: "#E2674A",
-  primaryLight: "#F08A6C",
-  primaryDark: "#C04A2E",
+  primary: "#CE4221",
+  // #E2674A : corail de marque d'origine, conservé pour le décoratif (seuil 3:1 des
+  // éléments d'interface) — jamais pour du texte, qui exige 4.5:1.
+  primaryLight: "#E2674A",
+  primaryDark: "#A8351A",
   primaryTint: "rgba(226, 103, 74, 0.10)",
   primaryGlow: "rgba(226, 103, 74, 0.18)",
   secondary: "#2F7A6B",
@@ -51,14 +53,14 @@ const lightColors: Palette = {
   border: "#EBDDD3",
   textPrimary: "#2B2420",
   textSecondary: "#6B5D54",
-  textTertiary: "#9C8D83",
+  textTertiary: "#807066",
   textInverse: "#FFFFFF",
-  brand: "#C04A2E",
-  success: "#1D9E75",
+  brand: "#A8351A",
+  success: "#188261",
   successBg: "#E1F5EE",
   error: "#DC2626",
   errorBg: "#FCE8E4",
-  warning: "#C87913",
+  warning: "#9F600F",
   warningBg: "#FFF1D8",
   overlay: "rgba(43, 36, 32, 0.48)",
   shimmer: "rgba(255, 255, 255, 0.72)",

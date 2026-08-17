@@ -246,3 +246,50 @@ test("consultation partagée : le propriétaire voit le constat du locataire et 
   // Et il peut ajouter sa propre observation sans écraser celle du locataire
   await expect(page.getByTestId("add-counter-pickup")).toBeVisible();
 });
+
+// ─── Spec 002 : accessibilité (non-régression) ──────────────────────────────
+
+test("accessibilité : tout élément actionnable a un rôle et un nom", async ({ page }) => {
+  await loginDemo(page);
+
+  const bilan = await page.evaluate(() => {
+    const root = document.getElementById("root")!;
+    const sel = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const parcours = [...root.querySelectorAll(sel)];
+    const champs = ["INPUT", "TEXTAREA", "SELECT"];
+    const nom = (e: Element) =>
+      e.getAttribute("aria-label") || (e.textContent || "").trim();
+    return {
+      arrets: parcours.length,
+      // Un <div> focusable sans rôle est muet pour un lecteur d'écran
+      divsNus: parcours.filter(
+        (e) => !["A", "BUTTON", "INPUT", "TEXTAREA", "SELECT"].includes(e.tagName) && !e.getAttribute("role"),
+      ).length,
+      sansNom: parcours.filter((e) => !nom(e) && !champs.includes(e.tagName)).length,
+      imagesSansAlt: [...root.querySelectorAll("img")].filter((i) => i.getAttribute("alt") === null).length,
+    };
+  });
+
+  expect(bilan.arrets).toBeGreaterThan(10);
+  expect(bilan.divsNus, "éléments focusables sans rôle accessible").toBe(0);
+  expect(bilan.sansNom, "éléments actionnables sans nom accessible").toBe(0);
+  expect(bilan.imagesSansAlt, "images sans alternative textuelle").toBe(0);
+});
+
+test("accessibilité : le focus clavier est visible", async ({ page }) => {
+  await loginDemo(page);
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+
+  const focus = await page.evaluate(() => {
+    const a = document.activeElement!;
+    const cs = getComputedStyle(a);
+    return {
+      balise: a.tagName,
+      contourVisible: cs.outlineStyle !== "none" && parseFloat(cs.outlineWidth) > 0,
+    };
+  });
+  // La règle projet supprime les halos à la souris ; :focus-visible les rétablit au clavier
+  expect(focus.balise).not.toBe("BODY");
+  expect(focus.contourVisible, "focus clavier invisible : l'app est inutilisable sans souris").toBe(true);
+});

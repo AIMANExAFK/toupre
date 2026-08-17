@@ -77,7 +77,7 @@ export default function ReferralScreen() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
               <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Parrainage</Text>
@@ -106,11 +106,11 @@ export default function ReferralScreen() {
                 <Text style={[styles.code, { color: colors.primary }]} selectable>
                   {data.referral_code}
                 </Text>
-                <TouchableOpacity onPress={copyCode} style={[styles.copyBtn, { backgroundColor: colors.surface2 }]}>
+                <TouchableOpacity accessibilityRole="button" accessibilityLabel={copied ? "Code copié" : "Copier le code de parrainage"} onPress={copyCode} style={[styles.copyBtn, { backgroundColor: colors.surface2 }]}>
                   <Ionicons name={copied ? "checkmark" : "copy-outline"} size={18} color={copied ? colors.success : colors.textPrimary} />
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={shareCode}
                 style={[styles.shareBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 })]}
               >

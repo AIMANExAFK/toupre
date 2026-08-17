@@ -37,7 +37,8 @@ export default function Root({ children }: PropsWithChildren) {
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
 
-              /* ─── Aucun outline / halo sur quoi que ce soit ─── */
+              /* ─── Aucun outline / halo sur quoi que ce soit ───
+                 (règle projet : pas de halo disgracieux au clic souris) */
               *,
               *:focus,
               *:focus-visible,
@@ -68,6 +69,30 @@ export default function Root({ children }: PropsWithChildren) {
               [role]:focus,
               [role]:focus-visible {
                 box-shadow: none !important;
+              }
+
+              /* ─── Focus clavier visible (spec 002, FR-011) ───
+                 :focus-visible ne se déclenche QUE sur navigation clavier — jamais au
+                 clic souris. La règle « pas de halo » ci-dessus reste donc respectée
+                 pour la souris, tout en rendant le focus perceptible au clavier, sans
+                 quoi l'application est inutilisable sans souris. */
+              #root a:focus-visible,
+              #root button:focus-visible,
+              #root input:focus-visible,
+              #root textarea:focus-visible,
+              #root [tabindex]:focus-visible {
+                outline: 3px solid #CE4221 !important;
+                outline-offset: 2px !important;
+                border-radius: 4px;
+              }
+              /* Sur fond corail, un contour corail serait invisible : on inverse. */
+              #root button[style*="rgb(206, 66, 33)"]:focus-visible {
+                outline-color: #FFF8F3 !important;
+              }
+              @media (prefers-reduced-motion: no-preference) {
+                #root a:focus-visible, #root button:focus-visible {
+                  transition: outline-offset 120ms ease;
+                }
               }
             `,
           }}

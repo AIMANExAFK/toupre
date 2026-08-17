@@ -85,7 +85,7 @@ export default function ListingDetail() {
       <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: "center", justifyContent: "center", gap: 12 }}>
         <Ionicons name="alert-circle-outline" size={52} color={colors.error} />
         <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>Annonce introuvable</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
           <Text style={{ color: colors.primary, fontWeight: "600" }}>Retour</Text>
         </TouchableOpacity>
       </View>
@@ -97,17 +97,18 @@ export default function ListingDetail() {
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="listing-detail-screen">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         <View style={styles.imgWrap}>
-          <Image source={{ uri: listing.photos[0] }} style={styles.image} />
+          <Image source={{ uri: listing.photos[0] }} style={styles.image} alt={`Photo de ${listing.title}`} />
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.18)" }]} />
           <SafeAreaView edges={["top"]} style={styles.topBar}>
-            <TouchableOpacity onPress={() => router.back()} testID="back-btn">
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="back-btn">
               <Glass borderRadius={22} style={styles.iconBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
             </TouchableOpacity>
             <View style={{ flexDirection: "row", gap: 8 }}>
               <Animated.View style={{ transform: [{ scale: favScale }] }}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
+                  accessibilityLabel={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
                   onPress={() => setFavorite(!favorite)}
                   onPressIn={() => pressIn(favScale)}
                   onPressOut={() => pressOut(favScale)}
@@ -119,7 +120,7 @@ export default function ListingDetail() {
                 </TouchableOpacity>
               </Animated.View>
               {!isOwner && (
-                <TouchableOpacity onPress={() => setReportOpen(true)} testID="report-listing-btn">
+                <TouchableOpacity accessibilityLabel="Signaler" accessibilityRole="button" onPress={() => setReportOpen(true)} testID="report-listing-btn">
                   <Glass borderRadius={22} style={styles.iconBtn}>
                     <Ionicons name="flag-outline" size={18} color={colors.textPrimary} />
                   </Glass>
@@ -175,7 +176,7 @@ export default function ListingDetail() {
                 <Text style={[styles.ownerLabel, { color: colors.textSecondary }]}>Propriétaire vérifié</Text>
               </View>
               {!isOwner && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   onPress={contactOwner}
                   style={[styles.contactBtn, { backgroundColor: colors.primaryTint }]}
                   testID="contact-owner-btn"
@@ -272,7 +273,7 @@ export default function ListingDetail() {
               </View>
             ) : (
               <Animated.View style={{ transform: [{ scale: bookScale }] }}>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[styles.bookBtn, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 })]}
                   onPress={() => {
                     if (!user) { router.push("/auth/otp"); return; }

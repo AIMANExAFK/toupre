@@ -83,7 +83,12 @@ export function InspectionView({ item }: { item: Inspection }) {
       {item.photos?.length > 0 && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photos}>
           {item.photos.map((p, i) => (
-            <Image key={i} source={{ uri: p }} style={styles.photo} />
+            <Image
+              key={i}
+              source={{ uri: p }}
+              style={styles.photo}
+              alt={`Photo ${i + 1} du constat de ${item.kind === "pickup" ? "remise" : "retour"}`}
+            />
           ))}
         </ScrollView>
       )}

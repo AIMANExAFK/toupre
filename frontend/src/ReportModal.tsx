@@ -84,7 +84,7 @@ export function ReportModal({ visible, onClose, targetType, targetId, targetLabe
 
           {/* Header */}
           <View style={[styles.header, { borderBottomColor: colors.border }]}>
-            <TouchableOpacity onPress={close} style={styles.closeBtn}>
+            <TouchableOpacity accessibilityLabel="Fermer" accessibilityRole="button" onPress={close} style={styles.closeBtn}>
               <Ionicons name="close" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={[styles.title, { color: colors.textPrimary }]}>Signaler</Text>
@@ -120,7 +120,7 @@ export function ReportModal({ visible, onClose, targetType, targetId, targetLabe
                 {CATEGORIES.map((cat) => {
                   const selected = category === cat.value;
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={cat.value}
                       onPress={() => setCategory(cat.value)}
                       activeOpacity={0.7}
@@ -190,9 +190,9 @@ export function ReportModal({ visible, onClose, targetType, targetId, targetLabe
                 </Text>
               </View>
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={submit}
-                disabled={!category || submitting}
+                disabled={!category || submitting} accessibilityState={{ disabled: !category || submitting }}
                 style={[
                   styles.submitBtn,
                   { backgroundColor: !category ? colors.border : colors.error },

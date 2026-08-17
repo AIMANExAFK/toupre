@@ -96,7 +96,7 @@ export default function MyItems() {
 
           {/* Tabs */}
           <View style={styles.tabRow}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => setTab("items")}
               style={[styles.tab, tab === "items" && { borderBottomColor: colors.primary }]}
               testID="tab-items"
@@ -105,7 +105,7 @@ export default function MyItems() {
                 Annonces ({items.length})
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => setTab("requests")}
               style={[styles.tab, tab === "requests" && { borderBottomColor: colors.primary }]}
               testID="tab-requests"
@@ -135,21 +135,21 @@ export default function MyItems() {
                 <View style={{ marginBottom: spacing.md }} testID={`my-item-${item.id}`}>
                   <Glass borderRadius={radius.lg}>
                     <View style={styles.card}>
-                      <Image source={{ uri: item.photos[0] }} style={styles.img} />
+                      <Image source={{ uri: item.photos[0] }} style={styles.img} alt={`Photo de ${item.title}`} />
                       <View style={styles.body}>
                         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{item.title}</Text>
                         <Text style={[styles.location, { color: colors.textSecondary }]}>{item.location?.address}</Text>
                         <View style={styles.bottomRow}>
                           <Text style={[styles.price, { color: colors.primary }]}>{item.price_per_day}€/jour</Text>
                           <View style={styles.actions}>
-                            <TouchableOpacity
+                            <TouchableOpacity accessibilityLabel="Voir l'annonce" accessibilityRole="button"
                               onPress={() => router.push(`/listing/${item.id}`)}
                               style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
                               testID={`view-item-${item.id}`}
                             >
                               <Ionicons name="eye" size={18} color={colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity
+                            <TouchableOpacity accessibilityLabel="Supprimer l'annonce" accessibilityRole="button"
                               onPress={() => onDelete(item.id)}
                               style={[styles.actionBtn, { backgroundColor: colors.errorBg }]}
                               testID={`delete-item-${item.id}`}
@@ -169,7 +169,7 @@ export default function MyItems() {
                     <Ionicons name="cube-outline" size={48} color={colors.primary} />
                   </Glass>
                   <Text style={[styles.emptyText, { color: colors.textPrimary }]}>{"Vous n'avez encore rien publié"}</Text>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[styles.cta, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.45, radius: 16, offsetY: 6 })]}
                     onPress={() => router.push("/(tabs)/create")}
                     testID="empty-create-btn"
@@ -206,7 +206,7 @@ export default function MyItems() {
                       <Glass borderRadius={radius.lg} style={styles.bookingCard}>
                         <View style={styles.bookingHead}>
                           {b.listing?.photos?.[0] && (
-                            <Image source={{ uri: b.listing.photos[0] }} style={styles.bookingThumb} />
+                            <Image source={{ uri: b.listing.photos[0] }} style={styles.bookingThumb} alt={`Photo de ${b.listing.title}`} />
                           )}
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <Text style={[styles.bookingTitle, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -249,7 +249,7 @@ export default function MyItems() {
 
                         {b.status === "pending" && (
                           <View style={styles.bookingActions}>
-                            <TouchableOpacity
+                            <TouchableOpacity accessibilityRole="button"
                               onPress={() => updateBooking(b.id, "refused")}
                               style={[styles.btnRefuse, { backgroundColor: colors.errorBg, borderColor: colors.error }]}
                               testID={`refuse-${b.id}`}
@@ -257,7 +257,7 @@ export default function MyItems() {
                               <Ionicons name="close" size={16} color={colors.error} />
                               <Text style={[styles.btnText, { color: colors.error }]}>Refuser</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity
+                            <TouchableOpacity accessibilityRole="button"
                               onPress={() => updateBooking(b.id, "confirmed")}
                               style={[styles.btnAccept, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.35, radius: 8, offsetY: 3 })]}
                               testID={`accept-${b.id}`}
@@ -269,7 +269,7 @@ export default function MyItems() {
                         )}
 
                         {["active", "completed", "returned", "disputed"].includes(b.status) && (
-                          <TouchableOpacity
+                          <TouchableOpacity accessibilityRole="button"
                             onPress={() => router.push(`/booking/constats?id=${b.id}`)}
                             style={[styles.btnMessage, { borderColor: colors.border, marginBottom: 8 }]}
                             testID={`owner-constats-${b.id}`}
@@ -279,7 +279,7 @@ export default function MyItems() {
                           </TouchableOpacity>
                         )}
 
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityRole="button"
                           onPress={() => router.push(`/messages/${b.renter_id || b.user_id || b.renter?.id}?listingId=${b.listing_id}`)}
                           style={[styles.btnMessage, { borderColor: colors.border }]}
                         >

@@ -26,7 +26,7 @@ export default function RegisterRedirect() {
           <Text style={[styles.sub, { color: colors.textSecondary }]}>
             Un code envoyé sur email et téléphone suffit pour créer ou retrouver votre compte.
           </Text>
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
             onPress={() => router.replace("/auth/otp")}
             style={[
               styles.btn,

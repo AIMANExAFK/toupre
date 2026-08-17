@@ -125,7 +125,7 @@ export default function Help() {
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <View style={styles.header}>
-              <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")} testID="help-back">
+              <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.replace("/(tabs)/profile")} testID="help-back">
                 <Glass borderRadius={22} style={styles.backBtn}>
                   <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
                 </Glass>
@@ -153,7 +153,7 @@ export default function Help() {
                 </View>
 
                 <Text style={[styles.sectionMini, { color: colors.textSecondary }]}>APPELER</Text>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   activeOpacity={0.85}
                   style={[styles.callButton, { backgroundColor: colors.primary }]}
                   testID="support-call"
@@ -195,7 +195,7 @@ export default function Help() {
                   testID="contact-message"
                 />
 
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   style={[
                     styles.sendBtn,
                     { backgroundColor: colors.primary },
@@ -203,7 +203,7 @@ export default function Help() {
                     shadowStyle({ color: colors.primary, opacity: 0.32, radius: 14, offsetY: 6 }),
                   ]}
                   onPress={send}
-                  disabled={sending}
+                  disabled={sending} accessibilityState={{ disabled: sending }}
                   testID="contact-send"
                 >
                   <Ionicons name="send" size={16} color={colors.textInverse} />
@@ -254,7 +254,7 @@ export default function Help() {
 
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickReplies}>
                   {QUICK_REPLIES.map((reply) => (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       key={reply}
                       activeOpacity={0.8}
                       style={[styles.quickReply, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -274,7 +274,7 @@ export default function Help() {
                     onChangeText={setChatDraft}
                     testID="support-chat-input"
                   />
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityLabel="Envoyer le message" accessibilityRole="button"
                     style={[styles.chatSend, { backgroundColor: colors.primary }]}
                     onPress={sendChat}
                     testID="support-chat-send"
@@ -288,7 +288,7 @@ export default function Help() {
               <Glass borderRadius={radius.lg}>
                 {FAQS.map((faq, index) => (
                   <View key={faq.q}>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityRole="button"
                       style={styles.faqRow}
                       onPress={() => setOpen(open === index ? null : index)}
                       testID={`faq-${index}`}

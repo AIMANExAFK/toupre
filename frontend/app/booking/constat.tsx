@@ -128,7 +128,7 @@ export default function Constat() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} testID="constat-back">
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="constat-back">
               <Glass borderRadius={22} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
@@ -156,8 +156,8 @@ export default function Constat() {
             <View style={styles.photoRow}>
               {photos.map((p, i) => (
                 <View key={i} style={styles.thumbWrap}>
-                  <Image source={{ uri: p }} style={styles.thumb} />
-                  <TouchableOpacity
+                  <Image source={{ uri: p }} style={styles.thumb} alt={`Photo ${i + 1} du constat`} />
+                  <TouchableOpacity accessibilityRole="button"
                     onPress={() => removePhoto(i)}
                     style={[styles.removeBtn, { backgroundColor: colors.error }]}
                     testID={`remove-photo-${i}`}
@@ -168,7 +168,7 @@ export default function Constat() {
                 </View>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   onPress={onAdd}
                   style={[styles.addBtn, { borderColor: colors.primary }]}
                   testID="add-photo"
@@ -190,7 +190,7 @@ export default function Constat() {
                   {CONDITIONS.map((c) => {
                     const active = condition === c.value;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityRole="button"
                         key={c.value}
                         onPress={() => setCondition(c.value)}
                         testID={`condition-${c.value}`}
@@ -266,9 +266,9 @@ export default function Constat() {
           </ScrollView>
 
           <View style={styles.footer}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={submit}
-              disabled={!canSubmit}
+              disabled={!canSubmit} accessibilityState={{ disabled: !canSubmit }}
               testID="constat-submit"
               style={[
                 styles.submit,

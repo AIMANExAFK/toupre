@@ -109,7 +109,7 @@ export default function ChatScreen() {
     >
       <SafeAreaView edges={["top"]} style={styles.headerWrap}>
         <Glass borderRadius={0} style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+          <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
             <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
@@ -125,7 +125,7 @@ export default function ChatScreen() {
               <Text style={[styles.headerStatus, { color: colors.success }]}>● En ligne</Text>
             </View>
           </View>
-          <TouchableOpacity onPress={() => setReportOpen(true)} style={styles.iconBtn} testID="report-user-btn">
+          <TouchableOpacity accessibilityLabel="Signaler" accessibilityRole="button" onPress={() => setReportOpen(true)} style={styles.iconBtn} testID="report-user-btn">
             <Ionicons name="flag-outline" size={20} color={colors.textPrimary} />
           </TouchableOpacity>
         </Glass>
@@ -193,7 +193,7 @@ export default function ChatScreen() {
           <Text style={{ flex: 1, fontSize: 12, color: colors.error, lineHeight: 16 }}>
             {blockedError}
           </Text>
-          <TouchableOpacity onPress={() => setBlockedError(null)}>
+          <TouchableOpacity accessibilityLabel="Fermer" accessibilityRole="button" onPress={() => setBlockedError(null)}>
             <Ionicons name="close" size={16} color={colors.error} />
           </TouchableOpacity>
         </View>
@@ -210,7 +210,9 @@ export default function ChatScreen() {
             maxLength={500}
             testID="chat-input"
           />
-          <TouchableOpacity
+          <TouchableOpacity accessibilityRole="button"
+            accessibilityLabel="Envoyer le message"
+            accessibilityState={{ disabled: !draft.trim() || sending }}
             onPress={send}
             disabled={!draft.trim() || sending}
             style={[styles.sendBtn, { backgroundColor: draft.trim() ? colors.primary : colors.surface2 }]}

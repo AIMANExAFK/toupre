@@ -95,7 +95,7 @@ export function RentalCard({
       onMouseEnter={Platform.OS === "web" ? onHoverIn : undefined}
       onMouseLeave={Platform.OS === "web" ? onHoverOut : undefined}
     >
-      <TouchableOpacity activeOpacity={0.95} onPress={onPress} testID={`rental-card-${title}`}>
+      <TouchableOpacity accessibilityRole="button" accessibilityLabel={`${title} — ${pricePerDay}€ par jour, ${location}`} activeOpacity={0.95} onPress={onPress} testID={`rental-card-${title}`}>
         <View
           style={[
             styles.card,
@@ -176,7 +176,7 @@ export function RentalCard({
             {/* Owner row */}
             <View style={[styles.ownerRow, { borderTopColor: colors.border }]}>
               {ownerAvatar ? (
-                <Image source={{ uri: ownerAvatar }} style={styles.avatar} />
+                <Image source={{ uri: ownerAvatar }} style={styles.avatar} alt="" />
               ) : (
                 <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryTint, borderColor: colors.surfaceGlassBorder }]}>
                   <Text style={[styles.avatarText, { color: colors.primary }]}>{initial}</Text>
@@ -201,7 +201,8 @@ export function RentalCard({
             {!isOwnListing && (onBook || onContact) && (
               <View style={styles.actions}>
                 {onBook && (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
+                    accessibilityLabel={`Réserver ${title}`}
                     activeOpacity={0.85}
                     onPress={onBook}
                     style={[styles.btnPrimary, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.34, radius: 14, offsetY: 5 })]}
@@ -211,7 +212,8 @@ export function RentalCard({
                   </TouchableOpacity>
                 )}
                 {onContact && (
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
+                    accessibilityLabel={`Contacter le propriétaire de ${title}`}
                     activeOpacity={0.85}
                     onPress={onContact}
                     style={[styles.btnSecondary, { borderColor: colors.border, backgroundColor: colors.surface2 }]}

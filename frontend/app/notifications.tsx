@@ -78,14 +78,14 @@ export default function NotificationsScreen() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} style={styles.iconBtn}>
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
               <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               Notifications {unread > 0 ? `(${unread})` : ""}
             </Text>
             {unread > 0 ? (
-              <TouchableOpacity onPress={markAllRead}>
+              <TouchableOpacity accessibilityRole="button" onPress={markAllRead}>
                 <Text style={[styles.markRead, { color: colors.primary }]}>Tout lu</Text>
               </TouchableOpacity>
             ) : <View style={{ width: 32 }} />}
@@ -106,7 +106,7 @@ export default function NotificationsScreen() {
               </View>
             }
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => tap(item)} activeOpacity={0.7}>
+              <TouchableOpacity accessibilityRole="button" onPress={() => tap(item)} activeOpacity={0.7}>
                 <Glass borderRadius={radius.lg} style={[styles.notif, !item.read && { borderColor: colors.primary, borderWidth: 1 }]}>
                   <View style={[styles.notifIcon, { backgroundColor: item.read ? colors.surface2 : colors.primaryTint }]}>
                     <Ionicons

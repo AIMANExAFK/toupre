@@ -133,7 +133,8 @@ export default function Explore() {
                 Louer près de vous
               </Text>
             </View>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
+              accessibilityLabel={viewMode === "list" ? "Afficher la carte" : "Afficher la liste"}
               onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}
               testID="toggle-view-btn"
               activeOpacity={0.8}
@@ -150,7 +151,7 @@ export default function Explore() {
 
           {/* Contact verification banner */}
           {user && !user.verified && (
-            <TouchableOpacity
+            <TouchableOpacity accessibilityRole="button"
               onPress={() => router.push("/auth/otp")}
               activeOpacity={0.85}
               style={styles.kycBanner}
@@ -210,12 +211,12 @@ export default function Explore() {
                 returnKeyType="search"
               />
               {q.length > 0 && (
-                <TouchableOpacity onPress={() => setQ("")} activeOpacity={0.7}>
+                <TouchableOpacity accessibilityLabel="Effacer la recherche" accessibilityRole="button" onPress={() => setQ("")} activeOpacity={0.7}>
                   <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
                 </TouchableOpacity>
               )}
             </Glass>
-            <TouchableOpacity activeOpacity={0.8} onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}>
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={viewMode === "list" ? "Afficher la carte" : "Afficher la liste"} activeOpacity={0.8} onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}>
               <Glass borderRadius={radius.md} style={styles.filterBtn}>
                 <Ionicons name={viewMode === "list" ? "map-outline" : "list-outline"} size={20} color={colors.primary} />
               </Glass>
@@ -231,7 +232,7 @@ export default function Explore() {
             {categoryOptions.map((c) => {
               const active = c.id === activeCat;
               return (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityRole="button"
                   key={c.id}
                   onPress={() => setActiveCat(c.id)}
                   testID={`cat-${c.id}`}

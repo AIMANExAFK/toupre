@@ -51,7 +51,7 @@ export default function Bookings() {
     router.push(`/booking/constat?id=${booking.id}&kind=${kind}`);
 
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
+    <TouchableOpacity accessibilityRole="button"
       onPress={() => item.listing && router.push(`/listing/${item.listing.id}`)}
       testID={`booking-${item.id}`}
       style={{ marginBottom: spacing.md }}
@@ -59,7 +59,7 @@ export default function Bookings() {
       <Glass borderRadius={radius.lg}>
         <View style={styles.card}>
           {item.listing?.photos?.[0] && (
-            <Image source={{ uri: item.listing.photos[0] }} style={styles.img} />
+            <Image source={{ uri: item.listing.photos[0] }} style={styles.img} alt={`Photo de ${item.listing.title}`} />
           )}
           <View style={styles.body}>
             <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -86,7 +86,7 @@ export default function Bookings() {
               <Text style={[styles.total, { color: colors.textPrimary }]}>{item.total_price}€</Text>
             </View>
             {item.status === "confirmed" || item.status === "paid" ? (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={() => openConstat(item, "pickup")}
                 style={[styles.flowBtn, { backgroundColor: colors.primary }]}
                 testID={`pickup-${item.id}`}
@@ -101,7 +101,7 @@ export default function Bookings() {
                 )}
               </TouchableOpacity>
             ) : item.status === "active" ? (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={() => openConstat(item, "return")}
                 style={[styles.flowBtn, { backgroundColor: colors.success }]}
                 testID={`return-${item.id}`}
@@ -117,7 +117,7 @@ export default function Bookings() {
               </TouchableOpacity>
             ) : null}
             {["active", "completed", "returned", "disputed"].includes(item.status) && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 onPress={() => router.push(`/booking/constats?id=${item.id}`)}
                 style={styles.constatsLink}
                 testID={`constats-${item.id}`}
@@ -162,7 +162,7 @@ export default function Bookings() {
                   <Text style={[styles.emptySub, { color: colors.textSecondary }]}>
                     Découvrez les annonces disponibles près de chez vous
                   </Text>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityRole="button"
                     style={[
                       styles.exploreBtn,
                       { backgroundColor: colors.primary },

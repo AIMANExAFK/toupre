@@ -50,7 +50,7 @@ export default function BookingFlow() {
       <View style={[styles.loading, { backgroundColor: colors.bg, gap: 12 }]}>
         <Ionicons name="alert-circle-outline" size={52} color={colors.error} />
         <Text style={{ color: colors.textPrimary, fontSize: 17, fontWeight: "700" }}>Annonce introuvable</Text>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity accessibilityRole="button" onPress={() => router.back()}>
           <Text style={{ color: colors.primary, fontWeight: "600" }}>Retour</Text>
         </TouchableOpacity>
       </View>
@@ -105,7 +105,7 @@ export default function BookingFlow() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()} testID="back-btn">
+            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="back-btn">
               <Glass borderRadius={8} style={styles.backBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
               </Glass>
@@ -117,7 +117,7 @@ export default function BookingFlow() {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Glass borderRadius={radius.lg} style={styles.itemShell}>
               <View style={styles.itemCard}>
-                <Image source={{ uri: listing.photos[0] }} style={styles.itemImg} />
+                <Image source={{ uri: listing.photos[0] }} style={styles.itemImg} alt={`Photo de ${listing.title}`} />
                 <View style={{ flex: 1, padding: spacing.md }}>
                   <Text style={[styles.itemTitle, { color: colors.textPrimary }]} numberOfLines={2}>{listing.title}</Text>
                   <Text style={[styles.itemPrice, { color: colors.primary }]}>{listing.price_per_day}€ / jour</Text>
@@ -126,7 +126,7 @@ export default function BookingFlow() {
             </Glass>
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Dates de location</Text>
-            <TouchableOpacity onPress={() => setShowStartPicker(true)} testID="start-date-btn" style={{ marginBottom: spacing.sm }}>
+            <TouchableOpacity accessibilityRole="button" onPress={() => setShowStartPicker(true)} testID="start-date-btn" style={{ marginBottom: spacing.sm }}>
               <Glass borderRadius={radius.md} style={styles.dateShell}>
                 <View style={styles.dateRow}>
                   <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
@@ -141,7 +141,7 @@ export default function BookingFlow() {
               </Glass>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={() => setShowEndPicker(true)} testID="end-date-btn">
+            <TouchableOpacity accessibilityRole="button" onPress={() => setShowEndPicker(true)} testID="end-date-btn">
               <Glass borderRadius={radius.md} style={styles.dateShell}>
                 <View style={styles.dateRow}>
                   <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
@@ -201,12 +201,12 @@ export default function BookingFlow() {
 
           <SafeAreaView edges={["bottom"]} style={[styles.bottomBar, { borderTopColor: colors.border }]}>
             <Glass borderRadius={0} style={{ padding: spacing.md }}>
-              <TouchableOpacity
+              <TouchableOpacity accessibilityRole="button"
                 style={[
                   styles.payBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 },
                   shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 }),
                 ]}
-                onPress={onReserve} disabled={loading} testID="reserve-btn"
+                onPress={onReserve} disabled={loading} accessibilityState={{ disabled: loading }} testID="reserve-btn"
               >
                 {loading ? <ActivityIndicator color={colors.textInverse} /> : (
                   <>
