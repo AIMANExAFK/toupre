@@ -125,6 +125,7 @@ function RootShell() {
           <Stack.Screen name="booking/constats" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="booking/avis" options={{ animation: "slide_from_bottom" }} />
           <Stack.Screen name="settings" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="profil-edit" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="payments" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="help" options={{ animation: "slide_from_right" }} />
         </Stack>

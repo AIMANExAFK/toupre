@@ -255,6 +255,11 @@ class InspectionCreate(BaseModel):
     photos: List[str] = []
 
 
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    avatar: Optional[str] = None
+
+
 class ReportCreate(BaseModel):
     target_type: str
     target_id: str
@@ -1721,6 +1726,41 @@ async def checkout_status(session_id: str, request: Request):
     )
 
 
+
+
+@api_router.patch("/auth/me")
+async def update_my_profile(payload: ProfileUpdate, current_user: dict = Depends(get_current_user)):
+    """Modification du profil : nom affiché et photo.
+
+    L'email et le téléphone ne sont pas modifiables ici : ils constituent la
+    vérification de contact sur laquelle repose la confiance entre voisins.
+    Les changer supposerait de repasser par une vérification par code.
+    """
+    maj = {}
+
+    if payload.name is not None:
+        nom = payload.name.strip()
+        if len(nom) < 2:
+            raise HTTPException(status_code=400, detail="Le nom doit comporter au moins 2 caractères.")
+        if len(nom) > 60:
+            raise HTTPException(status_code=400, detail="Le nom ne peut pas dépasser 60 caractères.")
+        if check_content(nom)["blocked"]:
+            raise HTTPException(status_code=400, detail="Ce nom contient un contenu interdit.")
+        maj["name"] = nom
+
+    if payload.avatar is not None:
+        # Même bornage que les photos de constat : une image encodée reste
+        # envoyable sur une connexion mobile ordinaire.
+        if len(payload.avatar) > MAX_INSPECTION_PHOTOS_BYTES:
+            raise HTTPException(status_code=413, detail="Photo trop volumineuse.")
+        maj["avatar"] = payload.avatar or None
+
+    if not maj:
+        raise HTTPException(status_code=400, detail="Rien à modifier.")
+
+    await db.users.update_one({"id": current_user["id"]}, {"$set": maj})
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password_hash": 0})
+    return serialize_user(user)
 
 @api_router.delete("/auth/me")
 async def delete_my_account(current_user: dict = Depends(get_current_user)):

@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -77,13 +77,31 @@ export default function Profile() {
       <GradientBg>
         <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
-            <View style={styles.header}>
-              <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.42, radius: 20, offsetY: 8 })]}>
-                <Text style={[styles.avatarText, { color: colors.textInverse }]}>{initial}</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Modifier mon profil"
+              onPress={() => router.push("/profil-edit")}
+              testID="profile-edit-btn"
+              style={styles.header}
+              activeOpacity={0.85}
+            >
+              {user.avatar ? (
+                <Image
+                  source={{ uri: user.avatar }}
+                  style={[styles.avatar, { borderRadius: 22 }]}
+                  alt="Votre photo de profil"
+                />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.42, radius: 20, offsetY: 8 })]}>
+                  <Text style={[styles.avatarText, { color: colors.textInverse }]}>{initial}</Text>
+                </View>
+              )}
+              <View style={styles.nameRow}>
+                <Text style={[styles.name, { color: colors.textPrimary }]} testID="profile-name">{user.name}</Text>
+                <Ionicons name="pencil-outline" size={15} color={colors.textTertiary} />
               </View>
-              <Text style={[styles.name, { color: colors.textPrimary }]} testID="profile-name">{user.name}</Text>
               <Text style={[styles.email, { color: colors.textSecondary }]}>{user.email}</Text>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.statsWrap}>
               <Glass borderRadius={radius.lg} style={styles.statsCard}>
@@ -228,6 +246,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 36, fontWeight: "800" },
   name: { fontSize: 24, fontWeight: "900", marginTop: spacing.md, letterSpacing: 0 },
   email: { fontSize: 14, marginTop: 2 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   statsWrap: { paddingHorizontal: spacing.lg, marginTop: spacing.sm },
   statsCard: { flexDirection: "row", padding: spacing.md, alignItems: "center", borderWidth: 1 },
   statBox: { flex: 1, alignItems: "center" },
