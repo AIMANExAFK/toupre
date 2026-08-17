@@ -57,7 +57,7 @@ Le mode sombre est déjà conforme (mesuré : 5.69:1 à 16.60:1) — aucune modi
 - [x] T017 [P] Étendre `frontend/e2e/locashare.spec.ts` : test de non-régression d'accessibilité sur un écran représentatif
 - [x] T018 Parcours complet au clavier seul (explorer → réserver → constat) sans blocage (SC-003)
 - [x] T019 `./run-e2e.sh` vert, aucune régression fonctionnelle (SC-006)
-- [ ] T020 Mémoire projet mise à jour et commit avec le constat de vérification
+- [x] T020 Mémoire projet mise à jour et commit avec le constat de vérification
 
 ---
 
