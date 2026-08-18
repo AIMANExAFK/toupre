@@ -64,6 +64,13 @@ test("réservation : les dates envoyées sont les dates locales choisies", async
   await expect(page).toHaveURL(/\/booking\//);
   await expect(page.getByText("À régler en espèces")).toBeVisible();
 
+  // Plus aucune date n'est présélectionnée : on choisit J+1 puis J+2 dans le
+  // calendrier. Deux clics distincts, l'état React devant se propager entre eux.
+  await expect(page.getByTestId("reserve-btn")).toBeDisabled();
+  await page.getByTestId(`cal-${localISODate(1)}`).click();
+  await page.getByTestId(`cal-${localISODate(2)}`).click();
+  await expect(page.getByTestId("cal-resume")).toContainText("2 jours");
+
   // Régression bug fuseau horaire : le POST doit porter la date LOCALE (J+1),
   // pas la veille en UTC (l'ancien toISOString() reculait d'un jour après minuit UTC)
   const [request] = await Promise.all([
@@ -347,4 +354,141 @@ test("avis : une location terminée peut être notée et la note de l'annonce é
   const apres = (await (await request.get(`${API}/listings`)).json()).find((l: any) => l.id === cible.id);
   expect(apres.count, "le nombre d'avis n'a pas augmenté").toBe((nbAvant ?? 0) + 1);
   expect(apres.rating).not.toBe(noteAvant);
+});
+
+// ─── Spec 005 : trouver un objet, gérer son annonce ─────────────────────────
+
+/** Pose la session d'un compte sans repasser par l'écran OTP. */
+async function poserSession(page: Page, compte: any) {
+  await page.goto("/");
+  await page.evaluate(({ t, u }) => {
+    localStorage.setItem("ls_mock_token", t);
+    localStorage.setItem("ls_mock_user", JSON.stringify(u));
+  }, { t: compte.access_token, u: compte.user });
+}
+
+test("recherche : un mot présent uniquement dans la description remonte l'annonce", async ({ page, request }) => {
+  await poserSession(page, await apiLogin(request, DEMO_EMAIL, DEMO_PHONE));
+  await page.goto("/");
+  await expect(page.getByTestId("explore-title")).toBeVisible({ timeout: 15_000 });
+
+  // « mariage » n'apparaît dans aucun titre : seule une recherche côté serveur,
+  // portant sur la description, peut trouver le Canon.
+  await page.getByTestId("search-input").fill("mariage");
+  await expect(page.getByText("Canon EOS R6 + Objectif 24-70mm")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText("Tesla Model 3 - Berline électrique")).toHaveCount(0);
+
+  // Les accents ne doivent pas faire échouer la recherche
+  await page.getByTestId("search-input").fill("electrique");
+  await expect(page.getByText("Tesla Model 3 - Berline électrique")).toBeVisible({ timeout: 10_000 });
+
+  // Un filtre de prix restreint bien le résultat
+  await page.getByTestId("search-input").fill("");
+  await page.getByTestId("filtres-btn").click();
+  await page.getByTestId("prix-15").click();
+  await expect(page.getByText("Tesla Model 3 - Berline électrique")).toHaveCount(0);
+  await expect(page.getByText("Perceuse Bosch sans fil 18V")).toBeVisible({ timeout: 10_000 });
+});
+
+test("calendrier : un jour réservé n'est pas sélectionnable par un autre locataire", async ({ page, request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const premier = await apiLogin(request, "e2e-cal1@test.fr", "0788990055");
+  const second = await apiLogin(request, "e2e-cal2@test.fr", "0788990066");
+  const listings = await (await request.get(`${API}/listings`)).json();
+  const cible = listings.find((l: any) => l.owner_id === owner.user.id);
+
+  // Date proche et fixe : le calendrier ne va pas au-delà de 12 mois, et aucun
+  // autre test ne réserve dans cette fenêtre (la base est purgée à chaque run).
+  const jour = 45;
+  const debut = localISODate(jour);
+  const booking = await (await request.post(`${API}/bookings`, {
+    data: { listing_id: cible.id, start_date: debut, end_date: localISODate(jour + 1) },
+    headers: { Authorization: `Bearer ${premier.access_token}` },
+  })).json();
+  expect(booking.id, `réservation non créée : ${JSON.stringify(booking)}`).toBeTruthy();
+  await request.patch(`${API}/bookings/${booking.id}`, {
+    data: { status: "confirmed" },
+    headers: { Authorization: `Bearer ${owner.access_token}` },
+  });
+
+  await poserSession(page, second);
+  await page.goto(`/booking/${cible.id}`);
+  await expect(page.getByTestId("calendrier")).toBeVisible({ timeout: 10_000 });
+
+  // Le calendrier ouvre sur le mois courant : on avance jusqu'au mois de la
+  // réservation (la fenêtre de test est tirée loin dans le futur).
+  const casePrise = page.getByTestId(`cal-${debut}`);
+  for (let i = 0; i < 26 && (await casePrise.count()) === 0; i++) {
+    await page.getByTestId("cal-next").click();
+  }
+
+  // Le jour pris est annoncé indisponible et refuse le clic : l'erreur est
+  // rendue impossible au lieu d'être signalée après coup.
+  await expect(casePrise).toBeDisabled();
+  await expect(casePrise).toHaveAttribute("aria-label", /indisponible/);
+
+  // Tant qu'aucune date n'est choisie, on ne peut pas demander la réservation
+  await expect(page.getByTestId("reserve-btn")).toBeDisabled();
+});
+
+test("annonce : le propriétaire modifie son prix sans perdre ses avis", async ({ page, request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const listings = await (await request.get(`${API}/listings`)).json();
+  const cible = listings.find((l: any) => l.owner_id === owner.user.id && l.count > 0)
+    || listings.find((l: any) => l.owner_id === owner.user.id);
+  const avisAvant = cible.count;
+  const nouveauPrix = String(Math.round(cible.price_per_day) + 7);
+
+  await poserSession(page, owner);
+  await page.goto(`/listing/edit?id=${cible.id}`);
+  await expect(page.getByTestId("edit-titre")).toHaveValue(cible.title, { timeout: 10_000 });
+  // Sans changement, la validation reste fermée
+  await expect(page.getByTestId("edit-submit")).toBeDisabled();
+
+  await page.getByTestId("edit-prix").fill(nouveauPrix);
+  await expect(page.getByTestId("edit-submit")).toBeEnabled();
+  await page.getByTestId("edit-submit").click();
+
+  await expect(page).toHaveURL(/myitems/, { timeout: 10_000 });
+  const apres = await (await request.get(`${API}/listings/${cible.id}`)).json();
+  expect(apres.price_per_day).toBe(Number(nouveauPrix));
+
+  const avis = await (await request.get(`${API}/reviews/listing/${cible.id}`)).json();
+  expect(avis.count, "les avis doivent survivre à une modification").toBe(avisAvant);
+});
+
+test("modération : une annonce interdite est refusée, un outil au nom ambigu passe", async ({ request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const entetes = { Authorization: `Bearer ${owner.access_token}` };
+  const base = {
+    category: "tool", price_per_day: 9, photos: [],
+    location: { lat: 48.9, lng: 2.4, address: "Bobigny" },
+  };
+
+  const refus = await request.post(`${API}/listings`, {
+    data: { ...base, title: "Pistolet 9mm", description: "Bon état, peu servi." },
+    headers: entetes,
+  });
+  expect(refus.status()).toBe(400);
+
+  // Le filtre ne doit pas écarter un outil parfaitement louable
+  const accepte = await request.post(`${API}/listings`, {
+    data: { ...base, title: "Pistolet à peinture Wagner", description: "Pour repeindre un mur." },
+    headers: entetes,
+  });
+  expect(accepte.status()).toBe(200);
+  await request.delete(`${API}/listings/${(await accepte.json()).id}`, { headers: entetes });
+
+  const voisin = await apiLogin(request, "e2e-moderation@test.fr", "0788990077");
+  const message = await request.post(`${API}/messages`, {
+    data: { to_id: owner.user.id, content: "On fait le paiement direct hors plateforme ?" },
+    headers: { Authorization: `Bearer ${voisin.access_token}` },
+  });
+  expect(message.status()).toBe(400);
+
+  const normal = await request.post(`${API}/messages`, {
+    data: { to_id: owner.user.id, content: "Bonjour, l'objet est-il libre samedi ?" },
+    headers: { Authorization: `Bearer ${voisin.access_token}` },
+  });
+  expect(normal.status()).toBe(200);
 });

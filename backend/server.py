@@ -22,6 +22,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
+import unicodedata
 
 # ---------- MongoDB ----------
 mongo_url = os.environ['MONGO_URL']
@@ -38,12 +39,44 @@ RETURN_DEV_OTP = os.environ.get("TOUPRE_RETURN_DEV_OTP", "true").lower() != "fal
 # Modération de contenu (spec 003) — porté depuis le serveur de développement,
 # où il n'avait jamais été répliqué côté serveur réel.
 BANNED_PATTERNS = [
-    r"\b(coca[iï]ne|h[ée]ro[iï]ne|crystal\s+meth|m[ée]thamph[ée]tamine|ecstasy|mdma|lsd|dealer)\b",
-    r"\b(arme\s+(à\s+feu|de\s+poing)|pistolet|revolver|kalachnikov|ak\s*47|grenade|explosif)\b",
+    r"\b(coca[iï]ne|h[ée]ro[iï]ne|crystal\s+meth|m[ée]thamph[ée]tamine|ecstasy|mdma|lsd)\b",
+    r"\b(arme\s+(à\s+feu|de\s+poing)|kalachnikov|ak\s*47|explosifs?)\b",
+    # « pistolet » est resserré : un pistolet à peinture, à colle ou à air est un
+    # outil parfaitement louable — et c'est même le cœur de cette application.
+    r"\bpistolet\b(?!\s*(?:(?:à|a|de|du|des|d')\s*)?(peinture|colle|air|graisse|eau|silicone|calfeutr|sabl|clou|bille|chaleur|thermique|d[ée]cap|mastic|soud|vissage|lavage|arros))",
+    r"\brevolver\b",
+    # Une grenade est d'abord un fruit : seul l'usage militaire est refusé.
+    r"\bgrenade\s+(à\s+main|lacrymog[èe]ne|offensive|d[ée]fensive)\b",
     r"\b(paiement\s+direct\s+hors\s+(de\s+la\s+)?plateforme|virement\s+western\s+union)\b",
     r"\b(whatsapp|telegram|signal|wechat)\s*[:=]?\s*[\+\d]",
 ]
-SOFT_FLAG_PATTERNS = [r"\b(crypto|bitcoin|ethereum|nft|invest)\b"]
+# Marqué, jamais bloqué : le doute ne justifie pas de refuser une annonce.
+SOFT_FLAG_PATTERNS = [r"\b(crypto|bitcoin|ethereum|nft|invest|dealer)\b"]
+
+
+# Recherche insensible aux accents (spec 005) : plutôt qu'une collation Mongo
+# (qui imposerait une migration d'index), on élargit le motif — « e » accepte
+# « é è ê ë ». La base est locale et petite, une regex suffit largement.
+_CLASSES_ACCENTS = {
+    "a": "[aàáâãäå]", "c": "[cç]", "e": "[eéèêë]", "i": "[iíìîï]",
+    "n": "[nñ]", "o": "[oóòôõö]", "u": "[uúùûü]", "y": "[yÿ]",
+}
+
+
+def motif_sans_accent(texte: str) -> str:
+    """Motif regex qui retrouve un mot quels que soient ses accents."""
+    nu = "".join(
+        c for c in unicodedata.normalize("NFD", texte)
+        if unicodedata.category(c) != "Mn"
+    )
+    return "".join(_CLASSES_ACCENTS.get(c.lower(), re.escape(c)) for c in nu)
+
+
+CONTENU_REFUSE_ANNONCE = (
+    "Cette annonce contient un contenu interdit (produits illicites, armes, ou "
+    "tentative de paiement hors de la plateforme). Corrigez le titre ou la "
+    "description pour publier."
+)
 
 
 def check_content(text: str) -> dict:
@@ -784,14 +817,42 @@ async def me(current_user: dict = Depends(get_current_user)):
 
 
 # ---------- Listings ----------
+SORTS_LISTINGS = {
+    "recent": ("created_at", -1),
+    "prix_croissant": ("price_per_day", 1),
+    "prix_decroissant": ("price_per_day", -1),
+}
+
+
 @api_router.get("/listings")
-async def list_listings(category: Optional[str] = None, q: Optional[str] = None):
-    query = {}
+async def list_listings(
+    category: Optional[str] = None,
+    q: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    sort: str = "recent",
+):
+    query: dict = {}
     if category and category != "all":
         query["category"] = category
-    if q:
-        query["title"] = {"$regex": q, "$options": "i"}
-    items = await db.listings.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
+    if q and q.strip():
+        # Le mot cherché peut être n'importe où : dans le titre, dans le détail
+        # de la description, ou dans l'adresse (« perceuse » comme « Bobigny »).
+        motif = {"$regex": motif_sans_accent(q.strip()), "$options": "i"}
+        query["$or"] = [
+            {"title": motif},
+            {"description": motif},
+            {"location.address": motif},
+        ]
+    if min_price is not None or max_price is not None:
+        borne: dict = {}
+        if min_price is not None:
+            borne["$gte"] = min_price
+        if max_price is not None:
+            borne["$lte"] = max_price
+        query["price_per_day"] = borne
+    champ, sens = SORTS_LISTINGS.get(sort, SORTS_LISTINGS["recent"])
+    items = await db.listings.find(query, {"_id": 0}).sort(champ, sens).to_list(200)
     # attach owner basic info + note moyenne (le front lit item.rating / item.count / owner.verified)
     for item in items:
         owner = await db.users.find_one({"id": item["owner_id"]}, {"_id": 0, "password_hash": 0})
@@ -825,9 +886,15 @@ async def create_listing(
     payload: ListingCreate, current_user: dict = Depends(get_current_user)
 ):
     ensure_marketplace_verified(current_user, "publish")
-    listing = Listing(owner_id=current_user["id"], **payload.dict())
-    await db.listings.insert_one(listing.dict())
-    return listing.dict()
+    verdict = check_content(f"{payload.title} {payload.description}")
+    if verdict["blocked"]:
+        raise HTTPException(status_code=400, detail=CONTENU_REFUSE_ANNONCE)
+    doc = Listing(owner_id=current_user["id"], **payload.dict()).dict()
+    if verdict["flagged"]:
+        doc["flagged_for_review"] = True
+    await db.listings.insert_one(doc)
+    doc.pop("_id", None)  # insert_one marque le document inséré
+    return doc
 
 
 @api_router.get("/listings/owner/me")
@@ -859,6 +926,11 @@ async def update_listing(
     updates = {k: v for k, v in payload.dict().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="Nothing to update")
+    texte = " ".join(str(updates[c]) for c in ("title", "description") if c in updates)
+    verdict = check_content(texte)
+    if verdict["blocked"]:
+        raise HTTPException(status_code=400, detail=CONTENU_REFUSE_ANNONCE)
+    updates["flagged_for_review"] = verdict["flagged"]
     res = await db.listings.update_one(
         {"id": listing_id, "owner_id": current_user["id"]}, {"$set": updates}
     )
@@ -1023,6 +1095,13 @@ async def send_message(
                 "action": "/auth/otp?reason=message",
             },
         )
+    verdict = check_content(payload.content)
+    if verdict["blocked"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Ce message contient un contenu interdit (produits illicites, "
+                   "armes, ou tentative de paiement hors de la plateforme).",
+        )
     msg = {
         "id": str(uuid.uuid4()),
         "from_id": current_user["id"],
@@ -1030,6 +1109,7 @@ async def send_message(
         "content": payload.content,
         "listing_id": payload.listing_id,
         "read": False,
+        "flagged": verdict["flagged"],
         "created_at": datetime.now(timezone.utc),
     }
     await db.messages.insert_one(msg)

@@ -35,40 +35,43 @@ export default function Explore() {
   const router = useRouter();
   const colors = useColors();
   const { user } = useAuth();
-  const [allListings, setAllListings] = useState<Listing[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [activeCat, setActiveCat] = useState("all");
   const [q, setQ] = useState("");
+  const [recherche, setRecherche] = useState("");
+  const [prixMax, setPrixMax] = useState<number | null>(null);
+  const [tri, setTri] = useState<"recent" | "prix_croissant" | "prix_decroissant">("recent");
+  const [filtresOuverts, setFiltresOuverts] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+
+  // La requête part après une pause de frappe : on ne relance pas le serveur à
+  // chaque caractère (FR-004).
+  useEffect(() => {
+    const t = setTimeout(() => setRecherche(q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  const filtresActifs = prixMax !== null || tri !== "recent";
 
   const categoryOptions: Category[] = [
     { id: "all", label: "Tout", icon: "apps" },
     ...categories.filter((category) => category.id !== "all"),
   ];
-  const listings = q.trim()
-    ? allListings.filter((i) => {
-        const haystack = [
-          i.title,
-          i.category,
-          getCatLabel(categories, i.category),
-          i.location?.address,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        return haystack.includes(q.trim().toLowerCase());
-      })
-    : allListings;
-
   const load = useCallback(async () => {
+    const params = new URLSearchParams();
+    if (activeCat !== "all") params.set("category", activeCat);
+    if (recherche) params.set("q", recherche);
+    if (prixMax !== null) params.set("max_price", String(prixMax));
+    if (tri !== "recent") params.set("sort", tri);
     try {
       const [items, cats] = await Promise.all([
-        apiFetch(`/api/listings${activeCat !== "all" ? `?category=${activeCat}` : ""}`),
+        apiFetch(`/api/listings${params.toString() ? `?${params}` : ""}`),
         apiFetch("/api/categories"),
       ]);
-      setAllListings(items);
+      setListings(items);
       setCategories(cats);
     } catch (e) {
       console.log("load error", e);
@@ -76,7 +79,7 @@ export default function Explore() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [activeCat]);
+  }, [activeCat, recherche, prixMax, tri]);
 
   useEffect(() => {
     setLoading(true);
@@ -191,7 +194,7 @@ export default function Explore() {
                 </View>
               </View>
               <View style={styles.metricRow}>
-                <Metric value={String(allListings.length || "8+")} label="annonces" colors={colors} />
+                <Metric value={String(listings.length || "8+")} label="annonces" colors={colors} />
                 <Metric value="0€" label="frais app" colors={colors} />
                 <Metric value="cash" label="à la remise" colors={colors} />
               </View>
@@ -216,12 +219,70 @@ export default function Explore() {
                 </TouchableOpacity>
               )}
             </Glass>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel={viewMode === "list" ? "Afficher la carte" : "Afficher la liste"} activeOpacity={0.8} onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={filtresOuverts ? "Masquer les filtres" : "Afficher les filtres"}
+              accessibilityState={{ expanded: filtresOuverts }}
+              activeOpacity={0.8}
+              onPress={() => setFiltresOuverts((v) => !v)}
+              testID="filtres-btn"
+            >
               <Glass borderRadius={radius.md} style={styles.filterBtn}>
-                <Ionicons name={viewMode === "list" ? "map-outline" : "list-outline"} size={20} color={colors.primary} />
+                <Ionicons name="options-outline" size={20} color={filtresActifs ? colors.primary : colors.textSecondary} />
+                {filtresActifs && <View style={[styles.pastille, { backgroundColor: colors.primary }]} />}
               </Glass>
             </TouchableOpacity>
           </View>
+
+          {filtresOuverts && (
+            <View style={styles.filtres} testID="filtres-panneau">
+              <Text style={[styles.filtreLabel, { color: colors.textSecondary }]}>Prix maximum par jour</Text>
+              <View style={styles.puces}>
+                {[null, 15, 30, 60].map((v) => {
+                  const actif = prixMax === v;
+                  return (
+                    <TouchableOpacity
+                      key={String(v)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: actif }}
+                      onPress={() => setPrixMax(v)}
+                      testID={`prix-${v ?? "tous"}`}
+                      style={[styles.puce, { borderColor: actif ? colors.primary : colors.border,
+                                             backgroundColor: actif ? colors.primaryTint : "transparent" }]}
+                    >
+                      <Text style={[styles.puceTxt, { color: actif ? colors.primary : colors.textSecondary }]}>
+                        {v === null ? "Tous" : `≤ ${v}€`}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <Text style={[styles.filtreLabel, { color: colors.textSecondary }]}>Trier par</Text>
+              <View style={styles.puces}>
+                {([
+                  ["recent", "Plus récentes"],
+                  ["prix_croissant", "Prix croissant"],
+                  ["prix_decroissant", "Prix décroissant"],
+                ] as const).map(([v, libelle]) => {
+                  const actif = tri === v;
+                  return (
+                    <TouchableOpacity
+                      key={v}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: actif }}
+                      onPress={() => setTri(v)}
+                      testID={`tri-${v}`}
+                      style={[styles.puce, { borderColor: actif ? colors.primary : colors.border,
+                                             backgroundColor: actif ? colors.primaryTint : "transparent" }]}
+                    >
+                      <Text style={[styles.puceTxt, { color: actif ? colors.primary : colors.textSecondary }]}>{libelle}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+          )}
 
           <ScrollView
             horizontal
@@ -380,6 +441,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
+  pastille: { position: "absolute", top: 9, right: 9, width: 7, height: 7, borderRadius: 4 },
+  filtres: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 6 },
+  filtreLabel: { fontSize: 12, fontWeight: "800", marginTop: 4 },
+  puces: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
+  puce: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.sm, borderWidth: 1.5 },
+  puceTxt: { fontSize: 12.5, fontWeight: "700" },
   filterBtn: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },
 
   catScroll: {

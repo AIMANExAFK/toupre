@@ -120,6 +120,8 @@ function RootShell() {
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="listing/[id]" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="listing/edit" options={{ animation: "slide_from_right" }} />
+          <Stack.Screen name="listing/disponibilites" options={{ animation: "slide_from_right" }} />
           <Stack.Screen name="booking/[id]" options={{ animation: "slide_from_bottom" }} />
           <Stack.Screen name="booking/constat" options={{ animation: "slide_from_bottom" }} />
           <Stack.Screen name="booking/constats" options={{ animation: "slide_from_right" }} />

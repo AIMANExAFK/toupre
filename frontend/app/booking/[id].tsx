@@ -5,17 +5,13 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { ApiError, apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Calendrier, jourISO, depuisISO } from "../../src/Calendrier";
 
-// Date locale au format AAAA-MM-JJ, sans le décalage UTC de toISOString()
-function toLocalISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+function formatISO(iso: string): string {
+  return depuisISO(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
 }
 
 export default function BookingFlow() {
@@ -26,21 +22,23 @@ export default function BookingFlow() {
 
   const [listing, setListing] = useState<any>(null);
   const [listingError, setListingError] = useState(false);
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-  const dayAfter = new Date(today); dayAfter.setDate(today.getDate() + 2);
 
-  const [startDate, setStartDate] = useState(tomorrow);
-  const [endDate, setEndDate] = useState(dayAfter);
-  const [showStartPicker, setShowStartPicker] = useState(false);
-  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [debut, setDebut] = useState<string | null>(null);
+  const [fin, setFin] = useState<string | null>(null);
+  const [indisponibles, setIndisponibles] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
-        const data = await apiFetch(`/api/listings/${id}`);
+        const [data, dispo] = await Promise.all([
+          apiFetch(`/api/listings/${id}`),
+          apiFetch(`/api/listings/${id}/availability`),
+        ]);
         setListing(data);
+        // Réservé par d'autres + fermé par le propriétaire : pour le locataire
+        // la distinction n'a pas d'importance, le jour est simplement pris.
+        setIndisponibles([...(dispo.booked_dates || []), ...(dispo.blocked_dates || [])]);
       } catch (e: any) { Alert.alert("Erreur", e.message); setListingError(true); }
     })();
   }, [id]);
@@ -64,20 +62,23 @@ export default function BookingFlow() {
     );
   }
 
-  const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+  const days = debut
+    ? Math.round((depuisISO(fin || debut).getTime() - depuisISO(debut).getTime()) / 86400000) + 1
+    : 0;
   const subtotal = days * Number(listing.price_per_day);
   const total = Math.round(subtotal * 100) / 100;
 
   const onReserve = async () => {
     if (!token) { router.push("/auth/otp"); return; }
+    if (!debut) return;
     setLoading(true);
     try {
       await apiFetch(
         "/api/bookings",
         { method: "POST", body: JSON.stringify({
           listing_id: listing.id,
-          start_date: toLocalISODate(startDate),
-          end_date: toLocalISODate(endDate),
+          start_date: debut,
+          end_date: fin || debut,
         }) },
         token
       );
@@ -126,60 +127,23 @@ export default function BookingFlow() {
             </Glass>
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Dates de location</Text>
-            <TouchableOpacity accessibilityRole="button" onPress={() => setShowStartPicker(true)} testID="start-date-btn" style={{ marginBottom: spacing.sm }}>
-              <Glass borderRadius={radius.md} style={styles.dateShell}>
-                <View style={styles.dateRow}>
-                  <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
-                    <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Du</Text>
-                    <Text style={[styles.dateValue, { color: colors.textPrimary }]}>{formatDate(startDate)}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-                </View>
-              </Glass>
-            </TouchableOpacity>
-
-            <TouchableOpacity accessibilityRole="button" onPress={() => setShowEndPicker(true)} testID="end-date-btn">
-              <Glass borderRadius={radius.md} style={styles.dateShell}>
-                <View style={styles.dateRow}>
-                  <View style={[styles.dateIcon, { backgroundColor: colors.primaryTint }]}>
-                    <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.dateLabel, { color: colors.textSecondary }]}>Au</Text>
-                    <Text style={[styles.dateValue, { color: colors.textPrimary }]}>{formatDate(endDate)}</Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-                </View>
-              </Glass>
-            </TouchableOpacity>
-
-            {showStartPicker && (
-              <DateTimePicker
-                value={startDate} mode="date"
-                display={Platform.OS === "ios" ? "inline" : "default"}
-                minimumDate={today}
-                onChange={(_, d) => {
-                  setShowStartPicker(Platform.OS === "ios");
-                  if (d) {
-                    setStartDate(d);
-                    if (d >= endDate) {
-                      const newEnd = new Date(d); newEnd.setDate(d.getDate() + 1); setEndDate(newEnd);
-                    }
-                  }
-                }}
-              />
-            )}
-            {showEndPicker && (
-              <DateTimePicker
-                value={endDate} mode="date"
-                display={Platform.OS === "ios" ? "inline" : "default"}
-                minimumDate={startDate}
-                onChange={(_, d) => { setShowEndPicker(Platform.OS === "ios"); if (d) setEndDate(d); }}
-              />
-            )}
+            <Glass borderRadius={radius.lg} style={styles.calShell}>
+              <View style={{ padding: spacing.md }}>
+                <Calendrier
+                  indisponibles={indisponibles}
+                  debut={debut}
+                  fin={fin}
+                  onPlage={(d, f) => { setDebut(d); setFin(f); }}
+                />
+              </View>
+            </Glass>
+            <Text style={[styles.calAide, { color: colors.textSecondary }]} testID="cal-resume">
+              {!debut
+                ? "Choisissez le premier jour de location."
+                : !fin
+                  ? `Du ${formatISO(debut)} — choisissez le dernier jour.`
+                  : `Du ${formatISO(debut)} au ${formatISO(fin)} · ${days} jour${days > 1 ? "s" : ""}`}
+            </Text>
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Récapitulatif</Text>
             <Glass borderRadius={radius.lg} style={styles.summaryShell}>
@@ -203,10 +167,11 @@ export default function BookingFlow() {
             <Glass borderRadius={0} style={{ padding: spacing.md }}>
               <TouchableOpacity accessibilityRole="button"
                 style={[
-                  styles.payBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 },
+                  styles.payBtn, { backgroundColor: colors.primary }, (loading || !debut) && { opacity: 0.55 },
                   shadowStyle({ color: colors.primary, opacity: 0.45, radius: 18, offsetY: 8 }),
                 ]}
-                onPress={onReserve} disabled={loading} accessibilityState={{ disabled: loading }} testID="reserve-btn"
+                onPress={onReserve} disabled={loading || !debut}
+                accessibilityState={{ disabled: loading || !debut }} testID="reserve-btn"
               >
                 {loading ? <ActivityIndicator color={colors.textInverse} /> : (
                   <>
@@ -231,9 +196,6 @@ function Row({ label, value, bold, colors }: any) {
     </View>
   );
 }
-function formatDate(d: Date) {
-  return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long", year: "numeric" });
-}
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
@@ -247,11 +209,8 @@ const styles = StyleSheet.create({
   itemTitle: { fontSize: 15, fontWeight: "900", lineHeight: 20 },
   itemPrice: { fontSize: 14, fontWeight: "900", marginTop: 4 },
   sectionTitle: { fontSize: 17, fontWeight: "900", marginTop: spacing.lg, marginBottom: spacing.sm },
-  dateShell: { borderWidth: 1 },
-  dateRow: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: spacing.md },
-  dateIcon: { width: 40, height: 40, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  dateLabel: { fontSize: 12 },
-  dateValue: { fontSize: 15, fontWeight: "900", marginTop: 2 },
+  calShell: { overflow: "hidden" },
+  calAide: { fontSize: 13, textAlign: "center", marginTop: spacing.sm, fontWeight: "600" },
   summaryShell: { borderWidth: 1 },
   summary: { padding: spacing.md },
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },

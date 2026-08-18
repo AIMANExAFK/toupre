@@ -142,14 +142,28 @@ export default function MyItems() {
                         <View style={styles.bottomRow}>
                           <Text style={[styles.price, { color: colors.primary }]}>{item.price_per_day}€/jour</Text>
                           <View style={styles.actions}>
-                            <TouchableOpacity accessibilityLabel="Voir l'annonce" accessibilityRole="button"
+                            <TouchableOpacity accessibilityLabel={`Voir ${item.title}`} accessibilityRole="button"
                               onPress={() => router.push(`/listing/${item.id}`)}
                               style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
                               testID={`view-item-${item.id}`}
                             >
                               <Ionicons name="eye" size={18} color={colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity accessibilityLabel="Supprimer l'annonce" accessibilityRole="button"
+                            <TouchableOpacity accessibilityLabel={`Modifier ${item.title}`} accessibilityRole="button"
+                              onPress={() => router.push(`/listing/edit?id=${item.id}`)}
+                              style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
+                              testID={`edit-item-${item.id}`}
+                            >
+                              <Ionicons name="pencil" size={17} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity accessibilityLabel={`Disponibilités de ${item.title}`} accessibilityRole="button"
+                              onPress={() => router.push(`/listing/disponibilites?id=${item.id}`)}
+                              style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
+                              testID={`dispo-item-${item.id}`}
+                            >
+                              <Ionicons name="calendar" size={17} color={colors.primary} />
+                            </TouchableOpacity>
+                            <TouchableOpacity accessibilityLabel={`Supprimer ${item.title}`} accessibilityRole="button"
                               onPress={() => onDelete(item.id)}
                               style={[styles.actionBtn, { backgroundColor: colors.errorBg }]}
                               testID={`delete-item-${item.id}`}
