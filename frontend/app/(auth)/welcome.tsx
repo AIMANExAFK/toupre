@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Photo } from "../../src/Photo";
 import { ToupreMark } from "../../src/Brand";
 
 export default function Welcome() {
@@ -16,8 +17,9 @@ export default function Welcome() {
         <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
           {/* Hauteur en % CSS : useWindowDimensions pouvait renvoyer 0 à l'hydratation (web) */}
           <View style={[styles.heroBox, { height: "58%" }]}>
-            <Image
-              source={{ uri: "https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg" }}
+            <Photo
+              uri="https://images.pexels.com/photos/5356726/pexels-photo-5356726.jpeg"
+              largeur={430}
               style={styles.heroImg}
               alt=""
             />
@@ -72,13 +74,10 @@ export default function Welcome() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity accessibilityRole="button" onPress={() => router.push("/auth/otp")} testID="welcome-login-btn">
-              <Glass borderRadius={radius.md} style={styles.secondaryGlass}>
-                <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
-                  {"J'ai déjà un compte · Recevoir un code"}
-                </Text>
-              </Glass>
-            </TouchableOpacity>
+            <Text style={[styles.reassurance, { color: colors.textTertiary }]} testID="welcome-reassurance">
+              Nouveau ou déjà inscrit : le même code par email vous connecte.
+              Aucun mot de passe à retenir.
+            </Text>
           </View>
         </SafeAreaView>
       </GradientBg>
@@ -87,6 +86,7 @@ export default function Welcome() {
 }
 
 const styles = StyleSheet.create({
+  reassurance: { fontSize: 12.5, lineHeight: 18, textAlign: "center", marginTop: 14, paddingHorizontal: 6 },
   heroBox: { position: "relative", overflow: "hidden", borderBottomLeftRadius: 8, borderBottomRightRadius: 8 },
   heroImg: { width: "100%", height: "100%" },
   overlay: { ...StyleSheet.absoluteFillObject },
@@ -113,6 +113,4 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 15, lineHeight: 23, marginBottom: spacing.xl },
   primaryBtn: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center", flexDirection: "row", marginBottom: spacing.md },
   primaryBtnText: { fontSize: 16, fontWeight: "700" },
-  secondaryGlass: { paddingVertical: 17, alignItems: "center", justifyContent: "center" },
-  secondaryBtnText: { fontSize: 16, fontWeight: "700", textAlign: "center" },
 });

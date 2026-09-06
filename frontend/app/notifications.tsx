@@ -116,7 +116,7 @@ export default function NotificationsScreen() {
                     />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.notifTitle, { color: colors.textPrimary, fontWeight: item.read ? "600" : "800" }]} numberOfLines={1}>
+                    <Text style={[styles.notifTitle, { color: colors.textPrimary, fontWeight: item.read ? "600" : "800" }]} numberOfLines={2}>
                       {item.title}
                     </Text>
                     <Text style={[styles.notifBody, { color: colors.textSecondary }]} numberOfLines={2}>

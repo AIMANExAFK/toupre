@@ -37,7 +37,7 @@ export default function TabsLayout() {
           ...shadowStyle({ color: colors.primaryDark, opacity: 0.12, radius: 24, offsetY: 10 }),
         },
         tabBarItemStyle: { overflow: "visible" },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "800", marginTop: 2 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "800", marginTop: 2 },
       }}
     >
       <Tabs.Screen

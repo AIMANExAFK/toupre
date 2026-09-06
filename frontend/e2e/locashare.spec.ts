@@ -528,3 +528,42 @@ test("catalogue : chaque annonce a sa propre photo", async ({ request }) => {
   // Deux annonces qui partagent une photo font douter de tout le catalogue.
   expect(doublons, `photos partagées par plusieurs annonces : ${doublons.join(", ")}`).toEqual([]);
 });
+
+// ─── Honnêteté des états ────────────────────────────────────────────────────
+
+test("panne réseau : l'app dit la vérité et propose de réessayer", async ({ page, request }) => {
+  await poserSession(page, await apiLogin(request, DEMO_EMAIL, DEMO_PHONE));
+
+  // Serveur injoignable : l'écran annonçait « Aucun résultat » et conseillait
+  // de changer de recherche — un remède qui ne pouvait pas marcher.
+  await page.route("**/api/listings**", (route) => route.abort("failed"));
+  await page.goto("/");
+  await expect(page.getByTestId("explore-panne")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Annonces indisponibles")).toBeVisible();
+  await expect(page.getByText("Aucun résultat")).toHaveCount(0);
+
+  // Le réseau revient : le bouton doit vraiment rattraper la situation.
+  await page.unroute("**/api/listings**");
+  await page.getByTestId("explore-reessayer").click();
+  await expect(page.getByTestId(/^rental-card-/).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("explore-panne")).toHaveCount(0);
+});
+
+test("petit écran : aucun texte n'est amputé sur 320 points", async ({ page, request }) => {
+  await poserSession(page, await apiLogin(request, DEMO_EMAIL, DEMO_PHONE));
+  await page.setViewportSize({ width: 320, height: 700 });
+  await page.goto("/");
+  await expect(page.getByTestId(/^rental-card-/).first()).toBeVisible({ timeout: 15_000 });
+
+  // 320 points, c'est l'iPhone SE et les petits Android : encore utilisés.
+  const coupes = await page.evaluate(() =>
+    [...document.querySelectorAll("#root div, #root span")]
+      .filter((e) => {
+        const t = (e as HTMLElement).innerText || "";
+        return t.length > 0 && t.length < 40 && !t.includes("\n")
+          && e.children.length === 0 && e.scrollWidth > e.clientWidth + 1;
+      })
+      .map((e) => (e as HTMLElement).innerText),
+  );
+  expect(coupes, `textes amputés sur un écran étroit : ${coupes.join(" | ")}`).toEqual([]);
+});

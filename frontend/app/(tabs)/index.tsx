@@ -43,6 +43,7 @@ export default function Explore() {
   const [prixMax, setPrixMax] = useState<number | null>(null);
   const [tri, setTri] = useState<"recent" | "prix_croissant" | "prix_decroissant">("recent");
   const [filtresOuverts, setFiltresOuverts] = useState(false);
+  const [panne, setPanne] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
@@ -73,8 +74,12 @@ export default function Explore() {
       ]);
       setListings(items);
       setCategories(cats);
+      setPanne(false);
     } catch (e) {
-      console.log("load error", e);
+      // Distinguer « rien ne correspond » de « je n'ai pas pu demander » :
+      // le remède n'est pas le même, et l'un des deux n'est pas de son fait.
+      setPanne(true);
+      setListings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -180,9 +185,7 @@ export default function Explore() {
 
           <View style={styles.bandeau}>
             <Argument icone="pricetag-outline" texte="0€ de frais" colors={colors} />
-            <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <Argument icone="shield-checkmark-outline" texte="Contact vérifié" colors={colors} />
-            <View style={[styles.sep, { backgroundColor: colors.border }]} />
             <Argument icone="cash-outline" texte="Paiement cash" colors={colors} />
           </View>
 
@@ -342,16 +345,33 @@ export default function Explore() {
                 />
               }
               ListEmptyComponent={
-                <View style={styles.empty}>
-                  <View style={[styles.emptyIcon, { backgroundColor: colors.primaryTint }]}>
-                    <Ionicons name="search-outline" size={32} color={colors.primary} />
+                <View style={styles.empty} testID={panne ? "explore-panne" : "explore-vide"}>
+                  <View style={[styles.emptyIcon, { backgroundColor: panne ? colors.errorBg : colors.primaryTint }]}>
+                    <Ionicons
+                      name={panne ? "cloud-offline-outline" : "search-outline"}
+                      size={32}
+                      color={panne ? colors.error : colors.primary}
+                    />
                   </View>
                   <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                    Aucun résultat
+                    {panne ? "Annonces indisponibles" : "Aucun résultat"}
                   </Text>
                   <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                    Essaie une autre catégorie{"\n"}ou modifie ta recherche
+                    {panne
+                      ? "Impossible de joindre le serveur.\nVérifiez votre connexion."
+                      : "Essayez une autre catégorie\nou modifiez votre recherche."}
                   </Text>
+                  {panne && (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      onPress={() => { setLoading(true); load(); }}
+                      testID="explore-reessayer"
+                      style={[styles.reessai, { backgroundColor: colors.primary }]}
+                    >
+                      <Ionicons name="refresh" size={16} color={colors.textInverse} />
+                      <Text style={[styles.reessaiTxt, { color: colors.textInverse }]}>Réessayer</Text>
+                    </TouchableOpacity>
+                  )}
                 </View>
               }
               showsVerticalScrollIndicator={false}
@@ -367,7 +387,7 @@ function Argument({ icone, texte, colors }: { icone: any; texte: string; colors:
   return (
     <View style={styles.argument}>
       <Ionicons name={icone} size={13} color={colors.primary} />
-      <Text style={[styles.argumentTxt, { color: colors.textSecondary }]} numberOfLines={1}>{texte}</Text>
+      <Text style={[styles.argumentTxt, { color: colors.textSecondary }]}>{texte}</Text>
     </View>
   );
 }
@@ -390,13 +410,17 @@ const styles = StyleSheet.create({
   brand: { fontSize: 24, fontWeight: "900", letterSpacing: 0, marginTop: 2 },
   toggleBtn: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
 
-  bandeau: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.md, marginTop: 8, gap: 8,
+  reessai: {
+    flexDirection: "row", alignItems: "center", gap: 7, marginTop: 16,
+    paddingHorizontal: 20, paddingVertical: 12, borderRadius: radius.md,
   },
-  argument: { flexDirection: "row", alignItems: "center", gap: 5, flexShrink: 1 },
+  reessaiTxt: { fontSize: 14, fontWeight: "800" },
+  bandeau: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    flexWrap: "wrap", paddingHorizontal: spacing.md, marginTop: 8, rowGap: 4, columnGap: 14,
+  },
+  argument: { flexDirection: "row", alignItems: "center", gap: 5 },
   argumentTxt: { fontSize: 11, fontWeight: "700" },
-  sep: { width: 1, height: 13 },
   // KYC banner
   kycBanner: { paddingHorizontal: spacing.md, marginTop: 6, marginBottom: 4 },
   kycBannerInner: { flexDirection: "row", alignItems: "center", padding: 12, gap: 10, borderWidth: 1 },
