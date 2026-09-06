@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Photo } from "../../src/Photo";
 
 export default function Bookings() {
   const { token } = useAuth();
@@ -65,7 +66,7 @@ export default function Bookings() {
       <Glass borderRadius={radius.lg}>
         <View style={styles.card}>
           {item.listing?.photos?.[0] && (
-            <Image source={{ uri: item.listing.photos[0] }} style={styles.img} alt={`Photo de ${item.listing.title}`} />
+            <Photo uri={item.listing.photos[0]} largeur={110} style={styles.img} alt={`Photo de ${item.listing.title}`} icone="cube-outline" />
           )}
           <View style={styles.body}>
             <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>

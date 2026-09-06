@@ -17,6 +17,7 @@ import { Glass } from "../../src/Glass";
 import { SkeletonBox } from "../../src/Skeleton";
 import { Map } from "../../src/Map";
 import { ReportModal } from "../../src/ReportModal";
+import { Photo } from "../../src/Photo";
 
 const CATEGORY_LABELS: Record<string, string> = {
   car: "Voitures", bike: "Vélos", tool: "Outils", tech: "Tech", camping: "Camping", other: "Autres",
@@ -97,7 +98,7 @@ export default function ListingDetail() {
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="listing-detail-screen">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         <View style={styles.imgWrap}>
-          <Image source={{ uri: listing.photos[0] }} style={styles.image} alt={`Photo de ${listing.title}`} />
+          <Photo uri={listing.photos[0]} largeur={420} style={styles.image} alt={`Photo de ${listing.title}`} icone="cube-outline" />
           <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.18)" }]} />
           <SafeAreaView edges={["top"]} style={styles.topBar}>
             <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="back-btn">
@@ -328,7 +329,7 @@ const styles = StyleSheet.create({
   metaText: { fontSize: 14 },
   dot: {},
   ownerBox: { flexDirection: "row", alignItems: "center", padding: spacing.md, marginTop: spacing.lg, gap: spacing.md, borderWidth: 1 },
-  ownerAvatar: { width: 48, height: 48, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  ownerAvatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
   ownerInitial: { fontSize: 20, fontWeight: "800" },
   ownerName: { fontSize: 16, fontWeight: "900" },
   ownerLabel: { fontSize: 13, marginTop: 2 },

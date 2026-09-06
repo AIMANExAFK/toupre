@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Photo } from "../../src/Photo";
 
 // Modifier une annonce publiée (spec 005, US4). Supprimer puis republier ferait
 // perdre les avis reçus : la correction doit rester une correction.
@@ -133,7 +134,7 @@ export default function EditListing() {
                     testID="edit-photo"
                   >
                     {photo ? (
-                      <Image source={{ uri: photo }} style={styles.photo} alt={`Photo de ${titre}`} />
+                      <Photo uri={photo} largeur={380} style={styles.photo} alt={`Photo de ${titre}`} icone="cube-outline" />
                     ) : (
                       <View style={[styles.photo, styles.photoVide, { borderColor: colors.border }]}>
                         <Ionicons name="image-outline" size={30} color={colors.textTertiary} />

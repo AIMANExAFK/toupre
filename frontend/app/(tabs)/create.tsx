@@ -29,7 +29,9 @@ const CATEGORIES = [
   { id: "other", label: "Autre", icon: "cube" },
 ];
 
-const SAMPLE = "https://images.pexels.com/photos/24376862/pexels-photo-24376862.jpeg";
+// Repli quand l'utilisateur publie sans photo : un objet neutre, qui ne
+// ressemble à aucune annonce existante.
+const SAMPLE = "https://images.pexels.com/photos/1005058/pexels-photo-1005058.jpeg";
 
 export default function Create() {
   const { token, user } = useAuth();

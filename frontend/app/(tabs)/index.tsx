@@ -178,27 +178,12 @@ export default function Explore() {
             </TouchableOpacity>
           )}
 
-          <View style={styles.heroCard}>
-            <Glass borderRadius={radius.lg} style={styles.heroSurface}>
-              <View style={styles.heroTop}>
-                <View style={[styles.heroIcon, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="shield-checkmark" size={20} color={colors.textInverse} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.heroTitle, { color: colors.textPrimary }]}>
-                    {"Trouvez un objet fiable, sans l'acheter."}
-                  </Text>
-                  <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-                    Réservation simple, contact vérifié, retrait local.
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.metricRow}>
-                <Metric value={String(listings.length || "8+")} label="annonces" colors={colors} />
-                <Metric value="0€" label="frais app" colors={colors} />
-                <Metric value="cash" label="à la remise" colors={colors} />
-              </View>
-            </Glass>
+          <View style={styles.bandeau}>
+            <Argument icone="pricetag-outline" texte="0€ de frais" colors={colors} />
+            <View style={[styles.sep, { backgroundColor: colors.border }]} />
+            <Argument icone="shield-checkmark-outline" texte="Contact vérifié" colors={colors} />
+            <View style={[styles.sep, { backgroundColor: colors.border }]} />
+            <Argument icone="cash-outline" texte="Paiement cash" colors={colors} />
           </View>
 
           <View style={styles.searchWrap}>
@@ -378,11 +363,11 @@ export default function Explore() {
   );
 }
 
-function Metric({ value, label, colors }: { value: string; label: string; colors: any }) {
+function Argument({ icone, texte, colors }: { icone: any; texte: string; colors: any }) {
   return (
-    <View style={[styles.metric, { borderColor: colors.surfaceGlassBorder, backgroundColor: colors.surfaceGlass }]}>
-      <Text style={[styles.metricValue, { color: colors.textPrimary }]}>{value}</Text>
-      <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>{label}</Text>
+    <View style={styles.argument}>
+      <Ionicons name={icone} size={13} color={colors.primary} />
+      <Text style={[styles.argumentTxt, { color: colors.textSecondary }]} numberOfLines={1}>{texte}</Text>
     </View>
   );
 }
@@ -405,8 +390,13 @@ const styles = StyleSheet.create({
   brand: { fontSize: 24, fontWeight: "900", letterSpacing: 0, marginTop: 2 },
   toggleBtn: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
 
-  heroCard: { paddingHorizontal: spacing.md, marginTop: 6 },
-  heroSurface: { padding: 14, borderWidth: 1 },
+  bandeau: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: spacing.md, marginTop: 8, gap: 8,
+  },
+  argument: { flexDirection: "row", alignItems: "center", gap: 5, flexShrink: 1 },
+  argumentTxt: { fontSize: 11, fontWeight: "700" },
+  sep: { width: 1, height: 13 },
   // KYC banner
   kycBanner: { paddingHorizontal: spacing.md, marginTop: 6, marginBottom: 4 },
   kycBannerInner: { flexDirection: "row", alignItems: "center", padding: 12, gap: 10, borderWidth: 1 },
@@ -415,14 +405,7 @@ const styles = StyleSheet.create({
   kycSub: { fontSize: 11, lineHeight: 14, marginTop: 2 },
   kycCta: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999 },
   kycCtaText: { fontSize: 11, fontWeight: "800" },
-  heroTop: { flexDirection: "row", gap: 10, alignItems: "center" },
-  heroIcon: { width: 38, height: 38, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  heroTitle: { fontSize: 16, fontWeight: "900", letterSpacing: 0, lineHeight: 20 },
-  heroSubtitle: { fontSize: 12, lineHeight: 17, marginTop: 3 },
-  metricRow: { flexDirection: "row", gap: 7, marginTop: 12 },
   metric: { flex: 1, borderWidth: 1, borderRadius: radius.md, paddingVertical: 9, paddingHorizontal: 6 },
-  metricValue: { fontSize: 14, fontWeight: "900", textAlign: "center" },
-  metricLabel: { fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 2 },
 
   searchWrap: {
     paddingHorizontal: spacing.md,

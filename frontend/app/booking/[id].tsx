@@ -9,6 +9,7 @@ import { ApiError, apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 import { Calendrier, jourISO, depuisISO } from "../../src/Calendrier";
+import { Photo } from "../../src/Photo";
 
 function formatISO(iso: string): string {
   return depuisISO(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
@@ -118,7 +119,7 @@ export default function BookingFlow() {
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Glass borderRadius={radius.lg} style={styles.itemShell}>
               <View style={styles.itemCard}>
-                <Image source={{ uri: listing.photos[0] }} style={styles.itemImg} alt={`Photo de ${listing.title}`} />
+                <Photo uri={listing.photos[0]} largeur={104} style={styles.itemImg} alt={`Photo de ${listing.title}`} icone="cube-outline" />
                 <View style={{ flex: 1, padding: spacing.md }}>
                   <Text style={[styles.itemTitle, { color: colors.textPrimary }]} numberOfLines={2}>{listing.title}</Text>
                   <Text style={[styles.itemPrice, { color: colors.primary }]}>{listing.price_per_day}€ / jour</Text>

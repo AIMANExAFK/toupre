@@ -10,6 +10,11 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, radius, shadowStyle } from "./theme";
+import { Photo } from "./Photo";
+
+// La carte occupe la largeur de l'écran moins les marges : on demande au CDN
+// une image calibrée pour ça, pas l'original de 6 mégapixels.
+const LARGEUR_CARTE = 380;
 
 export type RentalCardProps = {
   id: string;
@@ -105,9 +110,13 @@ export function RentalCard({
         >
           {/* Hero Image */}
           <View style={styles.imgWrap}>
-            <Animated.Image
-              source={{ uri: image }}
-              style={[styles.img, { transform: [{ scale: imgScale }] }]}
+            <Photo
+              uri={image}
+              largeur={LARGEUR_CARTE}
+              style={styles.img}
+              transform={[{ scale: imgScale }]}
+              alt={`Photo de ${title}`}
+              icone="cube-outline"
             />
             {/* Dégradé localisé bas uniquement pour rendre le prix lisible */}
             <View pointerEvents="none" style={styles.priceGradient} />
@@ -176,7 +185,7 @@ export function RentalCard({
             {/* Owner row */}
             <View style={[styles.ownerRow, { borderTopColor: colors.border }]}>
               {ownerAvatar ? (
-                <Image source={{ uri: ownerAvatar }} style={styles.avatar} alt="" />
+                <Photo uri={ownerAvatar} largeur={32} style={styles.avatar} alt="" icone="person-outline" />
               ) : (
                 <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryTint, borderColor: colors.surfaceGlassBorder }]}>
                   <Text style={[styles.avatarText, { color: colors.primary }]}>{initial}</Text>
@@ -253,7 +262,7 @@ const styles = StyleSheet.create({
   },
   imgWrap: {
     width: "100%",
-    height: 190,
+    height: 164,
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#111",
@@ -305,7 +314,7 @@ const styles = StyleSheet.create({
   priceUnit: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "600" },
 
   // Body
-  body: { padding: 16, gap: 8 },
+  body: { padding: 14, gap: 7 },
   title: { fontSize: 15, fontWeight: "800", letterSpacing: -0.2, lineHeight: 19 },
 
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },

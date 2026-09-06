@@ -260,6 +260,9 @@ test("consultation partagée : le propriétaire voit le constat du locataire et 
 
 test("accessibilité : tout élément actionnable a un rôle et un nom", async ({ page }) => {
   await loginDemo(page);
+  // Les annonces arrivent après l'écran : sans cette attente, la mesure porte
+  // sur une page à moitié rendue et le compte varie d'un run à l'autre.
+  await expect(page.getByTestId(/^rental-card-/).first()).toBeVisible({ timeout: 15_000 });
 
   const bilan = await page.evaluate(() => {
     const root = document.getElementById("root")!;
@@ -279,7 +282,7 @@ test("accessibilité : tout élément actionnable a un rôle et un nom", async (
     };
   });
 
-  expect(bilan.arrets).toBeGreaterThan(10);
+  expect(bilan.arrets, "écran trop pauvre pour que la mesure ait un sens").toBeGreaterThan(10);
   expect(bilan.divsNus, "éléments focusables sans rôle accessible").toBe(0);
   expect(bilan.sansNom, "éléments actionnables sans nom accessible").toBe(0);
   expect(bilan.imagesSansAlt, "images sans alternative textuelle").toBe(0);
@@ -491,4 +494,37 @@ test("modération : une annonce interdite est refusée, un outil au nom ambigu p
     headers: { Authorization: `Bearer ${voisin.access_token}` },
   });
   expect(normal.status()).toBe(200);
+});
+
+// ─── Poids des images ───────────────────────────────────────────────────────
+
+test("images : aucune photo n'est servie en pleine résolution", async ({ page }) => {
+  await poserSession(page, await apiLogin(page.request, DEMO_EMAIL, DEMO_PHONE));
+  await page.goto("/");
+  await expect(page.getByTestId(/^rental-card-/).first()).toBeVisible({ timeout: 15_000 });
+
+  // Les photothèques servent l'original — jusqu'à 4,5 Mo pour une vignette.
+  // Chaque photo distante doit porter une consigne de redimensionnement.
+  const brutes = await page.evaluate(() =>
+    [...document.querySelectorAll("img")]
+      .map((i) => i.src)
+      .filter((s) => /^https?:/.test(s) && !/[?&]w=\d+/.test(s)),
+  );
+  expect(brutes, `photos servies en pleine résolution : ${brutes.join(", ")}`).toEqual([]);
+
+  // Et la consigne doit rester raisonnable : au-delà, l'œil ne gagne rien.
+  const trop = await page.evaluate(() =>
+    [...document.querySelectorAll("img")]
+      .map((i) => Number((i.src.match(/[?&]w=(\d+)/) || [])[1] || 0))
+      .filter((w) => w > 1400),
+  );
+  expect(trop, "redimensionnement demandé trop généreux").toEqual([]);
+});
+
+test("catalogue : chaque annonce a sa propre photo", async ({ request }) => {
+  const annonces = await (await request.get(`${API}/listings`)).json();
+  const photos = annonces.map((a: any) => a.photos[0]);
+  const doublons = photos.filter((p: string, i: number) => photos.indexOf(p) !== i);
+  // Deux annonces qui partagent une photo font douter de tout le catalogue.
+  expect(doublons, `photos partagées par plusieurs annonces : ${doublons.join(", ")}`).toEqual([]);
 });

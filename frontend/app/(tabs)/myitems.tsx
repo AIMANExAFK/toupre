@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Photo } from "../../src/Photo";
 
 type Tab = "items" | "requests";
 
@@ -135,42 +136,40 @@ export default function MyItems() {
                 <View style={{ marginBottom: spacing.md }} testID={`my-item-${item.id}`}>
                   <Glass borderRadius={radius.lg}>
                     <View style={styles.card}>
-                      <Image source={{ uri: item.photos[0] }} style={styles.img} alt={`Photo de ${item.title}`} />
+                      <Photo uri={item.photos[0]} largeur={110} style={styles.img} alt={`Photo de ${item.title}`} icone="cube-outline" />
                       <View style={styles.body}>
                         <Text style={[styles.title, { color: colors.textPrimary }]} numberOfLines={1}>{item.title}</Text>
                         <Text style={[styles.location, { color: colors.textSecondary }]}>{item.location?.address}</Text>
-                        <View style={styles.bottomRow}>
-                          <Text style={[styles.price, { color: colors.primary }]}>{item.price_per_day}€/jour</Text>
-                          <View style={styles.actions}>
-                            <TouchableOpacity accessibilityLabel={`Voir ${item.title}`} accessibilityRole="button"
-                              onPress={() => router.push(`/listing/${item.id}`)}
-                              style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
-                              testID={`view-item-${item.id}`}
-                            >
-                              <Ionicons name="eye" size={18} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity accessibilityLabel={`Modifier ${item.title}`} accessibilityRole="button"
-                              onPress={() => router.push(`/listing/edit?id=${item.id}`)}
-                              style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
-                              testID={`edit-item-${item.id}`}
-                            >
-                              <Ionicons name="pencil" size={17} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity accessibilityLabel={`Disponibilités de ${item.title}`} accessibilityRole="button"
-                              onPress={() => router.push(`/listing/disponibilites?id=${item.id}`)}
-                              style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
-                              testID={`dispo-item-${item.id}`}
-                            >
-                              <Ionicons name="calendar" size={17} color={colors.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity accessibilityLabel={`Supprimer ${item.title}`} accessibilityRole="button"
-                              onPress={() => onDelete(item.id)}
-                              style={[styles.actionBtn, { backgroundColor: colors.errorBg }]}
-                              testID={`delete-item-${item.id}`}
-                            >
-                              <Ionicons name="trash" size={18} color={colors.error} />
-                            </TouchableOpacity>
-                          </View>
+                        <Text style={[styles.price, { color: colors.primary }]}>{item.price_per_day}€/jour</Text>
+                        <View style={styles.actions}>
+                          <TouchableOpacity accessibilityLabel={`Voir ${item.title}`} accessibilityRole="button"
+                            onPress={() => router.push(`/listing/${item.id}`)}
+                            style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
+                            testID={`view-item-${item.id}`}
+                          >
+                            <Ionicons name="eye" size={18} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity accessibilityLabel={`Modifier ${item.title}`} accessibilityRole="button"
+                            onPress={() => router.push(`/listing/edit?id=${item.id}`)}
+                            style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
+                            testID={`edit-item-${item.id}`}
+                          >
+                            <Ionicons name="pencil" size={17} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity accessibilityLabel={`Disponibilités de ${item.title}`} accessibilityRole="button"
+                            onPress={() => router.push(`/listing/disponibilites?id=${item.id}`)}
+                            style={[styles.actionBtn, { backgroundColor: colors.primaryTint }]}
+                            testID={`dispo-item-${item.id}`}
+                          >
+                            <Ionicons name="calendar" size={17} color={colors.primary} />
+                          </TouchableOpacity>
+                          <TouchableOpacity accessibilityLabel={`Supprimer ${item.title}`} accessibilityRole="button"
+                            onPress={() => onDelete(item.id)}
+                            style={[styles.actionBtn, { backgroundColor: colors.errorBg }]}
+                            testID={`delete-item-${item.id}`}
+                          >
+                          <Ionicons name="trash" size={18} color={colors.error} />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </View>
@@ -220,7 +219,7 @@ export default function MyItems() {
                       <Glass borderRadius={radius.lg} style={styles.bookingCard}>
                         <View style={styles.bookingHead}>
                           {b.listing?.photos?.[0] && (
-                            <Image source={{ uri: b.listing.photos[0] }} style={styles.bookingThumb} alt={`Photo de ${b.listing.title}`} />
+                            <Photo uri={b.listing.photos[0]} largeur={56} style={styles.bookingThumb} alt={`Photo de ${b.listing.title}`} icone="cube-outline" />
                           )}
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <Text style={[styles.bookingTitle, { color: colors.textPrimary }]} numberOfLines={1}>
@@ -347,14 +346,15 @@ const styles = StyleSheet.create({
   tabBadgeText: { fontSize: 11, fontWeight: "800" },
   list: { padding: spacing.lg, flexGrow: 1, paddingBottom: 140 },
   card: { flexDirection: "row", overflow: "hidden" },
-  img: { width: 110, height: 120 },
-  body: { flex: 1, padding: spacing.md, justifyContent: "space-between" },
+  img: { width: 104, height: 138 },
+  body: { flex: 1, padding: spacing.md },
   title: { fontSize: 15, fontWeight: "700" },
   location: { fontSize: 13, marginTop: 2 },
-  bottomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  price: { fontSize: 15, fontWeight: "800" },
-  actions: { flexDirection: "row", gap: 8 },
-  actionBtn: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  price: { fontSize: 15, fontWeight: "800", marginTop: 6 },
+  actions: { flexDirection: "row", gap: 6, marginTop: 8 },
+  // Chaque action prend une part égale : la rangée s'adapte à la largeur de
+  // l'écran au lieu de déborder de la carte.
+  actionBtn: { flex: 1, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   loadingBox: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: 12, flex: 1, justifyContent: "center" },
   emptyText: { fontSize: 17, fontWeight: "700", textAlign: "center", marginTop: 12 },

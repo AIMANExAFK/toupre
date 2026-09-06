@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Photo } from "../../src/Photo";
 
 export default function Profile() {
   const { user, token, logout } = useAuth();
@@ -86,11 +87,7 @@ export default function Profile() {
               activeOpacity={0.85}
             >
               {user.avatar ? (
-                <Image
-                  source={{ uri: user.avatar }}
-                  style={[styles.avatar, { borderRadius: 22 }]}
-                  alt="Votre photo de profil"
-                />
+                <Photo uri={user.avatar} largeur={88} style={styles.avatar} alt="Votre photo de profil" icone="person-outline" />
               ) : (
                 <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.42, radius: 20, offsetY: 8 })]}>
                   <Text style={[styles.avatarText, { color: colors.textInverse }]}>{initial}</Text>
@@ -242,7 +239,7 @@ function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
 
 const styles = StyleSheet.create({
   header: { alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing.xl, paddingBottom: spacing.lg },
-  avatar: { width: 88, height: 88, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  avatar: { width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center" },
   avatarText: { fontSize: 36, fontWeight: "800" },
   name: { fontSize: 24, fontWeight: "900", marginTop: spacing.md, letterSpacing: 0 },
   email: { fontSize: 14, marginTop: 2 },
