@@ -18,6 +18,7 @@ import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 import { Photo } from "../../src/Photo";
+import { compte } from "../../src/francais";
 
 type Tab = "items" | "requests";
 
@@ -250,7 +251,7 @@ export default function MyItems() {
                           </View>
                           <View style={styles.bookingMetaItem}>
                             <Ionicons name="time-outline" size={14} color={colors.textSecondary} />
-                            <Text style={[styles.bookingMetaText, { color: colors.textSecondary }]}>{b.days} jour{b.days > 1 ? "s" : ""}</Text>
+                            <Text style={[styles.bookingMetaText, { color: colors.textSecondary }]}>{compte(b.days, "jour")}</Text>
                           </View>
                           <View style={styles.bookingMetaItem}>
                             <Ionicons name="cash-outline" size={14} color={colors.success} />

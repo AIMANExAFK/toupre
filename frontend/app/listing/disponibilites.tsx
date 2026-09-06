@@ -7,6 +7,7 @@ import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 import { Calendrier } from "../../src/Calendrier";
+import { compte, pluriel } from "../../src/francais";
 
 // Le propriétaire ferme les jours où son objet n'est pas disponible (spec 005, US3).
 // Un jour déjà réservé n'est pas modifiable ici : il ne dépend plus de lui.
@@ -109,7 +110,7 @@ export default function Disponibilites() {
                 <Text style={[styles.compte, { color: colors.textTertiary }]} testID="dispo-compte">
                   {fermes.length === 0
                     ? "Aucun jour fermé"
-                    : `${fermes.length} jour${fermes.length > 1 ? "s" : ""} fermé${fermes.length > 1 ? "s" : ""}`}
+                    : `${compte(fermes.length, "jour")} ${pluriel(fermes.length, "fermé")}`}
                 </Text>
                 {erreur && <Text style={[styles.erreur, { color: colors.error }]}>{erreur}</Text>}
               </>

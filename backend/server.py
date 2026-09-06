@@ -98,6 +98,10 @@ REPORT_FLAG_THRESHOLD = 3
 MAX_INSPECTION_PHOTOS = 5
 MAX_INSPECTION_PHOTOS_BYTES = 3_000_000
 
+# Photos d'annonce : plusieurs angles rassurent, mais un document reste borné.
+MAX_LISTING_PHOTOS = 5
+MAX_LISTING_PHOTOS_BYTES = 4_000_000
+
 BOOKING_STATUSES = {
     "pending",
     "confirmed",
@@ -824,6 +828,22 @@ SORTS_LISTINGS = {
 }
 
 
+def verifier_photos_annonce(photos: List[str]) -> None:
+    """Bornes communes à la création et à la modification d'une annonce."""
+    if not photos:
+        raise HTTPException(status_code=400, detail="Ajoutez au moins une photo.")
+    if len(photos) > MAX_LISTING_PHOTOS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{MAX_LISTING_PHOTOS} photos maximum par annonce.",
+        )
+    if sum(len(p) for p in photos) > MAX_LISTING_PHOTOS_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail="Photos trop volumineuses. Réduisez leur nombre ou leur qualité.",
+        )
+
+
 @api_router.get("/listings")
 async def list_listings(
     category: Optional[str] = None,
@@ -889,6 +909,7 @@ async def create_listing(
     verdict = check_content(f"{payload.title} {payload.description}")
     if verdict["blocked"]:
         raise HTTPException(status_code=400, detail=CONTENU_REFUSE_ANNONCE)
+    verifier_photos_annonce(payload.photos)
     doc = Listing(owner_id=current_user["id"], **payload.dict()).dict()
     if verdict["flagged"]:
         doc["flagged_for_review"] = True
@@ -926,6 +947,8 @@ async def update_listing(
     updates = {k: v for k, v in payload.dict().items() if v is not None}
     if not updates:
         raise HTTPException(status_code=400, detail="Nothing to update")
+    if "photos" in updates:
+        verifier_photos_annonce(updates["photos"])
     texte = " ".join(str(updates[c]) for c in ("title", "description") if c in updates)
     verdict = check_content(texte)
     if verdict["blocked"]:
@@ -2012,7 +2035,11 @@ SEED_LISTINGS = [
         "description": "Voiture électrique premium, autonomie 450km. Idéale pour les longs trajets ou un week-end en amoureux. Recharge rapide incluse.",
         "category": "car",
         "price_per_day": 89.0,
-        "photos": ["https://images.pexels.com/photos/10029873/pexels-photo-10029873.jpeg"],
+        "photos": [
+            "https://images.pexels.com/photos/10029873/pexels-photo-10029873.jpeg",
+            "https://images.pexels.com/photos/18977348/pexels-photo-18977348/free-photo-of-steering-wheel-of-tesla-car.jpeg",
+            "https://images.pexels.com/photos/18977344/pexels-photo-18977344/free-photo-of-view-of-a-tablet-showing-the-map-in-a-tesla.jpeg",
+        ],
         "location": {"lat": 48.8566, "lng": 2.3522, "address": "Paris 11ème"},
         "owner_key": "demo",
     },
@@ -2030,7 +2057,10 @@ SEED_LISTINGS = [
         "description": "Perceuse-visseuse professionnelle avec 2 batteries + chargeur. Parfaite pour vos travaux de bricolage.",
         "category": "tool",
         "price_per_day": 8.0,
-        "photos": ["https://images.pexels.com/photos/3877525/pexels-photo-3877525.jpeg"],
+        "photos": [
+            "https://images.pexels.com/photos/3877525/pexels-photo-3877525.jpeg",
+            "https://images.pexels.com/photos/8130011/pexels-photo-8130011.jpeg",
+        ],
         "location": {"lat": 48.8738, "lng": 2.2950, "address": "Paris 17ème"},
         "owner_key": "thomas",
     },
@@ -2039,7 +2069,11 @@ SEED_LISTINGS = [
         "description": "Tente familiale 4 places, montage rapide en 2 minutes. Utilisée 3 fois, comme neuve.",
         "category": "camping",
         "price_per_day": 15.0,
-        "photos": ["https://images.pexels.com/photos/15925118/pexels-photo-15925118/free-photo-of-a-blue-and-orange-tent-in-the-woods.jpeg"],
+        "photos": [
+            "https://images.pexels.com/photos/15925118/pexels-photo-15925118/free-photo-of-a-blue-and-orange-tent-in-the-woods.jpeg",
+            "https://images.pexels.com/photos/2526025/pexels-photo-2526025.jpeg",
+            "https://images.pexels.com/photos/6324395/pexels-photo-6324395.jpeg",
+        ],
         "location": {"lat": 48.8462, "lng": 2.3464, "address": "Paris 5ème"},
         "owner_key": "marie",
     },

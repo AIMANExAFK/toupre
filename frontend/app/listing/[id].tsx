@@ -18,6 +18,7 @@ import { SkeletonBox } from "../../src/Skeleton";
 import { Map } from "../../src/Map";
 import { ReportModal } from "../../src/ReportModal";
 import { Photo } from "../../src/Photo";
+import { Galerie } from "../../src/Galerie";
 
 const CATEGORY_LABELS: Record<string, string> = {
   car: "Voitures", bike: "Vélos", tool: "Outils", tech: "Tech", camping: "Camping", other: "Autres",
@@ -98,8 +99,11 @@ export default function ListingDetail() {
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="listing-detail-screen">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 130 }}>
         <View style={styles.imgWrap}>
-          <Photo uri={listing.photos[0]} largeur={420} style={styles.image} alt={`Photo de ${listing.title}`} icone="cube-outline" />
-          <View style={[StyleSheet.absoluteFillObject, { backgroundColor: "rgba(0,0,0,0.18)" }]} />
+          <Galerie photos={listing.photos || []} titre={listing.title} hauteur={360} largeur={420} />
+          {/* Voile léger pour que les boutons blancs du haut restent lisibles
+              quelle que soit la photo. Il ne doit pas intercepter le balayage
+              de la galerie. */}
+          <View pointerEvents="none" style={[styles.voile, { backgroundColor: "rgba(0,0,0,0.18)" }]} />
           <SafeAreaView edges={["top"]} style={styles.topBar}>
             <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="back-btn">
               <Glass borderRadius={22} style={styles.iconBtn}>
@@ -312,6 +316,8 @@ export default function ListingDetail() {
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
   imgWrap: { width: "100%", height: 360 },
+  // Le voile s'arrête au-dessus des pastilles de la galerie
+  voile: { position: "absolute", top: 0, left: 0, right: 0, height: 120 },
   image: { width: "100%", height: "100%" },
   topBar: { position: "absolute", top: 0, left: 0, right: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingTop: spacing.sm },
   iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },

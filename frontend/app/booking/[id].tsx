@@ -10,6 +10,7 @@ import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
 import { Calendrier, jourISO, depuisISO } from "../../src/Calendrier";
 import { Photo } from "../../src/Photo";
+import { compte } from "../../src/francais";
 
 function formatISO(iso: string): string {
   return depuisISO(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
@@ -143,13 +144,13 @@ export default function BookingFlow() {
                 ? "Choisissez le premier jour de location."
                 : !fin
                   ? `Du ${formatISO(debut)} — choisissez le dernier jour.`
-                  : `Du ${formatISO(debut)} au ${formatISO(fin)} · ${days} jour${days > 1 ? "s" : ""}`}
+                  : `Du ${formatISO(debut)} au ${formatISO(fin)} · ${compte(days, "jour")}`}
             </Text>
 
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Récapitulatif</Text>
             <Glass borderRadius={radius.lg} style={styles.summaryShell}>
               <View style={styles.summary}>
-                <Row label={`${listing.price_per_day}€ × ${days} jours`} value={`${subtotal.toFixed(2)}€`} colors={colors} />
+                <Row label={`${listing.price_per_day}€ × ${compte(days, "jour")}`} value={`${subtotal.toFixed(2)}€`} colors={colors} />
                 <Row label="Frais de service" value="0,00€" colors={colors} />
                 <View style={[styles.divider, { backgroundColor: colors.border }]} />
                 <Row label="À régler en espèces" value={`${total.toFixed(2)}€`} bold colors={colors} />

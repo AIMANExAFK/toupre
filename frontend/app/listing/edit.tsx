@@ -10,11 +10,13 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
-import { Photo } from "../../src/Photo";
+import { Vignettes } from "../../src/Galerie";
 
 // Modifier une annonce publiée (spec 005, US4). Supprimer puis republier ferait
 // perdre les avis reçus : la correction doit rester une correction.
 // Seuls les champs réellement modifiés sont envoyés.
+
+const MAX_PHOTOS = 5;
 
 const CATEGORIES = [
   { id: "car", label: "Voiture", icon: "car" },
@@ -37,7 +39,7 @@ export default function EditListing() {
   const [categorie, setCategorie] = useState("other");
   const [prix, setPrix] = useState("");
   const [adresse, setAdresse] = useState("");
-  const [photo, setPhoto] = useState("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -51,7 +53,7 @@ export default function EditListing() {
       setCategorie(a.category || "other");
       setPrix(String(a.price_per_day ?? ""));
       setAdresse(a.location?.address || "");
-      setPhoto(a.photos?.[0] || "");
+      setPhotos(a.photos || []);
     } catch (e: any) {
       setErreur(e?.message || "Annonce introuvable.");
     }
@@ -67,7 +69,7 @@ export default function EditListing() {
       allowsEditing: true, aspect: [4, 3], quality: 0.6, base64: true,
     });
     if (!r.canceled && r.assets?.[0]?.base64) {
-      setPhoto(`data:image/jpeg;base64,${r.assets[0].base64}`);
+      setPhotos((p) => [...p, `data:image/jpeg;base64,${r.assets[0].base64}`].slice(0, MAX_PHOTOS));
     }
   };
 
@@ -83,13 +85,15 @@ export default function EditListing() {
     if (adresse.trim() && adresse.trim() !== origine.location?.address) {
       d.location = { ...origine.location, address: adresse.trim() };
     }
-    if (photo && photo !== origine.photos?.[0]) d.photos = [photo, ...(origine.photos || []).slice(1)];
+    const memes = photos.length === (origine.photos || []).length
+      && photos.every((p, i) => p === origine.photos[i]);
+    if (photos.length > 0 && !memes) d.photos = photos;
     return d;
   };
 
   const diff = origine ? changements() : {};
   const modifie = Object.keys(diff).length > 0;
-  const valide = titre.trim().length >= 3 && description.trim().length >= 10
+  const valide = photos.length > 0 && titre.trim().length >= 3 && description.trim().length >= 10
     && parseFloat(prix.replace(",", ".")) > 0 && adresse.trim().length >= 3;
 
   const enregistrer = async () => {
@@ -127,23 +131,12 @@ export default function EditListing() {
                   : <ActivityIndicator style={{ marginTop: spacing.xl }} color={colors.primary} />
               ) : (
                 <>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Changer la photo de l'annonce"
-                    onPress={choisirPhoto}
-                    testID="edit-photo"
-                  >
-                    {photo ? (
-                      <Photo uri={photo} largeur={380} style={styles.photo} alt={`Photo de ${titre}`} icone="cube-outline" />
-                    ) : (
-                      <View style={[styles.photo, styles.photoVide, { borderColor: colors.border }]}>
-                        <Ionicons name="image-outline" size={30} color={colors.textTertiary} />
-                      </View>
-                    )}
-                    <View style={[styles.badgePhoto, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                      <Ionicons name="camera-outline" size={16} color={colors.primary} />
-                    </View>
-                  </TouchableOpacity>
+                  <Vignettes
+                    photos={photos}
+                    max={MAX_PHOTOS}
+                    onAjouter={choisirPhoto}
+                    onRetirer={(i) => setPhotos((p) => p.filter((_, k) => k !== i))}
+                  />
 
                   <Champ label="Titre" colors={colors}>
                     <TextInput value={titre} onChangeText={setTitre} maxLength={80}

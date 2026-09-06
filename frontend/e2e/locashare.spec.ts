@@ -464,7 +464,8 @@ test("modération : une annonce interdite est refusée, un outil au nom ambigu p
   const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
   const entetes = { Authorization: `Bearer ${owner.access_token}` };
   const base = {
-    category: "tool", price_per_day: 9, photos: [],
+    category: "tool", price_per_day: 9,
+    photos: ["https://images.pexels.com/photos/3877525/pexels-photo-3877525.jpeg"],
     location: { lat: 48.9, lng: 2.4, address: "Bobigny" },
   };
 
@@ -566,4 +567,55 @@ test("petit écran : aucun texte n'est amputé sur 320 points", async ({ page, r
       .map((e) => (e as HTMLElement).innerText),
   );
   expect(coupes, `textes amputés sur un écran étroit : ${coupes.join(" | ")}`).toEqual([]);
+});
+
+// ─── Plusieurs photos par annonce ───────────────────────────────────────────
+
+test("galerie : une annonce à plusieurs photos se parcourt, une seule reste simple", async ({ page, request }) => {
+  await poserSession(page, await apiLogin(request, DEMO_EMAIL, DEMO_PHONE));
+  const annonces = await (await request.get(`${API}/listings`)).json();
+  const plusieurs = annonces.find((a: any) => a.photos.length > 1);
+  const seule = annonces.find((a: any) => a.photos.length === 1);
+  expect(plusieurs, "le jeu de démonstration doit contenir une annonce à plusieurs photos").toBeTruthy();
+
+  await page.goto(`/listing/${plusieurs.id}`);
+  await expect(page.getByTestId("galerie")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("galerie-compteur")).toContainText(`1 / ${plusieurs.photos.length}`);
+
+  // Sauter à la dernière photo doit vraiment déplacer la galerie
+  const dernier = plusieurs.photos.length - 1;
+  await page.getByTestId(`galerie-point-${dernier}`).click();
+  await expect(page.getByTestId("galerie-compteur")).toContainText(`${dernier + 1} / ${plusieurs.photos.length}`);
+
+  // Une seule photo : ni compteur ni pastilles, ce serait du bruit
+  await page.goto(`/listing/${seule.id}`);
+  await expect(page.getByTestId("listing-detail-screen")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("galerie")).toHaveCount(0);
+});
+
+test("annonce : le nombre et le poids des photos sont bornés côté serveur", async ({ request }) => {
+  const owner = await apiLogin(request, DEMO_EMAIL, DEMO_PHONE);
+  const entetes = { Authorization: `Bearer ${owner.access_token}` };
+  const photo = "https://images.pexels.com/photos/3877525/pexels-photo-3877525.jpeg";
+  const base = {
+    title: "Escabeau 3 marches", description: "Aluminium, léger, stable et pliable.",
+    category: "tool", price_per_day: 5,
+    location: { lat: 48.9, lng: 2.4, address: "Bobigny" },
+  };
+
+  // Une annonce sans photo n'est pas consultable : autant la refuser à la source.
+  expect((await request.post(`${API}/listings`, { data: { ...base, photos: [] }, headers: entetes })).status()).toBe(400);
+  expect((await request.post(`${API}/listings`, { data: { ...base, photos: Array(6).fill(photo) }, headers: entetes })).status()).toBe(400);
+
+  const ok = await request.post(`${API}/listings`, { data: { ...base, photos: Array(5).fill(photo) }, headers: entetes });
+  expect(ok.status()).toBe(200);
+  const cree = await ok.json();
+  expect(cree.photos).toHaveLength(5);
+
+  // La borne vaut aussi à la modification, sinon elle se contourne
+  const debord = await request.patch(`${API}/listings/${cree.id}`, {
+    data: { photos: Array(6).fill(photo) }, headers: entetes,
+  });
+  expect(debord.status()).toBe(400);
+  await request.delete(`${API}/listings/${cree.id}`, { headers: entetes });
 });

@@ -19,6 +19,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth, ApiError } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { Vignettes } from "../../src/Galerie";
 
 const CATEGORIES = [
   { id: "car", label: "Voiture", icon: "car" },
@@ -31,6 +32,8 @@ const CATEGORIES = [
 
 // Repli quand l'utilisateur publie sans photo : un objet neutre, qui ne
 // ressemble à aucune annonce existante.
+const MAX_PHOTOS = 5;
+
 const SAMPLE = "https://images.pexels.com/photos/1005058/pexels-photo-1005058.jpeg";
 
 export default function Create() {
@@ -42,7 +45,7 @@ export default function Create() {
   const [category, setCategory] = useState("car");
   const [price, setPrice] = useState("");
   const [address, setAddress] = useState("");
-  const [photo, setPhoto] = useState<string>("");
+  const [photos, setPhotos] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const isReady = Boolean(title.trim() && description.trim() && price.trim() && address.trim());
 
@@ -60,7 +63,7 @@ export default function Create() {
       base64: true,
     });
     if (!result.canceled && result.assets?.[0]?.base64) {
-      setPhoto(`data:image/jpeg;base64,${result.assets[0].base64}`);
+      setPhotos((p) => [...p, `data:image/jpeg;base64,${result.assets[0].base64}`].slice(0, MAX_PHOTOS));
     }
   };
 
@@ -90,7 +93,7 @@ export default function Create() {
       Alert.alert("Prix invalide", "Entrez un prix par jour valide (ex: 25).");
       return;
     }
-    const finalPhoto = photo || SAMPLE;
+    const finalPhotos = photos.length > 0 ? photos : [SAMPLE];
     setLoading(true);
     try {
       await apiFetch(
@@ -102,7 +105,7 @@ export default function Create() {
             description,
             category,
             price_per_day: parsedPrice,
-            photos: [finalPhoto],
+            photos: finalPhotos,
             location: { lat: 48.8566, lng: 2.3522, address },
           }),
         },
@@ -185,7 +188,7 @@ export default function Create() {
                 <View style={styles.progressHeader}>
                   <Text style={[styles.progressTitle, { color: colors.textPrimary }]}>{"Qualité de l'annonce"}</Text>
                   <Text style={[styles.progressValue, { color: colors.primary }]}>
-                    {[title, description, price, address, photo].filter(Boolean).length}/5
+                    {[title, description, price, address, photos.length > 0].filter(Boolean).length}/5
                   </Text>
                 </View>
                 <View style={[styles.progressTrack, { backgroundColor: colors.surface2 }]}>
@@ -194,29 +197,38 @@ export default function Create() {
                       styles.progressFill,
                       {
                         backgroundColor: colors.primary,
-                        width: `${([title, description, price, address, photo].filter(Boolean).length / 5) * 100}%`,
+                        width: `${([title, description, price, address, photos.length > 0].filter(Boolean).length / 5) * 100}%`,
                       },
                     ]}
                   />
                 </View>
               </Glass>
 
-              <TouchableOpacity accessibilityRole="button" onPress={pickImage} testID="pick-image-btn" style={{ marginTop: spacing.lg }}>
-                <Glass borderRadius={radius.lg} style={[styles.imageBox, { borderColor: colors.primary }]}>
-                  {photo ? (
-                    <Image source={{ uri: photo }} style={styles.image} alt="Photo choisie pour votre annonce" />
-                  ) : (
-                    <View style={styles.placeholder}>
-                      <Ionicons name="camera-outline" size={36} color={colors.primary} />
-                      <Text style={[styles.placeholderText, { color: colors.primary }]}>Ajouter une photo claire</Text>
-                      <Text style={[styles.placeholderHint, { color: colors.textSecondary }]}>Face avant, bon éclairage, objet entier</Text>
-                    </View>
-                  )}
-                  <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
-                    <Ionicons name="camera" size={14} color={colors.textInverse} />
-                  </View>
-                </Glass>
-              </TouchableOpacity>
+              <View style={{ marginTop: spacing.lg }}>
+                {photos.length === 0 ? (
+                  <TouchableOpacity accessibilityRole="button" onPress={pickImage} testID="pick-image-btn">
+                    <Glass borderRadius={radius.lg} style={[styles.imageBox, { borderColor: colors.primary }]}>
+                      <View style={styles.placeholder}>
+                        <Ionicons name="camera-outline" size={36} color={colors.primary} />
+                        <Text style={[styles.placeholderText, { color: colors.primary }]}>Ajouter une photo claire</Text>
+                        <Text style={[styles.placeholderHint, { color: colors.textSecondary }]}>
+                          Face avant, bon éclairage, objet entier
+                        </Text>
+                      </View>
+                      <View style={[styles.editBadge, { backgroundColor: colors.primary }]}>
+                        <Ionicons name="camera" size={14} color={colors.textInverse} />
+                      </View>
+                    </Glass>
+                  </TouchableOpacity>
+                ) : (
+                  <Vignettes
+                    photos={photos}
+                    max={MAX_PHOTOS}
+                    onAjouter={pickImage}
+                    onRetirer={(i) => setPhotos((p) => p.filter((_, k) => k !== i))}
+                  />
+                )}
+              </View>
 
               <Text style={[styles.label, { color: colors.textPrimary }]}>Catégorie</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>

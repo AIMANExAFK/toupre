@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, radius } from "./theme";
+import { compte } from "./francais";
 
 type LatLng = { latitude: number; longitude: number };
 
@@ -155,7 +156,7 @@ export function Map({
         <View pointerEvents="none" style={[styles.mapBadge, { backgroundColor: colors.surface }]}>
           <Ionicons name="navigate-outline" size={15} color={colors.primary} />
           <Text style={[styles.mapBadgeText, { color: colors.textPrimary }]}>
-            {items.length} biens
+            {compte(items.length, "bien")}
           </Text>
         </View>
       )}
