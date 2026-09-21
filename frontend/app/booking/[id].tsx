@@ -150,10 +150,20 @@ export default function BookingFlow() {
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>Récapitulatif</Text>
             <Glass borderRadius={radius.lg} style={styles.summaryShell}>
               <View style={styles.summary}>
-                <Row label={`${listing.price_per_day}€ × ${compte(days, "jour")}`} value={`${subtotal.toFixed(2)}€`} colors={colors} />
-                <Row label="Frais de service" value="0,00€" colors={colors} />
-                <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                <Row label="À régler en espèces" value={`${total.toFixed(2)}€`} bold colors={colors} />
+                {debut ? (
+                  <>
+                    <Row label={`${listing.price_per_day}€ × ${compte(days, "jour")}`} value={`${subtotal.toFixed(2)}€`} colors={colors} />
+                    <Row label="Frais de service" value="0,00€" colors={colors} />
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <Row label="À régler en espèces" value={`${total.toFixed(2)}€`} bold colors={colors} />
+                  </>
+                ) : (
+                  // Sans dates, un total à 0,00€ n'a pas de sens : on invite plutôt
+                  // à choisir la période, dont dépend tout le calcul.
+                  <Text style={[styles.summaryVide, { color: colors.textSecondary }]} testID="recap-vide">
+                    Choisissez vos dates pour voir le montant à régler.
+                  </Text>
+                )}
               </View>
             </Glass>
 
@@ -215,6 +225,7 @@ const styles = StyleSheet.create({
   calAide: { fontSize: 13, textAlign: "center", marginTop: spacing.sm, fontWeight: "600" },
   summaryShell: { borderWidth: 1 },
   summary: { padding: spacing.md },
+  summaryVide: { fontSize: 13.5, lineHeight: 19, textAlign: "center", paddingVertical: 4 },
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
   rowLabel: { fontSize: 14 },
   rowValue: { fontSize: 14 },

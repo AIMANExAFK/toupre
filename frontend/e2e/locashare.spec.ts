@@ -62,7 +62,10 @@ test("réservation : les dates envoyées sont les dates locales choisies", async
   // Les onglets RN-web gardent les écrans montés : filtrer sur le bouton visible
   await page.getByText("Réserver", { exact: true }).filter({ visible: true }).first().click();
   await expect(page).toHaveURL(/\/booking\//);
-  await expect(page.getByText("À régler en espèces")).toBeVisible();
+  // Tant qu'aucune date n'est choisie, le récapitulatif n'affiche pas un total
+  // à 0,00€ : il invite à choisir les dates.
+  await expect(page.getByTestId("recap-vide")).toBeVisible();
+  await expect(page.getByText("À régler en espèces")).toHaveCount(0);
 
   // Plus aucune date n'est présélectionnée : on choisit J+1 puis J+2 dans le
   // calendrier. Deux clics distincts, l'état React devant se propager entre eux.
@@ -70,6 +73,8 @@ test("réservation : les dates envoyées sont les dates locales choisies", async
   await page.getByTestId(`cal-${localISODate(1)}`).click();
   await page.getByTestId(`cal-${localISODate(2)}`).click();
   await expect(page.getByTestId("cal-resume")).toContainText("2 jours");
+  // Les dates posées, le montant à régler apparaît.
+  await expect(page.getByText("À régler en espèces")).toBeVisible();
 
   // Régression bug fuseau horaire : le POST doit porter la date LOCALE (J+1),
   // pas la veille en UTC (l'ancien toISOString() reculait d'un jour après minuit UTC)
