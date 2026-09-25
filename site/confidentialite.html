@@ -7,7 +7,7 @@
 <meta name="description" content="Politique de confidentialité et protection des données personnelles de la plateforme Toupré."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -124,6 +124,54 @@ footer{border-top:1px solid var(--border);padding:32px 24px;position:relative;z-
   .contact-card{flex-direction:column}
   .rights-grid{grid-template-columns:1fr 1fr}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THÈME « SLATE » — identique à l'application et à la page d'accueil.
+   Barre noire en haut, corps clair pour la lecture, aucune couleur hors
+   signalement. Couche placée en dernier : elle surcharge la feuille d'origine.
+══════════════════════════════════════════════════════════════════════ */
+:root{
+  --primary:#0A0A0A;--primary-light:#0A0A0A;--accent:#0A0A0A;
+  --bg:#F4F3F0;--bg2:#ECEBE7;
+  --surface:#FFFFFF;--border:#E4E2DD;
+  --text:#111111;--text-2:#5E5E5E;--text-3:#6B6B6B;
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+body::before{display:none}
+nav:not(.toc){background:#0A0A0A;border-bottom:none}
+.nav-logo{color:#FFFFFF;font-weight:600}
+.logo-mark{background:#FFFFFF;color:#0A0A0A;border-radius:50%;box-shadow:none;font-weight:700}
+.nav-back{background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.72);border-radius:999px}
+.nav-back:hover{color:#FFFFFF;background:rgba(255,255,255,0.16);border-color:transparent}
+.page-badge{background:none;border:none;padding:0;color:var(--text-3);font-weight:600;letter-spacing:3px}
+.page-title{font-weight:600;letter-spacing:-0.03em;color:var(--text)}
+.gradient-text{background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:currentColor;color:var(--text-2)}
+.toc-sidebar::-webkit-scrollbar-thumb{background:rgba(10,10,10,0.15)}
+.toc-list a{color:var(--text-2)}
+.toc-list a:hover{color:var(--text)}
+.toc-list a::before{background:var(--text)}
+.doc-section .section-num{background:none;color:var(--text-3);letter-spacing:3px;font-weight:600}
+.section-title{color:var(--text);font-weight:600}
+.doc-section > p,.doc-section li{color:var(--text-2)}
+.doc-section li::marker{color:var(--text)}
+strong{color:var(--text)}
+.highlight,.info{background:#FFFFFF;border:none;border-left:3px solid #0A0A0A;box-shadow:0 1px 2px rgba(10,10,10,0.04),0 8px 22px rgba(10,10,10,0.05)}
+.highlight p,.info p{color:var(--text)}
+.warning{background:#FFF7E6;border:none;border-left:3px solid #9F600F}
+.warning p{color:#5C3A06}
+.contact-card,.right-card{background:#FFFFFF;border:none;box-shadow:0 1px 2px rgba(10,10,10,0.04),0 10px 28px rgba(10,10,10,0.06)}
+.right-card:hover{border-color:transparent;box-shadow:0 2px 4px rgba(10,10,10,0.05),0 18px 40px rgba(10,10,10,0.10)}
+.contact-icon,.right-icon,.info-icon{background:var(--bg2);border:none;color:var(--text)}
+.contact-card .contact-label,.right-desc{color:var(--text-2)}
+.contact-card .contact-value,.right-label{color:var(--text)}
+.table-wrap{background:#FFFFFF;border:none;border-radius:16px;box-shadow:0 1px 2px rgba(10,10,10,0.04),0 10px 28px rgba(10,10,10,0.06)}
+.data-table th{background:var(--bg2);color:var(--text);border-color:var(--border)}
+.data-table td{color:var(--text-2);border-color:var(--border)}
+.data-table tr:hover td{background:var(--bg)}
+footer{background:#0A0A0A;border-top:none;color:rgba(255,255,255,0.6)}
+.footer-copy,.footer-links a{color:rgba(255,255,255,0.6)}
+.footer-links a:hover{color:#FFFFFF}
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
 </style>
 </head>
 <body>

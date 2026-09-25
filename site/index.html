@@ -7,7 +7,7 @@
 <meta name="description" content="La plateforme française de location entre particuliers. Voitures, vélos, outils, tech et bien plus — entre voisins, en toute confiance."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════
    RESET & BASE
@@ -902,6 +902,161 @@ footer{
   .auth-logo-mobile{display:flex}
   .auth-right{padding:28px 24px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   THÈME « SLATE » — identique à l'application
+   Noir pur, gris clair neutre, blanc ; aucune couleur hors signalement.
+   Blocs noirs : hero (comme le splash), téléchargement, pied de page.
+   Corps : fond gris clair, cartes blanches sans liseré, pilules noires.
+   Cette couche vient en dernier : elle redéfinit les variables et les
+   composants de la feuille d'origine sans la réécrire.
+══════════════════════════════════════════════════════════════════════ */
+:root{
+  --primary:#0A0A0A; --primary-light:#0A0A0A; --primary-dark:#000; --secondary:#0A0A0A; --accent:#0A0A0A;
+  --bg:#F4F3F0; --bg2:#ECEBE7;
+  --surface:#FFFFFF; --surface-hover:#FFFFFF;
+  --border:#E4E2DD; --border-hover:rgba(10,10,10,0.2);
+  --text:#111111; --text-2:#5E5E5E; --text-3:#6B6B6B;
+  --radius:16px; --radius-sm:12px; --radius-lg:20px; --radius-xl:32px;
+  --noir:#0A0A0A; --sur-noir:#FFFFFF; --sur-noir-2:rgba(255,255,255,0.6);
+}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+h1,h2,h3,.hero-title,.section-title,.download-title,.nav-logo,.auth-logo-name{font-family:'Plus Jakarta Sans',system-ui,sans-serif;font-weight:600;letter-spacing:-0.02em}
+body::before,.orb{display:none}
+
+/* Titres de section : sans pastille, petit libellé gris espacé */
+.section-label{background:none;border:none;padding:0;color:var(--text-3);font-weight:600;letter-spacing:3px}
+.section-title{color:var(--text)}
+.section-sub{color:var(--text-2)}
+.gradient-text{background:none;-webkit-background-clip:initial;background-clip:initial;-webkit-text-fill-color:currentColor;color:inherit}
+
+/* Cartes : blanches, pleines, ombre douce */
+.glass{background:#FFFFFF;border:none;backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 1px 2px rgba(10,10,10,0.04),0 10px 28px rgba(10,10,10,0.06)}
+.glass:hover{box-shadow:0 2px 4px rgba(10,10,10,0.05),0 18px 40px rgba(10,10,10,0.10)}
+
+/* ── Navigation : transparente sur le noir du hero, claire une fois défilée ── */
+nav:not(.scrolled) .nav-logo,nav:not(.scrolled) .nav-links a{color:var(--sur-noir-2)}
+nav:not(.scrolled) .nav-logo{color:var(--sur-noir)}
+nav:not(.scrolled) .nav-links a:hover{color:var(--sur-noir)}
+nav:not(.scrolled) .hamburger span{background:var(--sur-noir)}
+nav.scrolled{background:rgba(244,243,240,0.88);border-bottom:1px solid var(--border)}
+nav.scrolled .nav-links a{color:var(--text-2)}
+nav.scrolled .nav-links a:hover{color:var(--text)}
+.logo-mark{background:var(--sur-noir);color:var(--noir);border-radius:50%;box-shadow:none;font-weight:700}
+nav.scrolled .logo-mark{background:var(--noir);color:var(--sur-noir)}
+.btn-nav{background:var(--sur-noir);color:var(--noir);border-radius:999px;box-shadow:none;font-weight:600}
+.btn-nav:hover{box-shadow:0 8px 24px rgba(0,0,0,0.25)}
+nav.scrolled .btn-nav{background:var(--noir);color:var(--sur-noir)}
+
+/* ── Hero : bloc noir plein écran, coins bas arrondis — le splash de l'app ── */
+#hero{background:var(--noir);color:var(--sur-noir);border-radius:0 0 40px 40px}
+#hero .hero-title{color:var(--sur-noir)}
+#hero .gradient-text{color:var(--sur-noir-2)}
+#hero .hero-sub{color:var(--sur-noir-2)}
+.hero-badge{background:rgba(255,255,255,0.08);border:none;color:var(--sur-noir)}
+.hero-badge-dot{background:#4ADE80}
+#hero .trust-text,#hero .trust-text strong{color:var(--sur-noir-2)}
+#hero .trust-text strong{color:var(--sur-noir)}
+.trust-avatar{background:#FFFFFF;color:var(--noir);border-color:var(--noir)}
+#hero .stat-num{color:var(--sur-noir);background:none;-webkit-text-fill-color:currentColor}
+#hero .stat-label{color:var(--sur-noir-2)}
+
+/* Boutons : pilules. Noires sur le clair, blanches sur le noir. */
+.btn-primary{background:var(--noir);color:#FFFFFF;border-radius:999px;box-shadow:none;font-weight:600}
+.btn-primary:hover{box-shadow:0 10px 28px rgba(10,10,10,0.25)}
+#hero .btn-primary,#download .btn-primary{background:#FFFFFF;color:var(--noir)}
+.btn-ghost{border-radius:999px;background:transparent;border:1px solid var(--border);color:var(--text);backdrop-filter:none}
+#hero .btn-ghost{border-color:rgba(255,255,255,0.22);color:var(--sur-noir)}
+#hero .btn-ghost:hover{background:rgba(255,255,255,0.08)}
+
+/* Téléphone : cadre noir et vraie capture de l'app */
+.phone-mockup{background:#000;border:2px solid rgba(255,255,255,0.14);box-shadow:0 40px 90px rgba(0,0,0,0.55)}
+.phone-screen{background:#000}
+.phone-shot{width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.phone-island{z-index:2}
+.float-chip{background:#FFFFFF;color:var(--noir);border:none;box-shadow:0 12px 30px rgba(0,0,0,0.25);border-radius:999px;backdrop-filter:none}
+.chip-green{color:#15803D}
+.chip-yellow{color:var(--noir)}
+
+/* ── Étapes, catégories, fonctionnalités ── */
+.steps-grid::before{background:var(--border)}
+.step-card::before{display:none}
+.step-num{background:var(--noir);color:#FFFFFF;border-radius:50%;box-shadow:none;font-weight:600}
+.cat-card::after{display:none}
+.cat-card:hover{border-color:transparent}
+.feature-icon,.feature-icon.violet,.feature-icon.coral,.feature-icon.indigo,.feature-icon.green{background:var(--bg2);border:none;border-radius:50%}
+.feature-tag{background:var(--bg2);color:var(--text);border:none}
+.review-item{background:var(--bg);border:none}
+.review-item:hover{border-color:transparent}
+.review-avatar,.testi-avatar{background:var(--noir);color:#FFFFFF;box-shadow:none}
+.testi-card::before{color:var(--bg2)}
+.testi-badge{background:#E7F4EC;color:#15803D;border:none}
+
+/* ── Téléchargement : bloc noir, comme la carte du tableau de bord ── */
+.download-wrap{background:var(--noir);border:none;color:var(--sur-noir)}
+.download-wrap::before{display:none}
+.download-title{color:var(--sur-noir)}
+.download-sub{color:var(--sur-noir-2)}
+.store-btn{background:#FFFFFF;border:none;border-radius:999px;backdrop-filter:none;color:var(--noir)}
+.store-btn *{color:var(--noir)}
+.store-soon{color:var(--sur-noir-2);background:rgba(255,255,255,0.08);border:none}
+.soon-dot{background:#4ADE80}
+
+/* ── FAQ ── */
+.faq-item{border-bottom:1px solid var(--border)}
+.faq-q{color:var(--text)}
+.faq-q:hover{color:var(--text-2)}
+.faq-icon{background:var(--bg2);border:none;color:var(--text)}
+.faq-item.open .faq-icon{background:var(--noir);border-color:var(--noir);color:#FFFFFF}
+.faq-a p{color:var(--text-2)}
+
+/* ── Pied de page : noir ── */
+footer{background:var(--noir);color:var(--sur-noir-2);border-top:none;border-radius:40px 40px 0 0;margin-top:40px}
+footer .nav-logo,.footer-col h4{color:var(--sur-noir)}
+.footer-desc,.footer-col ul a,.footer-legal a,.footer-bottom{color:var(--sur-noir-2)}
+.footer-col ul a:hover,.footer-legal a:hover{color:var(--sur-noir)}
+.footer-bottom{border-top-color:rgba(255,255,255,0.08)}
+.social-btn{background:rgba(255,255,255,0.08);border:none;color:var(--sur-noir)}
+.social-btn:hover{background:rgba(255,255,255,0.16);border-color:transparent}
+
+/* ── Fenêtre de connexion ── */
+.auth-box{background:#FFFFFF;border:none;box-shadow:0 32px 80px rgba(0,0,0,0.35)}
+.auth-left{background:var(--noir);border-right:none}
+.auth-title{color:var(--text)}
+.auth-sub,.auth-helper,.auth-tos{color:var(--text-2)}
+.auth-input{background:var(--bg);border:1.5px solid transparent;color:var(--text);border-radius:12px}
+.auth-input:focus{border-color:var(--noir);background:#FFFFFF}
+.auth-oauth-btn{background:#FFFFFF;border:1px solid var(--border);color:var(--text);border-radius:999px}
+.auth-submit{background:var(--noir);color:#FFFFFF;border-radius:999px;box-shadow:none}
+.auth-submit:hover{box-shadow:0 10px 28px rgba(10,10,10,0.25)}
+.auth-toggle a{color:var(--text)}
+.auth-close{color:var(--text-2)}
+
+/* Logo : blanc sur le noir (hero, pied de page), noir sur le clair */
+.logo-pin{fill:currentColor}
+nav:not(.scrolled) .nav-logo,footer .nav-logo,footer .footer-brand{color:#FFFFFF}
+nav.scrolled .nav-logo{color:#111111}
+nav:not(.scrolled) .logo-inner-trait,footer .logo-inner-trait{stroke:#0A0A0A}
+nav:not(.scrolled) .logo-inner-point,footer .logo-inner-point{fill:#0A0A0A}
+nav.scrolled .logo-inner-trait{stroke:#FFFFFF}
+nav.scrolled .logo-inner-point{fill:#FFFFFF}
+
+/* Menu : Plus Jakarta Sans est plus large que Nunito — sans ceci les
+   libellés passaient à la ligne sur tablette. */
+.nav-links a,.nav-cta > *{white-space:nowrap}
+/* « Se connecter » (bouton sans classe) : clair sur le noir du hero */
+nav:not(.scrolled) .nav-cta > button{color:rgba(255,255,255,0.72) !important}
+nav.scrolled .nav-cta > button{color:var(--text-2) !important}
+@media(max-width:1100px){
+  .nav-links{gap:2px}
+  .nav-links a{padding:8px 10px}
+}
+@media(max-width:900px){
+  .nav-cta > button{display:none}
+}
+
+/* Focus clavier : bleu, lisible sur le noir comme sur le clair (≥ 3:1) */
+a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
 </style>
 </head>
 <body>
@@ -915,7 +1070,7 @@ footer{
 <nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" class="logo-pin" fill="currentColor"/><path d="M14.5 22.5 24 13.8l9.5 8.7" class="logo-inner-trait" stroke="#0A0A0A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" class="logo-inner-point" fill="#0A0A0A"/></svg>
       toupré
     </a>
     <ul class="nav-links">
@@ -961,9 +1116,9 @@ footer{
         <div class="hero-trust">
           <div class="trust-avatars">
             <div class="trust-avatar">A</div>
-            <div class="trust-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">S</div>
-            <div class="trust-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">T</div>
-            <div class="trust-avatar" style="background:linear-gradient(135deg,#F08A6C,#E2674A)">M</div>
+            <div class="trust-avatar">S</div>
+            <div class="trust-avatar">T</div>
+            <div class="trust-avatar">M</div>
           </div>
           <p class="trust-text"><strong>+2 400</strong> utilisateurs en liste d'attente</p>
         </div>
@@ -987,44 +1142,9 @@ footer{
         <div class="phone-mockup">
           <div class="phone-screen">
             <div class="phone-island"></div>
-            <div class="phone-content">
-              <div class="phone-header">
-                <div>
-                  <div class="phone-title">Explorer</div>
-                  <div class="phone-subtitle">Bonjour 👋</div>
-                </div>
-                <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#E2674A,#C04A2E);display:flex;align-items:center;justify-content:center;font-size:14px">A</div>
-              </div>
-              <div class="phone-search">
-                <span>🔍</span> Voiture, vélo, outil…
-              </div>
-              <div class="phone-cats">
-                <div class="phone-cat active">Tous</div>
-                <div class="phone-cat">🚗 Voitures</div>
-                <div class="phone-cat">🚲 Vélos</div>
-                <div class="phone-cat">🔧 Outils</div>
-              </div>
-              <div class="phone-card">
-                <div class="phone-card-img" style="background:linear-gradient(135deg,#1e3a5f,#2d5a8e)">
-                  🚗
-                  <div class="phone-card-price">85€/j</div>
-                </div>
-                <div class="phone-card-body">
-                  <div class="phone-card-title">BMW Série 3 2021</div>
-                  <div class="phone-card-loc">📍 Paris 17ème · ⭐ 4.9</div>
-                </div>
-              </div>
-              <div class="phone-card">
-                <div class="phone-card-img" style="background:linear-gradient(135deg,#1a4a2e,#2d7a4a)">
-                  🚲
-                  <div class="phone-card-price">28€/j</div>
-                </div>
-                <div class="phone-card-body">
-                  <div class="phone-card-title">Vélo électrique Cowboy 4</div>
-                  <div class="phone-card-loc">📍 Paris 5ème · ⭐ 5.0</div>
-                </div>
-              </div>
-            </div>
+            <!-- Capture réelle de l'app (écran Explorer), et non plus une maquette HTML
+                 qui montrait l'ancienne identité corail. -->
+            <img class="phone-shot" src="img/app-explorer.jpg" alt="L'écran Explorer de l'application Toupré : « Bonjour Alexandre », 8 annonces près de chez vous" width="390" height="844"/>
           </div>
         </div>
         <!-- Floating chips -->
@@ -1150,7 +1270,7 @@ footer{
               </div>
             </div>
             <div class="review-item">
-              <div class="review-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">T</div>
+              <div class="review-avatar">T</div>
               <div>
                 <div class="review-name">Thomas B.</div>
                 <div class="review-text">"Perceuse nickel, Thomas ponctuel et sympa."</div>
@@ -1158,7 +1278,7 @@ footer{
               </div>
             </div>
             <div class="review-item">
-              <div class="review-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">M</div>
+              <div class="review-avatar">M</div>
               <div>
                 <div class="review-name">Marie L.</div>
                 <div class="review-text">"Tente impeccable, comme neuve. Merci !"</div>
@@ -1205,11 +1325,11 @@ footer{
           </div>
         </div>
       </div>
-      <div class="testi-card glass reveal" style="transition-delay:.1s;border-color:rgba(226,103,74,0.3)">
+      <div class="testi-card glass reveal" style="transition-delay:.1s">
         <div class="testi-stars">★★★★★</div>
         <p class="testi-text">"Louer une voiture pour le week-end à 55€ au lieu de 200€ chez un loueur classique… et le propriétaire habitait à 200m de chez moi. Incroyable."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,#FF6B6B,#FF8E53)">C</div>
+          <div class="testi-avatar">C</div>
           <div>
             <div class="testi-name">Camille R.</div>
             <div class="testi-role">Locataire · Lyon</div>
@@ -1221,7 +1341,7 @@ footer{
         <div class="testi-stars">★★★★★</div>
         <p class="testi-text">"On fait nos rénovations avec des outils loués sur Toupré. On a économisé plus de 800€ en évitant l'achat de matériel qu'on n'utiliserait qu'une fois."</p>
         <div class="testi-author">
-          <div class="testi-avatar" style="background:linear-gradient(135deg,#6FCDBA,#2F7A6B)">J</div>
+          <div class="testi-avatar">J</div>
           <div>
             <div class="testi-name">Julien & Emma K.</div>
             <div class="testi-role">Locataires · Bordeaux</div>
@@ -1247,7 +1367,7 @@ footer{
           style="flex:1;min-width:230px;padding:16px 20px;border-radius:14px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:16px;font-family:'Nunito',sans-serif;outline:none">
         <button type="submit" class="btn-primary" style="border:none;cursor:pointer;font-family:'Nunito',sans-serif">Rejoindre la bêta</button>
       </form>
-      <p id="waitlist-ok" style="display:none;color:#6FCDBA;font-weight:700;margin:0 auto 16px">✓ C'est noté ! Vérifie ta boîte mail pour confirmer ton inscription.</p>
+      <p id="waitlist-ok" style="display:none;color:#15803D;font-weight:700;margin:0 auto 16px">✓ C'est noté ! Vérifie ta boîte mail pour confirmer ton inscription.</p>
       <div class="store-soon">
         <div class="soon-dot"></div>
         Bêta 2026 · Premiers quartiers : Hauts-de-Seine · 0 % de commission, pour toujours
@@ -1401,7 +1521,7 @@ footer{
       </svg>
       <div class="auth-left-top">
         <div class="auth-logo-row">
-          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" fill="#E2674A"/><path d="M14.5 22.5 24 13.8l9.5 8.7" stroke="#FFF8F3" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" fill="#FFF8F3"/></svg>
+          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" class="logo-pin" fill="currentColor"/><path d="M14.5 22.5 24 13.8l9.5 8.7" class="logo-inner-trait" stroke="#0A0A0A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" class="logo-inner-point" fill="#0A0A0A"/></svg>
           <span class="auth-logo-name">toupré</span>
         </div>
       </div>
