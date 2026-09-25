@@ -181,11 +181,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
 
 <nav>
   <div class="nav-inner">
-    <a href="locashare-website.html" class="nav-logo">
+    <a href="index.html" class="nav-logo">
       <div class="logo-mark">L</div>
       Toupré
     </a>
-    <a href="locashare-website.html" class="nav-back">
+    <a href="index.html" class="nav-back">
       ← Retour au site
     </a>
   </div>
@@ -221,7 +221,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       <div class="page-meta">
         <span class="page-meta-item">Version 1.0</span>
         <span class="page-meta-dot"></span>
-        <span class="page-meta-item">En vigueur depuis le 1er mai 2025</span>
+        <span class="page-meta-item">Version bêta</span>
         <span class="page-meta-dot"></span>
         <span class="page-meta-item">Conforme RGPD</span>
       </div>
@@ -240,12 +240,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     <div class="contact-card">
       <div class="contact-icon">🏢</div>
       <div>
-        <p class="contact-label">Société</p>
-        <p class="contact-value">Toupré SAS</p>
+        <p class="contact-label">Éditeur</p>
+        <p class="contact-value">Toupré — Projet en bêta</p>
         <p style="font-size:14px;color:var(--text-2);margin-top:8px">
-          Siège social : Paris, France<br/>
-          SIRET : En cours d'enregistrement<br/>
-          Email : <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>
+          Société en cours de constitution (mentions légales complétées avant l'ouverture commerciale)<br/>
+          Email : <a href="mailto:contact@toupre.fr" style="color:var(--primary-light)">contact@toupre.fr</a>
         </p>
       </div>
     </div>
@@ -269,8 +268,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       <tbody>
         <tr>
           <td><strong>Identité</strong></td>
-          <td>Prénom, nom, photo de profil, adresse email</td>
-          <td>Inscription directe ou OAuth (Google / Apple)</td>
+          <td>Prénom, nom, photo de profil, adresse email, numéro de téléphone</td>
+          <td>Inscription par code (email et téléphone)</td>
         </tr>
         <tr>
           <td><strong>Compte</strong></td>
@@ -283,14 +282,14 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
           <td>Publication d'annonce par l'utilisateur</td>
         </tr>
         <tr>
-          <td><strong>Transactions</strong></td>
-          <td>Historique des réservations, montants, statuts de paiement</td>
+          <td><strong>Réservations</strong></td>
+          <td>Historique des demandes, dates, montant convenu, statut (demande, acceptée, terminée…)</td>
           <td>Utilisation de la plateforme</td>
         </tr>
         <tr>
           <td><strong>Paiement</strong></td>
-          <td>Aucune donnée bancaire brute — tokenisation via Stripe</td>
-          <td>Stripe (sous-traitant PCI-DSS)</td>
+          <td>Aucune. Le règlement se fait en espèces, hors de la plateforme ; nous ne collectons aucune donnée bancaire.</td>
+          <td>Sans objet (paiement en espèces)</td>
         </tr>
         <tr>
           <td><strong>Navigation</strong></td>
@@ -400,24 +399,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       </thead>
       <tbody>
         <tr>
-          <td><strong>Supabase</strong></td>
-          <td>Infrastructure base de données et authentification (hébergement UE)</td>
-          <td>Toutes les données de compte et d'activité</td>
+          <td><strong>MailerLite</strong></td>
+          <td>Gestion de la liste d'attente (bêta)</td>
+          <td>Adresse email</td>
         </tr>
         <tr>
-          <td><strong>Stripe</strong></td>
-          <td>Traitement des paiements (PCI-DSS niveau 1)</td>
-          <td>Email, montant, identifiant de transaction</td>
+          <td><strong>Resend</strong></td>
+          <td>Envoi des codes de connexion (OTP) par email</td>
+          <td>Adresse email</td>
         </tr>
         <tr>
-          <td><strong>Google</strong></td>
-          <td>Authentification OAuth (optionnel)</td>
-          <td>Email, prénom, photo de profil (si vous choisissez Google)</td>
-        </tr>
-        <tr>
-          <td><strong>Apple</strong></td>
-          <td>Authentification Sign in with Apple (optionnel)</td>
-          <td>Email (anonymisé si vous choisissez cette option), identifiant unique</td>
+          <td><strong>Vercel</strong></td>
+          <td>Hébergement du site web</td>
+          <td>Données techniques (logs de connexion, adresse IP)</td>
         </tr>
         <tr>
           <td><strong>Expo / React Native</strong></td>
@@ -428,7 +422,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     </table>
     </div>
 
-    <p>Tous nos sous-traitants sont liés par un contrat de traitement des données (DPA) conforme à l'article 28 du RGPD.</p>
+    <p>Toupré étant en phase de bêta, cette liste est susceptible d'évoluer ; elle sera mise à jour en conséquence. Nos sous-traitants sont liés par un contrat de traitement des données (DPA) conforme à l'article 28 du RGPD.</p>
 
     <div class="info">
       <span class="info-icon">⚖️</span>
@@ -440,14 +434,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
   <section class="doc-section" id="art6">
     <p class="section-num">Article 6</p>
     <h2 class="section-title">Transferts hors Union Européenne</h2>
-    <p>Certains de nos sous-traitants (Stripe, Google, Apple) peuvent traiter vos données hors de l'Union Européenne, notamment aux États-Unis. Ces transferts sont encadrés par :</p>
+    <p>Certains de nos sous-traitants (par exemple Resend et Vercel) peuvent traiter vos données hors de l'Union Européenne, notamment aux États-Unis. Ces transferts sont encadrés par :</p>
     <ul>
       <li><strong>Les Clauses Contractuelles Types (CCT)</strong> adoptées par la Commission européenne, garantissant un niveau de protection équivalent au RGPD.</li>
-      <li><strong>Le Data Privacy Framework UE–États-Unis</strong> pour les sous-traitants certifiés (Stripe, Google).</li>
+      <li><strong>Le Data Privacy Framework UE–États-Unis</strong> pour les sous-traitants certifiés.</li>
     </ul>
-    <p>Supabase héberge les données sur des serveurs situés en Europe (région EU West) par défaut.</p>
     <div class="highlight">
-      <p>Vous pouvez obtenir une copie des garanties mises en place pour ces transferts en écrivant à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>.</p>
+      <p>Vous pouvez obtenir une copie des garanties mises en place pour ces transferts en écrivant à <a href="mailto:privacy@toupre.fr" style="color:var(--primary-light)">privacy@toupre.fr</a>.</p>
     </div>
   </section>
 
@@ -544,7 +537,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       </div>
     </div>
 
-    <p style="margin-top:20px">Pour exercer l'un de ces droits, contactez-nous par email à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light);font-weight:600">privacy@locashare.fr</a> en joignant une pièce d'identité si nécessaire pour vérifier votre identité. Nous répondrons dans un délai maximum de <strong>30 jours</strong>.</p>
+    <p style="margin-top:20px">Pour exercer l'un de ces droits, contactez-nous par email à <a href="mailto:privacy@toupre.fr" style="color:var(--primary-light);font-weight:600">privacy@toupre.fr</a> en joignant une pièce d'identité si nécessaire pour vérifier votre identité. Nous répondrons dans un délai maximum de <strong>30 jours</strong>.</p>
 
     <div class="warning">
       <span class="warning-icon">⚠️</span>
@@ -559,11 +552,10 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     <p>Toupré met en œuvre des mesures techniques et organisationnelles appropriées pour protéger vos données :</p>
     <ul>
       <li><strong>Chiffrement en transit :</strong> toutes les communications sont chiffrées via TLS 1.3 (HTTPS).</li>
-      <li><strong>Chiffrement au repos :</strong> les bases de données sont chiffrées (AES-256) par notre infrastructure Supabase.</li>
-      <li><strong>Mots de passe :</strong> jamais stockés en clair — hachage bcrypt via Supabase Auth.</li>
-      <li><strong>Contrôle d'accès :</strong> Row Level Security (RLS) PostgreSQL — chaque utilisateur n'accède qu'à ses propres données.</li>
-      <li><strong>Authentification :</strong> JWT à durée de vie limitée + refresh tokens sécurisés.</li>
-      <li><strong>Paiements :</strong> aucune donnée bancaire ne transite sur nos serveurs — traitement direct par Stripe (PCI-DSS niveau 1).</li>
+      <li><strong>Identifiants :</strong> jamais stockés en clair — hachage bcrypt. La connexion se fait par code à usage unique (OTP) envoyé par email.</li>
+      <li><strong>Contrôle d'accès :</strong> chaque utilisateur n'accède qu'à ses propres données.</li>
+      <li><strong>Authentification :</strong> jetons JWT à durée de vie limitée, avec sessions révocables à tout moment.</li>
+      <li><strong>Paiements :</strong> aucune donnée bancaire n'est collectée — le règlement se fait en espèces, hors de la plateforme.</li>
       <li><strong>Accès employés :</strong> principe du moindre privilège — seuls les membres autorisés accèdent aux données de production.</li>
     </ul>
     <p>En cas de violation de données susceptible de porter atteinte à vos droits, nous nous engageons à notifier la CNIL dans les <strong>72 heures</strong> et les personnes concernées dans les meilleurs délais, conformément à l'article 33 du RGPD.</p>
@@ -574,7 +566,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     <p class="section-num">Article 10</p>
     <h2 class="section-title">Mineurs</h2>
     <p>Toupré est une plateforme réservée aux personnes majeures (18 ans et plus). Nous ne collectons pas sciemment de données personnelles concernant des enfants de moins de 16 ans.</p>
-    <p>Si vous êtes un parent ou tuteur légal et que vous constatez que votre enfant a fourni des données personnelles sans votre consentement, contactez-nous immédiatement à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a> afin que nous procédions à leur suppression.</p>
+    <p>Si vous êtes un parent ou tuteur légal et que vous constatez que votre enfant a fourni des données personnelles sans votre consentement, contactez-nous immédiatement à <a href="mailto:privacy@toupre.fr" style="color:var(--primary-light)">privacy@toupre.fr</a> afin que nous procédions à leur suppression.</p>
   </section>
 
   <!-- Article 11 -->
@@ -584,7 +576,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
     <p>Toupré peut mettre à jour cette politique de confidentialité pour refléter des changements dans nos pratiques ou des évolutions réglementaires. En cas de modification substantielle, nous vous en informerons par email ou via une notification dans l'application au moins <strong>30 jours avant</strong> l'entrée en vigueur des changements.</p>
     <p>La date de dernière mise à jour figure toujours en haut de cette page. En continuant à utiliser Toupré après l'entrée en vigueur de la nouvelle politique, vous en acceptez les termes.</p>
     <div class="highlight">
-      <p>Vous pouvez consulter les versions antérieures de notre politique en nous contactant à <a href="mailto:privacy@locashare.fr" style="color:var(--primary-light)">privacy@locashare.fr</a>.</p>
+      <p>Vous pouvez consulter les versions antérieures de notre politique en nous contactant à <a href="mailto:privacy@toupre.fr" style="color:var(--primary-light)">privacy@toupre.fr</a>.</p>
     </div>
   </section>
 
@@ -598,7 +590,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       <div class="contact-icon">📧</div>
       <div>
         <p class="contact-label">Email DPO</p>
-        <p class="contact-value">privacy@locashare.fr</p>
+        <p class="contact-value">privacy@toupre.fr</p>
       </div>
     </div>
 
@@ -606,7 +598,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
       <div class="contact-icon">📮</div>
       <div>
         <p class="contact-label">Adresse postale</p>
-        <p class="contact-value">Toupré SAS — Service Protection des Données</p>
+        <p class="contact-value">Toupré — Service Protection des Données</p>
         <p style="font-size:14px;color:var(--text-2);margin-top:4px">Paris, France</p>
       </div>
     </div>
@@ -626,11 +618,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:3px solid 
 
 <footer>
   <div class="footer-inner">
-    <p class="footer-copy">© 2025 Toupré SAS — Tous droits réservés</p>
+    <p class="footer-copy">© 2026 Toupré — Projet en bêta</p>
     <div class="footer-links">
       <a href="cgu.html">CGU</a>
       <a href="confidentialite.html">Confidentialité</a>
-      <a href="locashare-website.html">Accueil</a>
+      <a href="index.html">Accueil</a>
     </div>
   </div>
 </footer>
