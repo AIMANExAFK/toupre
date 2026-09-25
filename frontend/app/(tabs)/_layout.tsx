@@ -1,97 +1,97 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, View, StyleSheet } from "react-native";
-import { useColors, shadowStyle } from "../../src/theme";
-import { Glass } from "../../src/Glass";
+import { useTheme, shadowStyle } from "../../src/theme";
+
+// Barre d'onglets « Slate » : une pilule d'encre qui flotte au-dessus du
+// contenu, icônes seules ; l'onglet actif est posé dans un rond clair.
+// Les intitulés ne sont plus affichés mais restent annoncés aux lecteurs
+// d'écran (tabBarAccessibilityLabel) — sans eux, les boutons seraient muets.
+
+type NomIcone = keyof typeof Ionicons.glyphMap;
 
 export default function TabsLayout() {
-  const colors = useColors();
+  const { colors } = useTheme();
+  // Comme dans Slate : pilule noire, icônes grises, onglet actif dans un rond
+  // blanc avec l'icône en noir.
+  const pilule = colors.ink;
+  const actifFond = "#FFFFFF";
+  const actifIcone = "#0A0A0A";
+  const inactif = "#8A8A8A";
+
+  const icone = (plein: NomIcone, creux: NomIcone) =>
+    ({ focused }: { focused: boolean }) => (
+      <View style={[styles.rond, focused && { backgroundColor: actifFond }]}>
+        <Ionicons name={focused ? plein : creux} size={21} color={focused ? actifIcone : inactif} />
+      </View>
+    );
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarShowLabel: false,
         sceneStyle: { backgroundColor: colors.bg } as any,
-        tabBarBackground: () => (
-          <Glass
-            borderRadius={8}
-            style={StyleSheet.absoluteFillObject}
-          />
-        ),
         tabBarStyle: {
-          backgroundColor: "transparent",
-          borderTopColor: "transparent",
+          backgroundColor: pilule,
           borderTopWidth: 0,
-          height: Platform.OS === "ios" ? 80 : 64,
-          paddingTop: 7,
-          paddingBottom: Platform.OS === "ios" ? 24 : 9,
+          height: 64,
+          paddingTop: 0,
+          paddingBottom: 0,
+          paddingHorizontal: 6,
           position: "absolute",
-          left: 12,
-          right: 12,
-          bottom: Platform.OS === "ios" ? 10 : 12,
-          borderRadius: 8,
-          overflow: "hidden",
+          left: 28,
+          right: 28,
+          bottom: Platform.OS === "ios" ? 24 : 16,
+          borderRadius: 999,
           zIndex: 1000,
           elevation: 1000,
-          ...shadowStyle({ color: colors.primaryDark, opacity: 0.12, radius: 24, offsetY: 10 }),
+          ...shadowStyle({ color: "#2B2420", opacity: 0.28, radius: 22, offsetY: 10 }),
         },
-        tabBarItemStyle: { overflow: "visible" },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "800", marginTop: 2 },
+        tabBarItemStyle: { height: 64, alignItems: "center", justifyContent: "center" },
+        tabBarIconStyle: { width: 44, height: 44 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
           title: "Explorer",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "compass" : "compass-outline"} size={22} color={color} />
-          ),
+          tabBarAccessibilityLabel: "Explorer",
+          tabBarIcon: icone("compass", "compass-outline"),
         }}
       />
       <Tabs.Screen
         name="bookings"
         options={{
           title: "Locations",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "calendar" : "calendar-outline"} size={22} color={color} />
-          ),
+          tabBarAccessibilityLabel: "Mes locations",
+          tabBarIcon: icone("calendar", "calendar-outline"),
         }}
       />
       <Tabs.Screen
         name="create"
         options={{
           title: "Publier",
-          tabBarIcon: () => (
-            <View
-              style={[
-                styles.fab,
-                { backgroundColor: colors.primary, borderColor: colors.surfaceGlassBorder },
-                shadowStyle({ color: colors.primary, opacity: 0.38, radius: 18, offsetY: 7 }),
-              ]}
-            >
-              <Ionicons name="add" size={28} color={colors.textInverse} />
-            </View>
-          ),
-          tabBarLabel: () => null,
+          tabBarAccessibilityLabel: "Publier une annonce",
+          // Slate n'a aucune couleur dans sa barre : « Publier » est une icône
+          // parmi les autres.
+          tabBarIcon: icone("add-circle", "add-circle-outline"),
         }}
       />
       <Tabs.Screen
         name="myitems"
         options={{
           title: "Mes biens",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "cube" : "cube-outline"} size={22} color={color} />
-          ),
+          tabBarAccessibilityLabel: "Mes biens",
+          tabBarIcon: icone("cube", "cube-outline"),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: "Profil",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? "person" : "person-outline"} size={22} color={color} />
-          ),
+          tabBarAccessibilityLabel: "Profil",
+          tabBarIcon: icone("person", "person-outline"),
         }}
       />
     </Tabs>
@@ -99,15 +99,5 @@ export default function TabsLayout() {
 }
 
 const styles = StyleSheet.create({
-  fab: {
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: -12,
-    zIndex: 1001,
-    elevation: 1001,
-  },
+  rond: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
 });

@@ -35,10 +35,9 @@ async function loginDemo(page: Page) {
 }
 
 test("connexion OTP et Explorer : annonces, notes et badges", async ({ page }) => {
-  // Le bouton "Commencer" de l'accueil mène directement à l'OTP (plus de hub)
+  // Comme dans Slate, l'app s'ouvre directement sur le splash puis la connexion
   await page.goto("/");
-  await page.getByText("Commencer", { exact: true }).click();
-  await expect(page).toHaveURL(/\/auth\/otp/);
+  await expect(page).toHaveURL(/\/auth\/otp/, { timeout: 15_000 });
 
   await loginDemo(page);
 

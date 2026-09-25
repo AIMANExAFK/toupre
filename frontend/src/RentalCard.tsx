@@ -41,11 +41,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   tech: "Tech", camping: "Camping", other: "Autres",
 };
 
-const CATEGORY_COLORS: Record<string, "primary" | "success" | "warning"> = {
-  car: "primary", tech: "primary", bike: "success",
-  camping: "success", other: "warning", tool: "warning",
-};
-
 export function RentalCard({
   image, category, categoryLabel, title, pricePerDay,
   rating = null, reviewCount = 0, location,
@@ -73,25 +68,14 @@ export function RentalCard({
   };
 
   const catLabel = categoryLabel || CATEGORY_LABELS[category] || category;
-  const catVariant = CATEGORY_COLORS[category] || "primary";
   const initial = ownerInitial || ownerName?.charAt(0).toUpperCase() || "?";
 
-  // Couleurs catégorie
-  const catBg = {
-    primary: "rgba(0,108,103,0.18)",
-    success: "rgba(5,150,105,0.18)",
-    warning: "rgba(232,93,63,0.18)",
-  }[catVariant];
-  const catFg = {
-    primary: colors.primaryLight,
-    success: colors.success,
-    warning: colors.secondary,
-  }[catVariant];
-  const catBorder = {
-    primary: "rgba(0,108,103,0.32)",
-    success: "rgba(5,150,105,0.32)",
-    warning: "rgba(232,93,63,0.32)",
-  }[catVariant];
+  // Badge de catégorie monochrome, comme toute l'interface Slate : pastille
+  // blanche translucide sur la photo, texte noir. (Avant : vert, rouge ou
+  // sarcelle selon la catégorie.)
+  const catBg = "rgba(255, 255, 255, 0.88)";
+  const catFg = "#0A0A0A";
+  const catBorder = "transparent";
 
   return (
     <Animated.View
@@ -292,7 +276,7 @@ const styles = StyleSheet.create({
     ...(Platform.OS === "web" ? { backdropFilter: "blur(10px)" as any } : {}),
   },
   catDot: { width: 6, height: 6, borderRadius: 3 },
-  catText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.3 },
+  catText: { fontSize: 11, fontWeight: "600", letterSpacing: 0.3 },
 
   // Rating overlay
   ratingOverlay: {
@@ -303,19 +287,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.55)",
     ...(Platform.OS === "web" ? { backdropFilter: "blur(10px)" as any } : {}),
   },
-  ratingOverlayText: { color: "#fff", fontSize: 11, fontWeight: "800" },
+  ratingOverlayText: { color: "#fff", fontSize: 11, fontWeight: "600" },
 
   // Price overlay
   priceOverlay: {
     position: "absolute", bottom: 14, left: 16,
     flexDirection: "row", alignItems: "baseline", gap: 3,
   },
-  priceText: { color: "#fff", fontSize: 26, fontWeight: "900", letterSpacing: -0.8 },
+  priceText: { color: "#fff", fontSize: 26, fontWeight: "700", letterSpacing: -0.8 },
   priceUnit: { color: "rgba(255,255,255,0.75)", fontSize: 12, fontWeight: "600" },
 
   // Body
   body: { padding: 14, gap: 7 },
-  title: { fontSize: 15, fontWeight: "800", letterSpacing: -0.2, lineHeight: 19 },
+  title: { fontSize: 15, fontWeight: "600", letterSpacing: -0.2, lineHeight: 19 },
 
   metaRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
   metaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -334,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     borderWidth: 1,
   },
-  avatarText: { fontSize: 13, fontWeight: "800" },
+  avatarText: { fontSize: 13, fontWeight: "600" },
   ownerNameRow: { flexDirection: "row", alignItems: "center", gap: 5 },
   ownerName: { fontSize: 13, fontWeight: "700" },
   ownerLabel: { fontSize: 11, marginTop: 1 },
@@ -344,18 +328,18 @@ const styles = StyleSheet.create({
   btnPrimary: {
     flex: 1,
     paddingVertical: 11,
-    borderRadius: 8,
+    borderRadius: 999,
     alignItems: "center",
   },
-  btnPrimaryText: { fontSize: 13, fontWeight: "800" },
+  btnPrimaryText: { fontSize: 13, fontWeight: "600" },
   btnSecondary: {
     flex: 1,
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5,
     paddingVertical: 11,
-    borderRadius: 8,
+    borderRadius: 999,
     borderWidth: 1,
   },
-  btnSecondaryText: { fontSize: 12, fontWeight: "800" },
+  btnSecondaryText: { fontSize: 12, fontWeight: "600" },
 
   ownBadge: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
@@ -364,7 +348,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginTop: 4,
   },
-  ownBadgeText: { fontSize: 12, fontWeight: "800" },
+  ownBadgeText: { fontSize: 12, fontWeight: "600" },
 
   // Glow
   glow: {

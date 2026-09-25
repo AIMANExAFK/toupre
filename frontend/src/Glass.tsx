@@ -1,10 +1,8 @@
 import React from "react";
 import { View, StyleSheet, Platform, ViewStyle, StyleProp } from "react-native";
-import { BlurView } from "expo-blur";
 import { useTheme } from "./theme";
 
 type Props = {
-  intensity?: number;
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
   borderRadius?: number;
@@ -12,7 +10,7 @@ type Props = {
   testID?: string;
 };
 
-export function Glass({ intensity = 35, style, children, borderRadius = 8, testID }: Props) {
+export function Glass({ style, children, borderRadius = 20, testID }: Props) {
   const { isDark, colors } = useTheme();
   if (Platform.OS === "web") {
     return (
@@ -20,16 +18,19 @@ export function Glass({ intensity = 35, style, children, borderRadius = 8, testI
         testID={testID}
         style={[
           {
+            // Style « Slate » : surface pleine, sans liseré ; c'est l'ombre, très
+            // douce, qui détache la carte du fond crème.
             backgroundColor: colors.surfaceGlass,
             borderRadius,
-            borderWidth: 1,
+            // Pas de liseré par défaut, mais une couleur de bordure quand même :
+            // plusieurs écrans passent `borderWidth` en comptant dessus — sans
+            // elle, le navigateur retombe sur un contour noir.
+            borderWidth: 0,
             borderColor: colors.surfaceGlassBorder,
             // @ts-ignore web only
-            backdropFilter: "blur(18px) saturate(145%)",
-            // @ts-ignore web only
-            WebkitBackdropFilter: "blur(18px) saturate(145%)",
-            // @ts-ignore web only
-            boxShadow: "0 1px 0 rgba(255,255,255,0.58) inset, 0 18px 42px rgba(11, 61, 58, 0.08)",
+            boxShadow: isDark
+              ? "0 10px 30px rgba(0, 0, 0, 0.28)"
+              : "0 1px 2px rgba(43, 36, 32, 0.04), 0 10px 28px rgba(43, 36, 32, 0.06)",
             overflow: "hidden",
           },
           style,
@@ -40,22 +41,26 @@ export function Glass({ intensity = 35, style, children, borderRadius = 8, testI
     );
   }
   return (
-    <BlurView
+    <View
       testID={testID}
-      intensity={intensity}
-      tint={isDark ? "dark" : "light"}
       style={[
         {
           borderRadius,
           overflow: "hidden",
-          borderWidth: 1,
+          backgroundColor: colors.surfaceGlass,
+          borderWidth: 0,
           borderColor: colors.surfaceGlassBorder,
+          shadowColor: "#2B2420",
+          shadowOpacity: isDark ? 0.3 : 0.07,
+          shadowRadius: 14,
+          shadowOffset: { width: 0, height: 8 },
+          elevation: 3,
         },
         style,
       ]}
     >
-      <View style={{ flex: 1, backgroundColor: colors.surfaceGlass }}>{children}</View>
-    </BlurView>
+      {children}
+    </View>
   );
 }
 
@@ -63,36 +68,7 @@ export function GradientBg({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
   return (
     <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg }]}>
-      <View pointerEvents="none" style={[styles.topWash, { backgroundColor: colors.bgGradient[1] }]} />
-      <View pointerEvents="none" style={[styles.topAccent, { backgroundColor: colors.primaryGlow }]} />
-      <View pointerEvents="none" style={[styles.rule, { backgroundColor: colors.border }]} />
       <View style={{ flex: 1 }}>{children}</View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  topWash: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 230,
-    opacity: 0.86,
-  },
-  topAccent: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-  },
-  rule: {
-    position: "absolute",
-    top: 229,
-    left: 0,
-    right: 0,
-    height: StyleSheet.hairlineWidth,
-    opacity: 0.7,
-  },
-});

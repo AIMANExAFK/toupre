@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
@@ -11,6 +11,7 @@ import { Photo } from "../../src/Photo";
 export default function Profile() {
   const { user, token, logout } = useAuth();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const colors = useColors();
   const [unread, setUnread] = useState(0);
   const [notifUnread, setNotifUnread] = useState(0);
@@ -43,7 +44,7 @@ export default function Profile() {
 
   const onLogout = async () => {
     await logout();
-    router.replace("/(auth)/welcome");
+    router.replace("/auth/otp");
   };
 
   if (!user) {
@@ -75,9 +76,11 @@ export default function Profile() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="profile-screen">
-      <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+      <View style={{ flex: 1 }}>
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 140 }}>
+            {/* Bloc d'encre en haut ; la carte de statistiques vient le chevaucher,
+                comme la carte bancaire sur l'en-tête du tableau de bord Slate. */}
+            <View style={[styles.encre, { backgroundColor: colors.ink, paddingTop: insets.top + 28 }]}>
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel="Modifier mon profil"
@@ -89,16 +92,17 @@ export default function Profile() {
               {user.avatar ? (
                 <Photo uri={user.avatar} largeur={88} style={styles.avatar} alt="Votre photo de profil" icone="person-outline" />
               ) : (
-                <View style={[styles.avatar, { backgroundColor: colors.primary }, shadowStyle({ color: colors.primary, opacity: 0.42, radius: 20, offsetY: 8 })]}>
-                  <Text style={[styles.avatarText, { color: colors.textInverse }]}>{initial}</Text>
+                <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+                  <Text style={[styles.avatarText, { color: "#0A0A0A" }]}>{initial}</Text>
                 </View>
               )}
               <View style={styles.nameRow}>
-                <Text style={[styles.name, { color: colors.textPrimary }]} testID="profile-name">{user.name}</Text>
-                <Ionicons name="pencil-outline" size={15} color={colors.textTertiary} />
+                <Text style={[styles.name, { color: colors.onInk }]} testID="profile-name">{user.name}</Text>
+                <Ionicons name="pencil-outline" size={15} color={colors.onInkMuted} />
               </View>
-              <Text style={[styles.email, { color: colors.textSecondary }]}>{user.email}</Text>
+              <Text style={[styles.email, { color: colors.onInkMuted }]}>{user.email}</Text>
             </TouchableOpacity>
+            </View>
 
             <View style={styles.statsWrap}>
               <Glass borderRadius={radius.lg} style={styles.statsCard}>
@@ -155,7 +159,7 @@ export default function Profile() {
                       Parrainage · {me.credit_balance}€ de crédit
                     </Text>
                     <Text style={[styles.trustText, { color: colors.textSecondary }]}>
-                      Code <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{me.referral_code}</Text> · Gagnez 10€ par filleul.
+                      Code <Text style={{ fontWeight: "600", color: colors.textPrimary }}>{me.referral_code}</Text> · Gagnez 10€ par filleul.
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.primary} />
@@ -210,8 +214,7 @@ export default function Profile() {
               </Glass>
             </TouchableOpacity>
           </ScrollView>
-        </SafeAreaView>
-      </GradientBg>
+      </View>
     </View>
   );
 }
@@ -229,7 +232,7 @@ function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
       <Text style={[styles.menuLabel, { color: colors.textPrimary }]}>{label}</Text>
       {badge !== undefined && (
         <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", marginRight: 6 }}>
-          <Text style={{ fontSize: 11, fontWeight: "800", color: colors.textInverse }}>{badge}</Text>
+          <Text style={{ fontSize: 11, fontWeight: "600", color: colors.textInverse }}>{badge}</Text>
         </View>
       )}
       <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -238,22 +241,23 @@ function MenuItem({ icon, label, onPress, testID, colors, badge }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "center", paddingHorizontal: spacing.xl, paddingTop: spacing.xl, paddingBottom: spacing.lg },
+  encre: { borderBottomLeftRadius: 32, borderBottomRightRadius: 32, paddingBottom: 52 },
+  header: { alignItems: "center", paddingHorizontal: spacing.xl },
   avatar: { width: 88, height: 88, borderRadius: 44, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 36, fontWeight: "800" },
-  name: { fontSize: 24, fontWeight: "900", marginTop: spacing.md, letterSpacing: 0 },
+  avatarText: { fontSize: 36, fontWeight: "600" },
+  name: { fontSize: 24, fontWeight: "700", marginTop: spacing.md, letterSpacing: 0 },
   email: { fontSize: 14, marginTop: 2 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  statsWrap: { paddingHorizontal: spacing.lg, marginTop: spacing.sm },
-  statsCard: { flexDirection: "row", padding: spacing.md, alignItems: "center", borderWidth: 1 },
+  statsWrap: { paddingHorizontal: spacing.lg, marginTop: -36, zIndex: 2 },
+  statsCard: { flexDirection: "row", padding: spacing.md, alignItems: "center" },
   statBox: { flex: 1, alignItems: "center" },
   statSep: { width: 1, height: 32 },
-  statValue: { fontSize: 22, fontWeight: "900" },
+  statValue: { fontSize: 22, fontWeight: "700" },
   statLabel: { fontSize: 12, marginTop: 2 },
   menu: { marginTop: spacing.lg, marginHorizontal: spacing.lg },
   trustCard: { padding: spacing.md, flexDirection: "row", alignItems: "center", gap: spacing.md, borderWidth: 1 },
   trustIcon: { width: 44, height: 44, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  trustTitle: { fontSize: 15, fontWeight: "900" },
+  trustTitle: { fontSize: 15, fontWeight: "700" },
   trustText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   menuCard: { borderWidth: 1 },
   menuItem: { flexDirection: "row", alignItems: "center", paddingHorizontal: spacing.md, paddingVertical: 14, gap: spacing.md },
@@ -261,8 +265,8 @@ const styles = StyleSheet.create({
   menuLabel: { flex: 1, fontSize: 15, fontWeight: "700" },
   logoutText: { fontWeight: "700", fontSize: 15 },
   guestBox: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: 8 },
-  guestTitle: { fontSize: 22, fontWeight: "800", marginTop: 16 },
+  guestTitle: { fontSize: 22, fontWeight: "600", marginTop: 16 },
   guestSub: { fontSize: 14, textAlign: "center", marginBottom: 16 },
-  btn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: radius.md, marginTop: 8 },
+  btn: { paddingHorizontal: 32, paddingVertical: 14, borderRadius: 999, marginTop: 8 },
   btnText: { fontWeight: "700", fontSize: 15 },
 });

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 
 export default function Payments() {
   const router = useRouter();
@@ -12,16 +13,11 @@ export default function Payments() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="payments-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()}>
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Paiement</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Paiement"
+            retour={() => router.back()}
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={{ alignItems: "center", marginBottom: spacing.md }}>
@@ -68,17 +64,14 @@ function Rule({ icon, title, text, colors }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800" },
   scroll: { padding: spacing.lg, paddingBottom: 56 },
   heroIcon: { width: 78, height: 78, borderRadius: 8, alignItems: "center", justifyContent: "center", marginBottom: 14 },
-  title: { fontSize: 24, fontWeight: "900", textAlign: "center", letterSpacing: 0 },
+  title: { fontSize: 24, fontWeight: "700", textAlign: "center", letterSpacing: 0 },
   subtitle: { fontSize: 14, lineHeight: 20, textAlign: "center", marginTop: 8 },
   rulesCard: { padding: spacing.md, gap: spacing.md, borderWidth: 1 },
   rule: { flexDirection: "row", gap: 12, alignItems: "flex-start" },
   ruleIcon: { width: 38, height: 38, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  ruleTitle: { fontSize: 14, fontWeight: "900" },
+  ruleTitle: { fontSize: 14, fontWeight: "700" },
   ruleText: { fontSize: 12, lineHeight: 17, marginTop: 2 },
   notice: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: spacing.md, borderRadius: radius.md, marginTop: spacing.lg },
   noticeText: { fontSize: 13, lineHeight: 18, fontWeight: "700", flex: 1 },

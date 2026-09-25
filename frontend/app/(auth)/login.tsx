@@ -45,8 +45,8 @@ export default function LoginRedirect() {
 const styles = StyleSheet.create({
   content: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: 16 },
   iconCircle: { width: 104, height: 104, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 24, fontWeight: "900", textAlign: "center" },
+  title: { fontSize: 24, fontWeight: "700", textAlign: "center" },
   sub: { fontSize: 15, textAlign: "center", lineHeight: 22, paddingHorizontal: 16 },
-  btn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: radius.md, marginTop: spacing.sm },
-  btnText: { fontSize: 15, fontWeight: "800" },
+  btn: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, marginTop: spacing.sm },
+  btnText: { fontSize: 15, fontWeight: "600" },
 });

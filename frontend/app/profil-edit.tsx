@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth } from "../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 
 // Modification du profil : nom affiché et photo.
 // L'email et le téléphone ne sont volontairement pas modifiables ici : ils portent
@@ -86,21 +87,12 @@ export default function ProfilEdit() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="profil-edit-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Retour"
-              onPress={() => router.back()}
-              testID="profil-edit-back"
-            >
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Mon profil</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Mon profil"
+            retour={() => router.back()}
+            retourTestID="profil-edit-back"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.avatarZone}>
@@ -205,24 +197,18 @@ export default function ProfilEdit() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   avatarZone: { alignItems: "center", gap: 8, marginBottom: spacing.lg },
   avatar: { width: 104, height: 104, borderRadius: 52 },
   avatarVide: { alignItems: "center", justifyContent: "center" },
-  initiale: { fontSize: 40, fontWeight: "800" },
+  initiale: { fontSize: 40, fontWeight: "600" },
   badgePhoto: {
     position: "absolute", right: -2, bottom: -2, width: 34, height: 34,
     borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center",
   },
   avatarAide: { fontSize: 13 },
   retirer: { fontSize: 13, fontWeight: "700" },
-  label: { fontSize: 14, fontWeight: "800", marginBottom: spacing.sm },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: spacing.sm },
   champWrap: { paddingHorizontal: 14, paddingVertical: 4 },
   champ: { fontSize: 16, paddingVertical: 12 },
   aide: { fontSize: 12, marginTop: 6 },
@@ -233,6 +219,6 @@ const styles = StyleSheet.create({
   infoTxt: { flex: 1, fontSize: 12.5, lineHeight: 18 },
   erreur: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing.sm },
-  submit: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  submitTxt: { fontSize: 16, fontWeight: "800" },
+  submit: { paddingVertical: 17, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  submitTxt: { fontSize: 16, fontWeight: "600" },
 });

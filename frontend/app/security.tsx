@@ -15,6 +15,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth, BACKEND_URL } from "../src/auth";
 import { useColors, spacing, radius } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 import { NotificationsManager, PasskeyManager } from "../src/NotificationsManager";
 
 type Passkey = { credential_id: string; device_name: string; created_at: string; last_used_at: string | null };
@@ -99,14 +100,11 @@ export default function SecurityScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Sécurité & Sessions</Text>
-            <View style={{ width: 32 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Sécurité & Sessions"
+            retour={() => router.back()}
+          />
 
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 80 }}>
 
@@ -223,26 +221,23 @@ function formatRelative(iso: string): string {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
 
   section: { padding: spacing.md, gap: spacing.sm },
   sectionHead: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: spacing.sm },
   sectionIco: { width: 40, height: 40, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  sectionTitle: { fontSize: 15, fontWeight: "800" },
+  sectionTitle: { fontSize: 15, fontWeight: "600" },
   sectionSub: { fontSize: 12, lineHeight: 16, marginTop: 2 },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#22C55E" },
 
   actionBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 11, borderRadius: 10 },
-  actionBtnText: { fontSize: 13, fontWeight: "800" },
+  actionBtnText: { fontSize: 13, fontWeight: "600" },
 
   itemRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10, paddingHorizontal: 4, borderTopWidth: 1 },
-  itemTitle: { fontSize: 13, fontWeight: "800" },
+  itemTitle: { fontSize: 13, fontWeight: "600" },
   itemSub: { fontSize: 11, marginTop: 2 },
   removeBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   thisBadge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
-  thisBadgeText: { fontSize: 9, fontWeight: "900", letterSpacing: 0.3 },
+  thisBadgeText: { fontSize: 9, fontWeight: "700", letterSpacing: 0.3 },
   emptyHint: { padding: 12, borderRadius: 8 },
   emptyText: { fontSize: 12, textAlign: "center" },
 });

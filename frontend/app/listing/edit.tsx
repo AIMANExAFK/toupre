@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { Vignettes } from "../../src/Galerie";
 
 // Modifier une annonce publiée (spec 005, US4). Supprimer puis republier ferait
@@ -112,16 +113,12 @@ export default function EditListing() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="edit-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()} testID="edit-back">
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Modifier l'annonce</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Modifier l'annonce"
+            retour={() => router.back()}
+            retourTestID="edit-back"
+          />
 
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
             <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -226,20 +223,8 @@ function Champ({ label, colors, children }: any) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  photo: { width: "100%", height: 180, borderRadius: radius.md },
-  photoVide: { alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed" },
-  badgePhoto: {
-    position: "absolute", right: 10, bottom: 10, width: 34, height: 34,
-    borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center",
-  },
-  label: { fontSize: 14, fontWeight: "800", marginBottom: spacing.sm, marginTop: spacing.md },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: spacing.sm, marginTop: spacing.md },
   champ: { fontSize: 15, paddingVertical: 12 },
   zone: { minHeight: 90, textAlignVertical: "top" },
   cats: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
@@ -250,6 +235,6 @@ const styles = StyleSheet.create({
   catTxt: { fontSize: 13, fontWeight: "700" },
   erreur: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing.sm },
-  submit: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  submitTxt: { fontSize: 16, fontWeight: "800" },
+  submit: { paddingVertical: 17, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  submitTxt: { fontSize: 16, fontWeight: "600" },
 });

@@ -315,13 +315,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  mapBadgeText: { fontSize: 12, fontWeight: "900" },
+  mapBadgeText: { fontSize: 12, fontWeight: "700" },
   fallback: {
     padding: 14,
     gap: 10,
   },
   fallbackHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  fallbackTitle: { fontSize: 14, fontWeight: "900" },
+  fallbackTitle: { fontSize: 14, fontWeight: "700" },
   fallbackText: { fontSize: 12, lineHeight: 18 },
   fallbackRow: {
     minHeight: 40,
@@ -332,5 +332,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
-  fallbackItem: { flex: 1, fontSize: 12, fontWeight: "800" },
+  fallbackItem: { flex: 1, fontSize: 12, fontWeight: "600" },
 });

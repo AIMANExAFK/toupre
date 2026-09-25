@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius } from "../../src/theme";
 import { Glass } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { SkeletonBox } from "../../src/Skeleton";
 
 type Conversation = {
@@ -70,15 +71,7 @@ export default function MessagesScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
-      <SafeAreaView edges={["top"]} style={styles.headerWrap}>
-        <Glass borderRadius={0} style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.backBtn}>
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Messages</Text>
-          <View style={{ width: 32 }} />
-        </Glass>
-      </SafeAreaView>
+      <EnTeteSombre titre="Messages" retour={() => router.back()} />
 
       {loading ? (
         <View style={{ padding: spacing.lg, gap: spacing.md }}>
@@ -109,7 +102,7 @@ export default function MessagesScreen() {
               activeOpacity={0.7}
               testID={`conv-${item.peer_id}`}
             >
-              <Glass borderRadius={radius.lg} style={[styles.convCard, item.unread > 0 && { borderColor: colors.primary, borderWidth: 1 }]}>
+              <Glass borderRadius={radius.lg} style={styles.convCard}>
                 <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
                   <Text style={[styles.avatarText, { color: colors.textInverse }]}>
                     {item.peer.name.charAt(0).toUpperCase()}
@@ -161,19 +154,8 @@ function formatTime(iso: string) {
 }
 
 const styles = StyleSheet.create({
-  headerWrap: { zIndex: 10 },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-  },
-  backBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800", letterSpacing: -0.3 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12, padding: spacing.lg },
-  emptyTitle: { fontSize: 18, fontWeight: "800" },
+  emptyTitle: { fontSize: 18, fontWeight: "600" },
   emptySub: { fontSize: 14, textAlign: "center", paddingHorizontal: spacing.xl },
   emptyLink: { fontSize: 14, fontWeight: "700", marginTop: spacing.sm },
   convCard: {
@@ -183,7 +165,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   avatar: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 18, fontWeight: "800" },
+  avatarText: { fontSize: 18, fontWeight: "600" },
   convHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 2 },
   convName: { fontSize: 15, fontWeight: "700", flex: 1, marginRight: spacing.sm },
   convTime: { fontSize: 11, fontWeight: "600" },
@@ -194,5 +176,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     alignItems: "center", justifyContent: "center",
   },
-  unreadText: { fontSize: 11, fontWeight: "800" },
+  unreadText: { fontSize: 11, fontWeight: "600" },
 });

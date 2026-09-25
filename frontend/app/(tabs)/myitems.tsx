@@ -17,6 +17,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { Photo } from "../../src/Photo";
 import { compte } from "../../src/francais";
 
@@ -92,36 +93,40 @@ export default function MyItems() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="myitems-screen">
-      <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <Text style={[styles.heading, { color: colors.textPrimary }]}>Mes biens</Text>
-
-          {/* Tabs */}
-          <View style={styles.tabRow}>
-            <TouchableOpacity accessibilityRole="button"
-              onPress={() => setTab("items")}
-              style={[styles.tab, tab === "items" && { borderBottomColor: colors.primary }]}
-              testID="tab-items"
-            >
-              <Text style={[styles.tabText, { color: tab === "items" ? colors.primary : colors.textSecondary }]}>
-                Annonces ({items.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button"
-              onPress={() => setTab("requests")}
-              style={[styles.tab, tab === "requests" && { borderBottomColor: colors.primary }]}
-              testID="tab-requests"
-            >
-              <Text style={[styles.tabText, { color: tab === "requests" ? colors.primary : colors.textSecondary }]}>
-                Demandes
-              </Text>
-              {pendingCount > 0 && (
-                <View style={[styles.tabBadge, { backgroundColor: colors.primary }]}>
-                  <Text style={[styles.tabBadgeText, { color: colors.textInverse }]}>{pendingCount}</Text>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+      <View style={{ flex: 1 }}>
+          <EnTeteSombre titre="Mes biens" sousTitre="Vos annonces et les demandes reçues.">
+            {/* Sélecteur à deux segments, posé sur l'encre : le segment actif
+                est une pastille claire, comme l'onglet actif de la barre. */}
+            <View style={styles.segments} accessibilityRole="tablist">
+              <TouchableOpacity
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === "items" }}
+                onPress={() => setTab("items")}
+                style={[styles.segment, tab === "items" && { backgroundColor: colors.bg }]}
+                testID="tab-items"
+              >
+                <Text style={[styles.segmentTxt, { color: tab === "items" ? colors.textPrimary : colors.onInkMuted }]}>
+                  Annonces ({items.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="tab"
+                accessibilityState={{ selected: tab === "requests" }}
+                onPress={() => setTab("requests")}
+                style={[styles.segment, tab === "requests" && { backgroundColor: colors.bg }]}
+                testID="tab-requests"
+              >
+                <Text style={[styles.segmentTxt, { color: tab === "requests" ? colors.textPrimary : colors.onInkMuted }]}>
+                  Demandes
+                </Text>
+                {pendingCount > 0 && (
+                  <View style={[styles.tabBadge, { backgroundColor: tab === "requests" ? colors.ink : "#FFFFFF" }]}>
+                    <Text style={[styles.tabBadgeText, { color: tab === "requests" ? "#FFFFFF" : "#0A0A0A" }]}>{pendingCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </EnTeteSombre>
 
           {loading ? (
             <View style={styles.loadingBox}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -307,8 +312,7 @@ export default function MyItems() {
               )}
             </ScrollView>
           )}
-        </SafeAreaView>
-      </GradientBg>
+      </View>
     </View>
   );
 }
@@ -339,19 +343,24 @@ function ownerStatusColor(status: string, colors: any) {
 }
 
 const styles = StyleSheet.create({
-  heading: { fontSize: 30, fontWeight: "800", paddingHorizontal: spacing.lg, paddingTop: spacing.md, letterSpacing: -1 },
-  tabRow: { flexDirection: "row", paddingHorizontal: spacing.lg, marginTop: spacing.md, gap: spacing.md, borderBottomWidth: 0 },
-  tab: { paddingVertical: spacing.sm, paddingHorizontal: spacing.xs, borderBottomWidth: 2, borderBottomColor: "transparent", flexDirection: "row", alignItems: "center", gap: 6 },
-  tabText: { fontSize: 14, fontWeight: "700" },
+  segments: {
+    flexDirection: "row", padding: 4, borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.10)",
+  },
+  segment: {
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 10, borderRadius: 999,
+  },
+  segmentTxt: { fontSize: 14, fontWeight: "600" },
   tabBadge: { minWidth: 20, height: 20, borderRadius: 10, paddingHorizontal: 6, alignItems: "center", justifyContent: "center" },
-  tabBadgeText: { fontSize: 11, fontWeight: "800" },
+  tabBadgeText: { fontSize: 11, fontWeight: "600" },
   list: { padding: spacing.lg, flexGrow: 1, paddingBottom: 140 },
   card: { flexDirection: "row", overflow: "hidden" },
   img: { width: 104, height: 138 },
   body: { flex: 1, padding: spacing.md },
   title: { fontSize: 15, fontWeight: "700" },
   location: { fontSize: 13, marginTop: 2 },
-  price: { fontSize: 15, fontWeight: "800", marginTop: 6 },
+  price: { fontSize: 15, fontWeight: "600", marginTop: 6 },
   actions: { flexDirection: "row", gap: 6, marginTop: 8 },
   // Chaque action prend une part égale : la rangée s'adapte à la largeur de
   // l'écran au lieu de déborder de la carte.
@@ -359,18 +368,18 @@ const styles = StyleSheet.create({
   loadingBox: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: 12, flex: 1, justifyContent: "center" },
   emptyText: { fontSize: 17, fontWeight: "700", textAlign: "center", marginTop: 12 },
-  cta: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: radius.md, marginTop: 12 },
+  cta: { paddingHorizontal: 28, paddingVertical: 14, borderRadius: 999, marginTop: 12 },
   ctaText: { fontWeight: "700" },
   // Bookings
   bookingCard: { padding: spacing.md, gap: spacing.sm },
   bookingHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   bookingThumb: { width: 56, height: 56, borderRadius: 10 },
-  bookingTitle: { fontSize: 14, fontWeight: "800" },
+  bookingTitle: { fontSize: 14, fontWeight: "600" },
   renterAv: { width: 18, height: 18, borderRadius: 9, alignItems: "center", justifyContent: "center" },
-  renterAvText: { fontSize: 10, fontWeight: "800" },
+  renterAvText: { fontSize: 10, fontWeight: "600" },
   renterName: { fontSize: 12, fontWeight: "600", flex: 1 },
   statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  statusText: { fontSize: 11, fontWeight: "800" },
+  statusText: { fontSize: 11, fontWeight: "600" },
   bookingMeta: { flexDirection: "row", flexWrap: "wrap", gap: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1 },
   bookingMetaItem: { flexDirection: "row", alignItems: "center", gap: 4 },
   bookingMetaText: { fontSize: 12 },

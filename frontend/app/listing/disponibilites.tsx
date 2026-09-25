@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { Calendrier } from "../../src/Calendrier";
 import { compte, pluriel } from "../../src/francais";
 
@@ -76,16 +77,12 @@ export default function Disponibilites() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="dispo-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityRole="button" accessibilityLabel="Retour" onPress={() => router.back()} testID="dispo-back">
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Disponibilités</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Disponibilités"
+            retour={() => router.back()}
+            retourTestID="dispo-back"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {chargement ? (
@@ -146,18 +143,12 @@ export default function Disponibilites() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  objet: { fontSize: 15, fontWeight: "800", marginBottom: 4 },
+  objet: { fontSize: 15, fontWeight: "600", marginBottom: 4 },
   intro: { fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
   compte: { fontSize: 12.5, textAlign: "center", marginTop: spacing.sm },
   erreur: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing.sm },
-  submit: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  submitTxt: { fontSize: 16, fontWeight: "800" },
+  submit: { paddingVertical: 17, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  submitTxt: { fontSize: 16, fontWeight: "600" },
 });

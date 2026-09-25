@@ -13,12 +13,12 @@ export default function Root({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <title>Toupré — Tout se loue, tout près.</title>
-        {/* Typo de marque Toupré : Fredoka (titres/wordmark) + Nunito (texte) */}
+        {/* Typo « Slate » : Plus Jakarta Sans, géométrique, graisses modérées */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@400;600;700;800&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
         />
         {/*
           Disable body scrolling on web to make ScrollView components work correctly.
@@ -32,8 +32,7 @@ export default function Root({ children }: PropsWithChildren) {
               body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
 
               /* ─── Typo de marque (sans écraser les polices d'icônes) ─── */
-              #root, #root *:not([style*="Ionicons"]):not([style*="ionicons"]) { font-family: 'Nunito', -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
-              [data-brand-font], [data-brand-font] * { font-family: 'Fredoka', 'Nunito', sans-serif !important; }
+              #root, #root *:not([style*="Ionicons"]):not([style*="ionicons"]) { font-family: 'Plus Jakarta Sans', -apple-system, 'Segoe UI', Roboto, sans-serif !important; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
 
@@ -81,7 +80,7 @@ export default function Root({ children }: PropsWithChildren) {
               #root input:focus-visible,
               #root textarea:focus-visible,
               #root [tabindex]:focus-visible {
-                outline: 3px solid #CE4221 !important;
+                outline: 3px solid #2563EB !important;
                 outline-offset: 2px !important;
                 border-radius: 4px;
               }
@@ -90,10 +89,6 @@ export default function Root({ children }: PropsWithChildren) {
                  reste visible, il est simplement porté par le champ. */
               #root input[data-focus-propre]:focus-visible {
                 outline: none !important;
-              }
-              /* Sur fond corail, un contour corail serait invisible : on inverse. */
-              #root button[style*="rgb(206, 66, 33)"]:focus-visible {
-                outline-color: #FFF8F3 !important;
               }
               @media (prefers-reduced-motion: no-preference) {
                 #root a:focus-visible, #root button:focus-visible {

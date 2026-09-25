@@ -12,12 +12,14 @@ export default function Index() {
   useEffect(() => {
     if (loading) return;
     if (user) router.replace("/(tabs)");
-    else router.replace("/(auth)/welcome");
+    // Comme dans Slate, on ouvre directement sur le splash puis la connexion,
+    // tous deux portés par l'écran de code (pas d'écran d'accueil intermédiaire).
+    else router.replace("/auth/otp");
   }, [user, loading, router]);
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.bg }]} testID="splash-screen">
-      <ActivityIndicator size="large" color={colors.primary} />
+    <View style={[styles.container, { backgroundColor: colors.ink }]} testID="splash-screen">
+      <ActivityIndicator size="large" color={colors.onInk} />
     </View>
   );
 }

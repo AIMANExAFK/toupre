@@ -10,12 +10,12 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
-import { Glass, GradientBg } from "../../src/Glass";
+import { Glass } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { Photo } from "../../src/Photo";
 
 export default function Bookings() {
@@ -153,9 +153,11 @@ export default function Bookings() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="bookings-screen">
-      <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <Text style={[styles.heading, { color: colors.textPrimary }]}>Mes locations</Text>
+      <View style={{ flex: 1 }}>
+          <EnTeteSombre
+            titre="Mes locations"
+            sousTitre="Vos réservations, en cours et passées."
+          />
 
           {loading ? (
             <View style={styles.loadingBox}>
@@ -198,8 +200,7 @@ export default function Bookings() {
               }
             />
           )}
-        </SafeAreaView>
-      </GradientBg>
+      </View>
     </View>
   );
 }
@@ -242,14 +243,7 @@ function statusBg(s: string, colors: any) {
 
 const styles = StyleSheet.create({
   constatsLink: { flexDirection: "row", alignItems: "center", gap: 5, marginLeft: 10 },
-  constatsTxt: { fontSize: 12.5, fontWeight: "800" },
-  heading: {
-    fontSize: 30,
-    fontWeight: "800",
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    letterSpacing: -1,
-  },
+  constatsTxt: { fontSize: 12.5, fontWeight: "600" },
   list: { padding: spacing.lg, flexGrow: 1, paddingBottom: 140 },
   card: { flexDirection: "row", overflow: "hidden" },
   img: { width: 110, height: 110 },
@@ -261,9 +255,9 @@ const styles = StyleSheet.create({
   statusPill: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999 },
   dot: { width: 6, height: 6, borderRadius: 3 },
   statusText: { fontSize: 11, fontWeight: "700" },
-  total: { fontSize: 17, fontWeight: "800" },
+  total: { fontSize: 17, fontWeight: "600" },
   flowBtn: { marginTop: 10, minHeight: 34, borderRadius: radius.sm + 2, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-  flowBtnText: { fontSize: 13, fontWeight: "800" },
+  flowBtnText: { fontSize: 13, fontWeight: "600" },
   loadingBox: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", padding: spacing.xxl, gap: 10 },
   emptyIcon: { alignItems: "center", justifyContent: "center" },

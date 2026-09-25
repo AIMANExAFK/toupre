@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     position: "absolute", bottom: 10, right: 14, flexDirection: "row", alignItems: "center", gap: 4,
     paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, backgroundColor: "rgba(0,0,0,0.55)",
   },
-  compteurTxt: { color: "#fff", fontSize: 11, fontWeight: "800" },
+  compteurTxt: { color: "#fff", fontSize: 11, fontWeight: "600" },
   points: {
     position: "absolute", bottom: 10, left: 0, right: 0,
     flexDirection: "row", justifyContent: "center",
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   badgePrincipale: {
     position: "absolute", bottom: 5, left: 5, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 5,
   },
-  badgeTxt: { fontSize: 9, fontWeight: "800" },
+  badgeTxt: { fontSize: 9, fontWeight: "600" },
   retirer: {
     position: "absolute", top: -5, right: -5, width: 24, height: 24, borderRadius: 12,
     borderWidth: 1, alignItems: "center", justifyContent: "center",

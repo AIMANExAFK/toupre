@@ -10,6 +10,7 @@ import * as ImagePicker from "expo-image-picker";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 
 // État des lieux (spec 001) — écran unique paramétré par la nature du constat.
 // Bornes alignées sur le backend : refuser côté client ce que le serveur refusera.
@@ -126,18 +127,12 @@ export default function Constat() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="constat-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="constat-back">
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              {isReturn ? "Constat de retour" : "Constat de remise"}
-            </Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre={<>{isReturn ? "Constat de retour" : "Constat de remise"}</>}
+            retour={() => router.back()}
+            retourTestID="constat-back"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Text style={[styles.intro, { color: colors.textSecondary }]}>
@@ -307,15 +302,9 @@ export default function Constat() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   intro: { fontSize: 14, lineHeight: 21, marginBottom: spacing.lg },
-  label: { fontSize: 14, fontWeight: "800", marginBottom: spacing.sm },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: spacing.sm },
   count: { fontSize: 12, fontWeight: "600" },
   photoRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   thumbWrap: { position: "relative" },
@@ -347,8 +336,8 @@ const styles = StyleSheet.create({
   error: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing.sm },
   submit: {
-    paddingVertical: 17, borderRadius: radius.md,
+    paddingVertical: 17, borderRadius: 999,
     alignItems: "center", justifyContent: "center",
   },
-  submitTxt: { fontSize: 16, fontWeight: "800" },
+  submitTxt: { fontSize: 16, fontWeight: "600" },
 });

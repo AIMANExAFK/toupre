@@ -9,12 +9,13 @@ import {
   ScrollView,
   RefreshControl,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
-import { Glass, GradientBg } from "../../src/Glass";
+import { Glass } from "../../src/Glass";
+import { EnTeteSombre, BoutonEnTete } from "../../src/EnTeteSombre";
+import { compte } from "../../src/francais";
 import { SkeletonCard } from "../../src/Skeleton";
 import { Map } from "../../src/Map";
 import { RentalCard } from "../../src/RentalCard";
@@ -132,30 +133,58 @@ export default function Explore() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="explore-screen">
-      <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
+      <View style={{ flex: 1 }}>
+          <EnTeteSombre
+            titre={user?.name ? `Bonjour ${user.name.split(" ")[0]}` : "Bonjour"}
+            tailleTitre={23}
+            droite={
+              <BoutonEnTete
+                icone={viewMode === "list" ? "map-outline" : "list-outline"}
+                libelle={viewMode === "list" ? "Afficher la carte" : "Afficher la liste"}
+                onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}
+                testID="toggle-view-btn"
+              />
+            }
+          >
+            {/* Comme le solde du tableau de bord Slate : un petit libellé gris,
+                puis le chiffre en grand. */}
             <View>
-              <Text dataSet={{ brandFont: "1" }} style={[styles.greeting, { color: colors.primary }]}>toupré</Text>
-              <Text style={[styles.brand, { color: colors.textPrimary }]} testID="explore-title">
+              <Text style={[styles.libelle, { color: colors.onInkMuted }]} testID="explore-title">
                 Louer près de vous
               </Text>
+              <Text style={[styles.chiffre, { color: colors.onInk }]} testID="explore-compte">
+                {loading ? "…" : compte(listings.length, "annonce")}
+              </Text>
             </View>
-            <TouchableOpacity accessibilityRole="button"
-              accessibilityLabel={viewMode === "list" ? "Afficher la carte" : "Afficher la liste"}
-              onPress={() => setViewMode(viewMode === "list" ? "map" : "list")}
-              testID="toggle-view-btn"
-              activeOpacity={0.8}
-            >
-              <Glass borderRadius={22} style={styles.toggleBtn}>
-                <Ionicons
-                  name={viewMode === "list" ? "map" : "list"}
-                  size={20}
-                  color={colors.primary}
+
+            <View style={styles.searchWrap}>
+              <View style={[styles.searchBox, { backgroundColor: colors.surface }]}>
+                <Ionicons name="search" size={18} color={colors.textTertiary} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.textPrimary }]}
+                  placeholder="Voiture, vélo, outil…"
+                  placeholderTextColor={colors.textTertiary}
+                  value={q}
+                  onChangeText={setQ}
+                  testID="search-input"
+                  returnKeyType="search"
                 />
-              </Glass>
-            </TouchableOpacity>
-          </View>
+                {q.length > 0 && (
+                  <TouchableOpacity accessibilityLabel="Effacer la recherche" accessibilityRole="button" onPress={() => setQ("")} activeOpacity={0.7}>
+                    <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+              <BoutonEnTete
+                icone="options-outline"
+                libelle={filtresOuverts ? "Masquer les filtres" : "Afficher les filtres"}
+                onPress={() => setFiltresOuverts((v) => !v)}
+                testID="filtres-btn"
+                actif={filtresActifs}
+                etendu={filtresOuverts}
+              />
+            </View>
+          </EnTeteSombre>
 
           {/* Contact verification banner */}
           {user && !user.verified && (
@@ -182,45 +211,6 @@ export default function Explore() {
               </Glass>
             </TouchableOpacity>
           )}
-
-          <View style={styles.bandeau}>
-            <Argument icone="pricetag-outline" texte="0€ de frais" colors={colors} />
-            <Argument icone="shield-checkmark-outline" texte="Contact vérifié" colors={colors} />
-            <Argument icone="cash-outline" texte="Paiement cash" colors={colors} />
-          </View>
-
-          <View style={styles.searchWrap}>
-            <Glass borderRadius={radius.md} style={styles.searchBox}>
-              <Ionicons name="search" size={18} color={colors.textTertiary} />
-              <TextInput
-                style={[styles.searchInput, { color: colors.textPrimary }]}
-                placeholder="Voiture, vélo, outil…"
-                placeholderTextColor={colors.textTertiary}
-                value={q}
-                onChangeText={setQ}
-                testID="search-input"
-                returnKeyType="search"
-              />
-              {q.length > 0 && (
-                <TouchableOpacity accessibilityLabel="Effacer la recherche" accessibilityRole="button" onPress={() => setQ("")} activeOpacity={0.7}>
-                  <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-                </TouchableOpacity>
-              )}
-            </Glass>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={filtresOuverts ? "Masquer les filtres" : "Afficher les filtres"}
-              accessibilityState={{ expanded: filtresOuverts }}
-              activeOpacity={0.8}
-              onPress={() => setFiltresOuverts((v) => !v)}
-              testID="filtres-btn"
-            >
-              <Glass borderRadius={radius.md} style={styles.filterBtn}>
-                <Ionicons name="options-outline" size={20} color={filtresActifs ? colors.primary : colors.textSecondary} />
-                {filtresActifs && <View style={[styles.pastille, { backgroundColor: colors.primary }]} />}
-              </Glass>
-            </TouchableOpacity>
-          </View>
 
           {filtresOuverts && (
             <View style={styles.filtres} testID="filtres-panneau">
@@ -377,17 +367,7 @@ export default function Explore() {
               showsVerticalScrollIndicator={false}
             />
           )}
-        </SafeAreaView>
-      </GradientBg>
-    </View>
-  );
-}
-
-function Argument({ icone, texte, colors }: { icone: any; texte: string; colors: any }) {
-  return (
-    <View style={styles.argument}>
-      <Ionicons name={icone} size={13} color={colors.primary} />
-      <Text style={[styles.argumentTxt, { color: colors.textSecondary }]}>{texte}</Text>
+      </View>
     </View>
   );
 }
@@ -398,43 +378,26 @@ function getCatLabel(cats: Category[], id: string) {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: 8,
-  },
-  greeting: { fontSize: 11, fontWeight: "900", letterSpacing: 1.1, textTransform: "uppercase" },
-  brand: { fontSize: 24, fontWeight: "900", letterSpacing: 0, marginTop: 2 },
-  toggleBtn: { width: 42, height: 42, alignItems: "center", justifyContent: "center" },
+  libelle: { fontSize: 12.5, fontWeight: "500" },
+  chiffre: { fontSize: 34, fontWeight: "600", letterSpacing: -1, marginTop: 2 },
 
   reessai: {
     flexDirection: "row", alignItems: "center", gap: 7, marginTop: 16,
     paddingHorizontal: 20, paddingVertical: 12, borderRadius: radius.md,
   },
-  reessaiTxt: { fontSize: 14, fontWeight: "800" },
-  bandeau: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center",
-    flexWrap: "wrap", paddingHorizontal: spacing.md, marginTop: 8, rowGap: 4, columnGap: 14,
-  },
-  argument: { flexDirection: "row", alignItems: "center", gap: 5 },
-  argumentTxt: { fontSize: 11, fontWeight: "700" },
+  reessaiTxt: { fontSize: 14, fontWeight: "600" },
   // KYC banner
-  kycBanner: { paddingHorizontal: spacing.md, marginTop: 6, marginBottom: 4 },
+  kycBanner: { paddingHorizontal: spacing.md, marginTop: 14, marginBottom: 2 },
   kycBannerInner: { flexDirection: "row", alignItems: "center", padding: 12, gap: 10, borderWidth: 1 },
   kycIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  kycTitle: { fontSize: 13, fontWeight: "900", letterSpacing: -0.2 },
+  kycTitle: { fontSize: 13, fontWeight: "700", letterSpacing: -0.2 },
   kycSub: { fontSize: 11, lineHeight: 14, marginTop: 2 },
   kycCta: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 11, paddingVertical: 7, borderRadius: 999 },
-  kycCtaText: { fontSize: 11, fontWeight: "800" },
-  metric: { flex: 1, borderWidth: 1, borderRadius: radius.md, paddingVertical: 9, paddingHorizontal: 6 },
+  kycCtaText: { fontSize: 11, fontWeight: "600" },
 
   searchWrap: {
-    paddingHorizontal: spacing.md,
-    marginTop: 10,
     flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   searchBox: {
@@ -445,16 +408,14 @@ const styles = StyleSheet.create({
     minHeight: 48,
     paddingVertical: 10,
     gap: 8,
-    borderWidth: 1,
+    borderRadius: radius.md,
   },
   searchInput: { flex: 1, fontSize: 15, paddingVertical: 0 },
-  pastille: { position: "absolute", top: 9, right: 9, width: 7, height: 7, borderRadius: 4 },
   filtres: { paddingHorizontal: spacing.md, paddingBottom: spacing.sm, gap: 6 },
-  filtreLabel: { fontSize: 12, fontWeight: "800", marginTop: 4 },
+  filtreLabel: { fontSize: 12, fontWeight: "600", marginTop: 4 },
   puces: { flexDirection: "row", flexWrap: "wrap", gap: 7 },
   puce: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.sm, borderWidth: 1.5 },
   puceTxt: { fontSize: 12.5, fontWeight: "700" },
-  filterBtn: { width: 46, height: 46, alignItems: "center", justifyContent: "center" },
 
   catScroll: {
     height: 50,
@@ -485,52 +446,7 @@ const styles = StyleSheet.create({
 
   list: { padding: spacing.md, paddingBottom: 120 },
 
-  card: { borderRadius: radius.lg, overflow: "hidden", borderWidth: 1 },
-  imgWrap: { position: "relative" },
-  cardImg: { width: "100%", height: 156 },
-  imgGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 90,
-    backgroundColor: "rgba(0,0,0,0.36)",
-  },
-  catChipImg: {
-    position: "absolute",
-    top: 10,
-    left: 10,
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-  catChipText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.2 },
-  priceBadge: {
-    position: "absolute",
-    bottom: 10,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 2,
-  },
-  priceValue: { fontSize: 19, fontWeight: "800", color: "#fff", letterSpacing: 0 },
-  priceUnit: { fontSize: 12, color: "rgba(255,255,255,0.75)", fontWeight: "600" },
 
-  cardBody: { padding: 12, gap: 5 },
-  cardTitle: { fontSize: 16, fontWeight: "900", letterSpacing: 0 },
-  cardMeta: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  metaLeft: { flexDirection: "row", alignItems: "center", gap: 4, flex: 1, marginRight: 8 },
-  cardLocText: { fontSize: 13, flex: 1 },
-  ratingRow: { flexDirection: "row", alignItems: "center", gap: 3 },
-  ratingText: { fontSize: 13, fontWeight: "600" },
-  ownerRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 2 },
-  ownerBadge: { width: 22, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  ownerInitial: { fontSize: 11, fontWeight: "700" },
-  ownerName: { fontSize: 12, fontWeight: "500" },
 
   mapWrap: { flex: 1, padding: spacing.md, paddingBottom: 130 },
 

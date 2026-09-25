@@ -201,9 +201,9 @@ function Legende({ couleur, texte, plein }: { couleur: string; texte: string; pl
 const styles = StyleSheet.create({
   barre: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.sm },
   fleche: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
-  mois: { fontSize: 15, fontWeight: "800", textTransform: "capitalize" },
+  mois: { fontSize: 15, fontWeight: "600", textTransform: "capitalize" },
   semaine: { flexDirection: "row" },
-  entete: { flex: 1, textAlign: "center", fontSize: 11, fontWeight: "800", paddingVertical: 4 },
+  entete: { flex: 1, textAlign: "center", fontSize: 11, fontWeight: "600", paddingVertical: 4 },
   grille: { flexDirection: "row", flexWrap: "wrap" },
   case: {
     width: `${100 / 7}%`, aspectRatio: 1, alignItems: "center", justifyContent: "center",

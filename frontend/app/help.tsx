@@ -16,6 +16,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 
 const FAQS = [
   {
@@ -122,17 +123,13 @@ export default function Help() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="help-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-            <View style={styles.header}>
-              <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.replace("/(tabs)/profile")} testID="help-back">
-                <Glass borderRadius={22} style={styles.backBtn}>
-                  <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-                </Glass>
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Aide</Text>
-              <View style={{ width: 44 }} />
-            </View>
+            <EnTeteSombre
+              titre="Aide"
+              retour={() => router.replace("/(tabs)/profile")}
+              retourTestID="help-back"
+            />
 
             <ScrollView
               contentContainerStyle={styles.scroll}
@@ -320,24 +317,15 @@ export default function Help() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800" },
   scroll: { padding: spacing.lg, paddingBottom: 80 },
   contactCard: { padding: spacing.md, gap: spacing.sm },
   contactHeader: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginBottom: spacing.sm },
   contactIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  contactTitle: { fontSize: 18, fontWeight: "900" },
+  contactTitle: { fontSize: 18, fontWeight: "700" },
   contactSub: { fontSize: 13, marginTop: 2 },
   sectionMini: {
     fontSize: 10,
-    fontWeight: "900",
+    fontWeight: "700",
     letterSpacing: 1,
     marginTop: spacing.sm,
   },
@@ -349,12 +337,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  callTitle: { fontSize: 15, fontWeight: "900" },
+  callTitle: { fontSize: 15, fontWeight: "700" },
   callSub: { fontSize: 12, fontWeight: "700", opacity: 0.78, marginTop: 1 },
   chatCard: { padding: spacing.md, gap: 12 },
   chatHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   agentAvatar: { width: 46, height: 46, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  chatTitle: { fontSize: 16, fontWeight: "900" },
+  chatTitle: { fontSize: 16, fontWeight: "700" },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 3 },
   statusDot: { width: 7, height: 7, borderRadius: 4 },
   statusText: { fontSize: 12, fontWeight: "700" },
@@ -372,7 +360,7 @@ const styles = StyleSheet.create({
   chatBubbleText: { fontSize: 13, fontWeight: "700", lineHeight: 18 },
   quickReplies: { gap: 8, paddingRight: spacing.md },
   quickReply: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 },
-  quickReplyText: { fontSize: 12, fontWeight: "800" },
+  quickReplyText: { fontSize: 12, fontWeight: "600" },
   chatComposer: {
     minHeight: 48,
     borderWidth: 1,
@@ -392,7 +380,7 @@ const styles = StyleSheet.create({
   chatSend: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   section: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "600",
     letterSpacing: 1,
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
@@ -410,7 +398,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     marginTop: spacing.sm,
   },
-  sendText: { fontWeight: "800", fontSize: 15 },
+  sendText: { fontWeight: "600", fontSize: 15 },
   faqRow: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: 12 },
   faqQ: { flex: 1, fontSize: 15, fontWeight: "700" },
   faqAnswer: { paddingHorizontal: spacing.md, paddingBottom: spacing.md },

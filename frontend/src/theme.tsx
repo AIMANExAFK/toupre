@@ -6,6 +6,10 @@ export type ThemeMode = "light" | "dark" | "system";
 
 type Palette = {
   primary: string;
+  /** Encre des zones sombres (en-têtes, barre d'onglets) et texte posé dessus. */
+  ink: string;
+  onInk: string;
+  onInkMuted: string;
   primaryLight: string;
   primaryDark: string;
   primaryTint: string;
@@ -36,63 +40,69 @@ type Palette = {
 // Identité Toupré — "Tout se loue, tout près."
 // Crème chaleureux + corail terracotta + anthracite. Sombre chaud en option.
 const lightColors: Palette = {
-  primary: "#CE4221",
+  primary: "#0A0A0A",
+  ink: "#0A0A0A",
+  onInk: "#FFFFFF",
+  onInkMuted: "rgba(255, 255, 255, 0.58)",
   // #E2674A : corail de marque d'origine, conservé pour le décoratif (seuil 3:1 des
   // éléments d'interface) — jamais pour du texte, qui exige 4.5:1.
-  primaryLight: "#E2674A",
-  primaryDark: "#A8351A",
-  primaryTint: "rgba(226, 103, 74, 0.10)",
-  primaryGlow: "rgba(226, 103, 74, 0.18)",
+  primaryLight: "#0A0A0A",
+  primaryDark: "#000000",
+  primaryTint: "rgba(10, 10, 10, 0.05)",
+  primaryGlow: "rgba(10, 10, 10, 0.06)",
   secondary: "#2F7A6B",
-  bg: "#FFF8F3",
-  bgGradient: ["#FFFBF7", "#FCEFE6"],
+  bg: "#F4F3F0",
+  bgGradient: ["#F4F3F0", "#F4F3F0"],
   surface: "#FFFFFF",
-  surface2: "#F8EBE2",
-  surfaceGlass: "rgba(255, 255, 255, 0.90)",
-  surfaceGlassBorder: "rgba(63, 42, 33, 0.10)",
-  border: "#EBDDD3",
-  textPrimary: "#2B2420",
-  textSecondary: "#6B5D54",
-  textTertiary: "#807066",
+  surface2: "#ECEBE7",
+  surfaceGlass: "#FFFFFF",
+  surfaceGlassBorder: "rgba(10, 10, 10, 0.06)",
+  border: "#E4E2DD",
+  textPrimary: "#111111",
+  textSecondary: "#5E5E5E",
+  textTertiary: "#6B6B6B",
   textInverse: "#FFFFFF",
-  brand: "#A8351A",
-  success: "#188261",
-  successBg: "#E1F5EE",
+  brand: "#0A0A0A",
+  success: "#15803D",
+  successBg: "#E7F4EC",
   error: "#DC2626",
   errorBg: "#FCE8E4",
   warning: "#9F600F",
   warningBg: "#FFF1D8",
-  overlay: "rgba(43, 36, 32, 0.48)",
-  shimmer: "rgba(255, 255, 255, 0.72)",
+  overlay: "rgba(0, 0, 0, 0.5)",
+  shimmer: "rgba(255, 255, 255, 0.7)",
 };
 
 const darkColors: Palette = {
-  primary: "#F08A6C",
-  primaryLight: "#FFB39C",
-  primaryDark: "#E2674A",
-  primaryTint: "rgba(240, 138, 108, 0.14)",
-  primaryGlow: "rgba(240, 138, 108, 0.18)",
+  primary: "#FFFFFF",
+  ink: "#1C1C1C",
+  onInk: "#FFFFFF",
+  onInkMuted: "rgba(255, 255, 255, 0.6)",
+  primaryLight: "#FFFFFF",
+  primaryDark: "#FFFFFF",
+  primaryTint: "rgba(255, 255, 255, 0.08)",
+  primaryGlow: "rgba(255, 255, 255, 0.08)",
   secondary: "#6FCDBA",
-  bg: "#1A1411",
-  bgGradient: ["#1A1411", "#241B16"],
-  surface: "#241C17",
-  surface2: "#2F241E",
-  surfaceGlass: "rgba(36, 28, 23, 0.90)",
-  surfaceGlassBorder: "rgba(255, 255, 255, 0.10)",
+  bg: "#0A0A0A",
+  bgGradient: ["#0A0A0A", "#0A0A0A"],
+  surface: "#161616",
+  surface2: "#1F1F1F",
+  surfaceGlass: "#161616",
+  surfaceGlassBorder: "rgba(255, 255, 255, 0.06)",
   border: "rgba(255, 255, 255, 0.10)",
-  textPrimary: "#FAF3EE",
-  textSecondary: "#D6C8BF",
-  textTertiary: "#9C8D83",
-  textInverse: "#241511",
-  brand: "#FFB39C",
-  success: "#34D399",
+  textPrimary: "#F5F5F5",
+  textSecondary: "#B5B5B5",
+  textTertiary: "#8C8C8C",
+  textInverse: "#0A0A0A",
+  brand: "#FFFFFF",
+  success: "#4ADE80",
   successBg: "rgba(52, 211, 153, 0.18)",
   error: "#F87171",
   errorBg: "rgba(248, 113, 113, 0.18)",
   warning: "#FBBF24",
   warningBg: "rgba(251, 191, 36, 0.18)",
-  overlay: "rgba(0, 0, 0, 0.55)",
-  shimmer: "rgba(240, 138, 108, 0.16)",
+  overlay: "rgba(0, 0, 0, 0.6)",
+  shimmer: "rgba(255, 255, 255, 0.06)",
 };
 
 export const spacing = {
@@ -105,10 +115,10 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 6,
-  md: 8,
-  lg: 8,
-  xl: 12,
+  sm: 10,
+  md: 14,
+  lg: 20,
+  xl: 26,
   pill: 999,
 };
 

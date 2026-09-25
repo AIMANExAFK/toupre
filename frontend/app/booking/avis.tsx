@@ -9,6 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 
 // Dépôt d'un avis après une location terminée (spec 004, US1).
 // Le serveur vérifie déjà que l'auteur a bien loué l'objet et qu'il n'a pas déjà noté.
@@ -55,21 +56,12 @@ export default function Avis() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="avis-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Retour"
-              onPress={() => router.back()}
-              testID="avis-back"
-            >
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Votre avis</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Votre avis"
+            retour={() => router.back()}
+            retourTestID="avis-back"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {!!titre && (
@@ -162,24 +154,18 @@ export default function Avis() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
-  objet: { fontSize: 18, fontWeight: "800", marginBottom: 4 },
+  objet: { fontSize: 18, fontWeight: "600", marginBottom: 4 },
   intro: { fontSize: 14, lineHeight: 21, marginBottom: spacing.lg },
   etoiles: { flexDirection: "row", justifyContent: "center", gap: 6, marginTop: spacing.sm },
   etoileBtn: { padding: 4 },
   libelle: { fontSize: 15, fontWeight: "700", textAlign: "center", marginTop: 8, marginBottom: spacing.lg },
-  label: { fontSize: 14, fontWeight: "800", marginBottom: spacing.sm },
+  label: { fontSize: 14, fontWeight: "600", marginBottom: spacing.sm },
   facultatif: { fontSize: 12, fontWeight: "600" },
   zoneWrap: { paddingHorizontal: 14, paddingVertical: 10, minHeight: 96 },
   zone: { fontSize: 15, minHeight: 76, textAlignVertical: "top" },
   erreur: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
   footer: { paddingHorizontal: spacing.lg, paddingBottom: spacing.lg, paddingTop: spacing.sm },
-  submit: { paddingVertical: 17, borderRadius: radius.md, alignItems: "center", justifyContent: "center" },
-  submitTxt: { fontSize: 16, fontWeight: "800" },
+  submit: { paddingVertical: 17, borderRadius: 999, alignItems: "center", justifyContent: "center" },
+  submitTxt: { fontSize: 16, fontWeight: "600" },
 });

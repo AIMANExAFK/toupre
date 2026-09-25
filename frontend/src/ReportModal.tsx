@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   closeBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  title: { fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
+  title: { fontSize: 17, fontWeight: "600", letterSpacing: -0.3 },
   body: { padding: spacing.lg, paddingBottom: spacing.xl, gap: spacing.sm },
   targetCard: {
     flexDirection: "row",
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   targetText: { flex: 1, fontSize: 13, fontWeight: "700" },
-  sectionLabel: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 },
+  sectionLabel: { fontSize: 12, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.6, marginBottom: 8 },
   catRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -298,10 +298,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
-    borderRadius: radius.md,
+    borderRadius: 999,
     marginTop: spacing.md,
   },
-  submitText: { fontSize: 14, fontWeight: "800" },
+  submitText: { fontSize: 14, fontWeight: "600" },
   successBox: {
     padding: spacing.xl,
     alignItems: "center",
@@ -311,6 +311,6 @@ const styles = StyleSheet.create({
     width: 80, height: 80, borderRadius: 40,
     alignItems: "center", justifyContent: "center",
   },
-  successTitle: { fontSize: 18, fontWeight: "800", marginTop: 8 },
+  successTitle: { fontSize: 18, fontWeight: "600", marginTop: 8 },
   successText: { fontSize: 13, lineHeight: 18, textAlign: "center", paddingHorizontal: spacing.md },
 });

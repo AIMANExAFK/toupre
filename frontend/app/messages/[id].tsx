@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { BoutonEnTete } from "../../src/EnTeteSombre";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth, ApiError } from "../../src/auth";
@@ -107,28 +108,24 @@ export default function ChatScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={0}
     >
-      <SafeAreaView edges={["top"]} style={styles.headerWrap}>
-        <Glass borderRadius={0} style={[styles.header, { borderBottomColor: colors.border }]}>
-          <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-            <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
+      <SafeAreaView edges={["top"]} style={[styles.headerWrap, { backgroundColor: colors.ink }]}>
+        <View style={[styles.header, { backgroundColor: colors.ink }]}>
+          <BoutonEnTete icone="arrow-back" libelle="Retour" onPress={() => router.back()} />
           <View style={styles.headerCenter}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.avatarText, { color: colors.textInverse }]}>
+            <View style={[styles.avatar, { backgroundColor: "#FFFFFF" }]}>
+              <Text style={[styles.avatarText, { color: "#0A0A0A" }]}>
                 {(peer?.name || "?").charAt(0).toUpperCase()}
               </Text>
             </View>
             <View style={{ minWidth: 0, flex: 1 }}>
-              <Text style={[styles.headerName, { color: colors.textPrimary }]} numberOfLines={1}>
+              <Text style={[styles.headerName, { color: colors.onInk }]} numberOfLines={1}>
                 {peer?.name || "Chargement..."}
               </Text>
-              <Text style={[styles.headerStatus, { color: colors.success }]}>● En ligne</Text>
+              <Text style={[styles.headerStatus, { color: "#4ADE80" }]}>● En ligne</Text>
             </View>
           </View>
-          <TouchableOpacity accessibilityLabel="Signaler" accessibilityRole="button" onPress={() => setReportOpen(true)} style={styles.iconBtn} testID="report-user-btn">
-            <Ionicons name="flag-outline" size={20} color={colors.textPrimary} />
-          </TouchableOpacity>
-        </Glass>
+          <BoutonEnTete icone="flag-outline" libelle="Signaler" onPress={() => setReportOpen(true)} testID="report-user-btn" />
+        </View>
       </SafeAreaView>
 
       {loading ? (
@@ -240,25 +237,25 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
-  headerWrap: { zIndex: 10 },
+  headerWrap: { zIndex: 10, borderBottomLeftRadius: 24, borderBottomRightRadius: 24, overflow: "hidden" },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.md,
     gap: spacing.sm,
   },
   iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
   headerCenter: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm },
   avatar: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 14, fontWeight: "800" },
-  headerName: { fontSize: 15, fontWeight: "800" },
+  avatarText: { fontSize: 14, fontWeight: "600" },
+  headerName: { fontSize: 15, fontWeight: "600" },
   headerStatus: { fontSize: 11, fontWeight: "600" },
   bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6, marginVertical: 1 },
   bubbleRowMine: { flexDirection: "row-reverse" },
   bubbleAv: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  bubbleAvText: { fontSize: 11, fontWeight: "800" },
+  bubbleAvText: { fontSize: 11, fontWeight: "600" },
   bubble: {
     maxWidth: "72%",
     paddingHorizontal: 12,

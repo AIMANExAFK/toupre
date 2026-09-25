@@ -8,6 +8,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { ApiError, apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { Calendrier, jourISO, depuisISO } from "../../src/Calendrier";
 import { Photo } from "../../src/Photo";
 import { compte } from "../../src/francais";
@@ -106,16 +107,12 @@ export default function BookingFlow() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="booking-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="back-btn">
-              <Glass borderRadius={8} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Réservation</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Réservation"
+            retour={() => router.back()}
+            retourTestID="back-btn"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <Glass borderRadius={radius.lg} style={styles.itemShell}>
@@ -211,16 +208,13 @@ function Row({ label, value, bold, colors }: any) {
 
 const styles = StyleSheet.create({
   loading: { flex: 1, alignItems: "center", justifyContent: "center" },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "900" },
   scroll: { padding: spacing.lg, paddingBottom: 120 },
   itemShell: { borderWidth: 1 },
   itemCard: { flexDirection: "row", overflow: "hidden" },
   itemImg: { width: 104, height: 104 },
-  itemTitle: { fontSize: 15, fontWeight: "900", lineHeight: 20 },
-  itemPrice: { fontSize: 14, fontWeight: "900", marginTop: 4 },
-  sectionTitle: { fontSize: 17, fontWeight: "900", marginTop: spacing.lg, marginBottom: spacing.sm },
+  itemTitle: { fontSize: 15, fontWeight: "700", lineHeight: 20 },
+  itemPrice: { fontSize: 14, fontWeight: "700", marginTop: 4 },
+  sectionTitle: { fontSize: 17, fontWeight: "700", marginTop: spacing.lg, marginBottom: spacing.sm },
   calShell: { overflow: "hidden" },
   calAide: { fontSize: 13, textAlign: "center", marginTop: spacing.sm, fontWeight: "600" },
   summaryShell: { borderWidth: 1 },
@@ -229,11 +223,11 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 },
   rowLabel: { fontSize: 14 },
   rowValue: { fontSize: 14 },
-  bold: { fontSize: 17, fontWeight: "900" },
+  bold: { fontSize: 17, fontWeight: "700" },
   divider: { height: 1, marginVertical: 8 },
   notice: { flexDirection: "row", alignItems: "center", gap: 8, padding: spacing.md, borderRadius: radius.md, marginTop: spacing.md },
   noticeText: { fontSize: 14, fontWeight: "700" },
   bottomBar: { borderTopWidth: 1 },
-  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 17, borderRadius: radius.md },
-  payText: { fontWeight: "800", fontSize: 16 },
+  payBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 17, borderRadius: 999},
+  payText: { fontWeight: "600", fontSize: 16 },
 });

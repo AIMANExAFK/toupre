@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../src/auth";
 import { useColors, spacing, radius } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre, BoutonEnTete } from "../src/EnTeteSombre";
 
 type Notif = {
   id: string;
@@ -76,20 +77,15 @@ export default function NotificationsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-              Notifications {unread > 0 ? `(${unread})` : ""}
-            </Text>
-            {unread > 0 ? (
-              <TouchableOpacity accessibilityRole="button" onPress={markAllRead}>
-                <Text style={[styles.markRead, { color: colors.primary }]}>Tout lu</Text>
-              </TouchableOpacity>
-            ) : <View style={{ width: 32 }} />}
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre={<>Notifications {unread > 0 ? `(${unread})` : ""}</>}
+            retour={() => router.back()}
+            droite={unread > 0 ? (
+              // Sur l'en-tête noir : action en rond translucide, comme les autres
+              <BoutonEnTete icone="checkmark-done" libelle="Tout marquer comme lu" onPress={markAllRead} />
+            ) : undefined}
+          />
 
           <FlatList
             data={items}
@@ -107,7 +103,7 @@ export default function NotificationsScreen() {
             }
             renderItem={({ item }) => (
               <TouchableOpacity accessibilityRole="button" onPress={() => tap(item)} activeOpacity={0.7}>
-                <Glass borderRadius={radius.lg} style={[styles.notif, !item.read && { borderColor: colors.primary, borderWidth: 1 }]}>
+                <Glass borderRadius={radius.lg} style={styles.notif}>
                   <View style={[styles.notifIcon, { backgroundColor: item.read ? colors.surface2 : colors.primaryTint }]}>
                     <Ionicons
                       name={TYPE_ICON[item.type] || "notifications-outline"}
@@ -148,12 +144,8 @@ function formatTime(iso: string) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
-  markRead: { fontSize: 13, fontWeight: "700", paddingHorizontal: 8 },
   empty: { paddingVertical: spacing.xl * 2, alignItems: "center", gap: 8 },
-  emptyTitle: { fontSize: 17, fontWeight: "800", marginTop: 8 },
+  emptyTitle: { fontSize: 17, fontWeight: "600", marginTop: 8 },
   emptySub: { fontSize: 13, textAlign: "center", paddingHorizontal: spacing.xl },
   notif: { flexDirection: "row", alignItems: "center", gap: spacing.md, padding: spacing.md },
   notifIcon: { width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../src/auth";
 import { useColors, spacing, radius, shadowStyle } from "../src/theme";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 
 type Referral = { id: string; name: string; joined_at: string; has_booked: boolean };
 
@@ -75,14 +76,11 @@ export default function ReferralScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} style={styles.iconBtn}>
-              <Ionicons name="arrow-back" size={22} color={colors.textPrimary} />
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Parrainage</Text>
-            <View style={{ width: 32 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Parrainage"
+            retour={() => router.back()}
+          />
 
           <ScrollView contentContainerStyle={{ padding: spacing.lg, gap: spacing.lg, paddingBottom: 100 }}>
 
@@ -200,39 +198,36 @@ export default function ReferralScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  iconBtn: { width: 32, height: 32, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800", letterSpacing: -0.3 },
   hero: { padding: spacing.lg, alignItems: "center", gap: 6 },
   heroIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: spacing.sm },
-  heroTitle: { fontSize: 22, fontWeight: "900", textAlign: "center", letterSpacing: -0.5 },
+  heroTitle: { fontSize: 22, fontWeight: "700", textAlign: "center", letterSpacing: -0.5 },
   heroSub: { fontSize: 14, lineHeight: 20, textAlign: "center", paddingHorizontal: spacing.sm },
   codeBox: { padding: spacing.lg, alignItems: "center", gap: spacing.md },
   codeLabel: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.8 },
   codeRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-  code: { fontSize: 30, fontWeight: "900", letterSpacing: 2, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" },
+  code: { fontSize: 30, fontWeight: "700", letterSpacing: 2, fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" },
   copyBtn: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   shareBtn: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 28, borderRadius: radius.md, alignSelf: "stretch", justifyContent: "center" },
-  shareText: { fontSize: 15, fontWeight: "800" },
+  shareText: { fontSize: 15, fontWeight: "600" },
   stats: { flexDirection: "row", gap: 8 },
   statCard: { flex: 1, padding: spacing.md, alignItems: "center", gap: 4 },
-  statVal: { fontSize: 22, fontWeight: "900", letterSpacing: -0.5 },
+  statVal: { fontSize: 22, fontWeight: "700", letterSpacing: -0.5 },
   statLabel: { fontSize: 11, fontWeight: "600", textAlign: "center" },
   howBox: { padding: spacing.lg },
-  howTitle: { fontSize: 16, fontWeight: "800", marginBottom: spacing.md },
+  howTitle: { fontSize: 16, fontWeight: "600", marginBottom: spacing.md },
   howStep: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: 8 },
   howNum: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  howNumText: { fontSize: 13, fontWeight: "900" },
+  howNumText: { fontSize: 13, fontWeight: "700" },
   howStepTitle: { fontSize: 14, fontWeight: "700" },
   howStepDesc: { fontSize: 12, lineHeight: 17, marginTop: 1 },
   section: { padding: spacing.md },
-  sectionTitle: { fontSize: 15, fontWeight: "800", marginBottom: spacing.sm },
+  sectionTitle: { fontSize: 15, fontWeight: "600", marginBottom: spacing.sm },
   emptyText: { fontSize: 13, textAlign: "center", padding: spacing.lg },
   refRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: spacing.sm, borderTopWidth: 1 },
   refAv: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  refAvText: { fontSize: 14, fontWeight: "800" },
+  refAvText: { fontSize: 14, fontWeight: "600" },
   refName: { fontSize: 14, fontWeight: "700" },
   refDate: { fontSize: 11, marginTop: 1 },
   statusPill: { flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  statusText: { fontSize: 11, fontWeight: "800" },
+  statusText: { fontSize: 11, fontWeight: "600" },
 });

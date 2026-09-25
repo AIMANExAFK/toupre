@@ -57,10 +57,9 @@ export default function OtpFlow() {
   const [caseActive, setCaseActive] = useState<number | null>(null);
   const inputs = useRef<(TextInput | null)[]>([]);
 
-  // Encre du bandeau : l'anthracite de la marque plutôt qu'un noir pur. En mode
-  // sombre, un ton plus CLAIR que le fond : plus profond, il se confondait avec
-  // lui et la vague — tout l'intérêt de l'écran — disparaissait.
-  const encre = isDark ? "#3A2B24" : "#2B2420";
+  // Encre du bandeau : le noir de la vidéo (jeton `ink` du thème). En mode
+  // sombre, l'encre est plus claire que le fond, sinon la vague disparaît.
+  const encre = colors.ink;
   // Bouton pilule : sombre sur crème ; inversé (clair sur sombre) en mode sombre.
   const pilule = isDark ? colors.textPrimary : encre;
   const texteSurPilule = isDark ? colors.textInverse : "#FFFFFF";
@@ -393,7 +392,7 @@ export default function OtpFlow() {
               <View style={[styles.trait, { backgroundColor: colors.border }]} />
               <Text style={[styles.piedTxt, { color: colors.textSecondary }]}>
                 Pas encore de compte ?{" "}
-                <Text style={{ color: colors.textPrimary, fontWeight: "800" }}>Le même code vous inscrit.</Text>
+                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Le même code vous inscrit.</Text>
               </Text>
             </Animated.View>
           </Animated.View>
@@ -402,8 +401,8 @@ export default function OtpFlow() {
             <View>
               <Text style={[styles.titre, { color: colors.textPrimary }]}>Saisissez le code</Text>
               <Text style={[styles.sousTitre, { color: colors.textSecondary }]}>
-                Envoyé à <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{email}</Text>
-                {" "}et <Text style={{ fontWeight: "800", color: colors.textPrimary }}>{phone}</Text>
+                Envoyé à <Text style={{ fontWeight: "600", color: colors.textPrimary }}>{email}</Text>
+                {" "}et <Text style={{ fontWeight: "600", color: colors.textPrimary }}>{phone}</Text>
               </Text>
             </View>
 
@@ -413,7 +412,7 @@ export default function OtpFlow() {
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.devTitle, { color: colors.textPrimary }]}>Mode démo</Text>
                   <Text style={[styles.devText, { color: colors.textSecondary }]}>
-                    Votre code : <Text style={{ fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontWeight: "900", fontSize: 16, color: colors.warning }}>{devCode}</Text>
+                    Votre code : <Text style={{ fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace", fontWeight: "700", fontSize: 16, color: colors.warning }}>{devCode}</Text>
                   </Text>
                 </View>
               </View>
@@ -467,7 +466,7 @@ export default function OtpFlow() {
                 </Text>
               ) : (
                 <TouchableOpacity accessibilityRole="button" onPress={requestOTP}>
-                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "800" }}>Renvoyer</Text>
+                  <Text style={{ color: colors.textPrimary, fontSize: 13, fontWeight: "600" }}>Renvoyer</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -535,7 +534,7 @@ const styles = StyleSheet.create({
   courbe: { position: "absolute", left: 0, right: 0, bottom: -CREUX + 1 },
 
   titreBloc: { position: "absolute", left: MARGE, alignSelf: "flex-start" },
-  marque: { color: "#FFFFFF", fontSize: 26, fontWeight: "600", letterSpacing: 8 },
+  marque: { color: "#FFFFFF", fontSize: 26, fontWeight: "500", letterSpacing: 7 },
   // Centrée sur le nom quelle que soit sa longueur, sans retour à la ligne.
   signature: {
     position: "absolute", top: 40, left: -200, right: -200,
@@ -547,13 +546,13 @@ const styles = StyleSheet.create({
   iconBtn: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
 
   etape: { gap: spacing.md },
-  titre: { fontSize: 30, fontWeight: "800", letterSpacing: -0.6 },
+  titre: { fontSize: 28, fontWeight: "600", letterSpacing: -0.5 },
   sousTitre: { fontSize: 14, lineHeight: 20, marginTop: 6 },
 
-  label: { fontSize: 13, fontWeight: "700", marginBottom: 8 },
+  label: { fontSize: 13, fontWeight: "600", marginBottom: 8 },
   champ: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    borderWidth: 1.5, borderRadius: 14, minHeight: 54, paddingHorizontal: 16,
+    borderWidth: 1.5, borderRadius: 12, minHeight: 50, paddingHorizontal: 16,
   },
   input: { flex: 1, fontSize: 15, paddingVertical: 14 },
 
@@ -563,7 +562,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
     minHeight: 56, borderRadius: 999, marginTop: spacing.sm,
   },
-  piluleTxt: { fontSize: 16, fontWeight: "800" },
+  piluleTxt: { fontSize: 16, fontWeight: "600" },
 
   pied: { alignItems: "center", gap: spacing.md, marginTop: spacing.sm },
   trait: { width: 48, height: 1 },
@@ -575,7 +574,7 @@ const styles = StyleSheet.create({
     width: 46, height: 56,
     borderWidth: 1.5, borderRadius: 12,
     textAlign: "center",
-    fontSize: 26, fontWeight: "900",
+    fontSize: 26, fontWeight: "700",
     letterSpacing: -0.5,
   },
 
@@ -583,6 +582,6 @@ const styles = StyleSheet.create({
 
   // Dev banner
   devBanner: { flexDirection: "row", alignItems: "center", gap: 10, padding: 12, borderRadius: 14 },
-  devTitle: { fontSize: 12, fontWeight: "800" },
+  devTitle: { fontSize: 12, fontWeight: "600" },
   devText: { fontSize: 13, marginTop: 1 },
 });

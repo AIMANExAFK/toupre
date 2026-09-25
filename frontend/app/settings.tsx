@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useColors, spacing, radius, ThemeMode } from "../src/theme";
 import { apiFetch, useAuth } from "../src/auth";
 import { Glass, GradientBg } from "../src/Glass";
+import { EnTeteSombre } from "../src/EnTeteSombre";
 
 type DetailKey = "privacy" | "terms" | "data" | "rate";
 
@@ -70,7 +71,7 @@ export default function Settings() {
             try {
               await apiFetch("/api/auth/me", { method: "DELETE" }, token);
               await logout();
-              router.replace("/(auth)/welcome");
+              router.replace("/auth/otp");
             } catch (e: any) {
               setSuppression(false);
               Alert.alert("Suppression impossible", e?.message ?? "Réessayez plus tard.");
@@ -89,16 +90,12 @@ export default function Settings() {
     return (
       <View style={{ flex: 1, backgroundColor: colors.bg }} testID={`settings-detail-${detail}`}>
         <GradientBg>
-          <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-            <View style={styles.header}>
-              <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => setDetail(null)} testID="settings-detail-back">
-                <Glass borderRadius={22} style={styles.backBtn}>
-                  <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-                </Glass>
-              </TouchableOpacity>
-              <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>{current.title}</Text>
-              <View style={{ width: 44 }} />
-            </View>
+          <SafeAreaView style={{ flex: 1 }} edges={[]}>
+            <EnTeteSombre
+              titre={<>{current.title}</>}
+              retour={() => setDetail(null)}
+              retourTestID="settings-detail-back"
+            />
 
             <ScrollView contentContainerStyle={styles.detailScroll} showsVerticalScrollIndicator={false}>
               <Glass borderRadius={radius.lg} style={styles.detailCard}>
@@ -151,16 +148,12 @@ export default function Settings() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="settings-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.replace("/(tabs)/profile")} testID="settings-back">
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>Paramètres</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="Paramètres"
+            retour={() => router.replace("/(tabs)/profile")}
+            retourTestID="settings-back"
+          />
 
           <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
             <Text style={[styles.section, { color: colors.textSecondary }]}>APPARENCE</Text>
@@ -251,7 +244,15 @@ function ToggleRow({ label, icon, defaultOn, colors }: any) {
         <Ionicons name={icon} size={18} color={colors.primary} />
       </View>
       <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
-      <Switch value={on} onValueChange={setOn} trackColor={{ true: colors.primary, false: colors.border }} thumbColor="#fff" />
+      <Switch
+        value={on}
+        onValueChange={setOn}
+        trackColor={{ true: colors.primary, false: colors.border }}
+        thumbColor="#fff"
+        // Sur le web, activé, la pastille prend `activeThumbColor` (sarcelle par
+        // défaut) et ignore `thumbColor` : on la force en blanc.
+        {...({ activeThumbColor: "#fff" } as any)}
+      />
     </View>
   );
 }
@@ -277,13 +278,10 @@ function Divider({ colors }: { colors: any }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 18, fontWeight: "800" },
   dangerRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 16 },
-  dangerTxt: { fontSize: 15, fontWeight: "800" },
+  dangerTxt: { fontSize: 15, fontWeight: "600" },
   dangerNote: { fontSize: 12, lineHeight: 17, paddingHorizontal: 4, marginTop: 8 },
-  section: { fontSize: 11, fontWeight: "800", letterSpacing: 1, marginTop: spacing.lg, marginBottom: spacing.sm, paddingHorizontal: 4 },
+  section: { fontSize: 11, fontWeight: "600", letterSpacing: 1, marginTop: spacing.lg, marginBottom: spacing.sm, paddingHorizontal: 4 },
   row: { flexDirection: "row", alignItems: "center", padding: spacing.md, gap: spacing.md },
   iconBox: { width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: "600" },
@@ -291,16 +289,16 @@ const styles = StyleSheet.create({
   detailScroll: { padding: spacing.lg, paddingBottom: 80 },
   detailCard: { padding: spacing.lg, alignItems: "flex-start", gap: spacing.md },
   detailIcon: { width: 58, height: 58, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  detailTitle: { fontSize: 24, fontWeight: "900" },
+  detailTitle: { fontSize: 24, fontWeight: "700" },
   detailText: { fontSize: 14, lineHeight: 22 },
   stars: { flexDirection: "row", gap: 10, paddingVertical: spacing.sm },
   primaryBtn: {
     width: "100%",
     minHeight: 48,
-    borderRadius: radius.md,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
     marginTop: spacing.sm,
   },
-  primaryBtnText: { fontSize: 15, fontWeight: "900" },
+  primaryBtnText: { fontSize: 15, fontWeight: "700" },
 });

@@ -6,6 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { apiFetch, useAuth } from "../../src/auth";
 import { useColors, spacing, radius } from "../../src/theme";
 import { Glass, GradientBg } from "../../src/Glass";
+import { EnTeteSombre } from "../../src/EnTeteSombre";
 import { InspectionView, Inspection } from "../../src/InspectionView";
 
 // Consultation partagée des états des lieux (spec 001, US3).
@@ -43,16 +44,12 @@ export default function Constats() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg }} testID="constats-screen">
       <GradientBg>
-        <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
-          <View style={styles.header}>
-            <TouchableOpacity accessibilityLabel="Retour" accessibilityRole="button" onPress={() => router.back()} testID="constats-back">
-              <Glass borderRadius={22} style={styles.backBtn}>
-                <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-              </Glass>
-            </TouchableOpacity>
-            <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>États des lieux</Text>
-            <View style={{ width: 44 }} />
-          </View>
+        <SafeAreaView style={{ flex: 1 }} edges={[]}>
+          <EnTeteSombre
+            titre="États des lieux"
+            retour={() => router.back()}
+            retourTestID="constats-back"
+          />
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             {items === null ? (
@@ -101,12 +98,6 @@ export default function Constats() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.md,
-  },
-  backBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
-  headerTitle: { fontSize: 17, fontWeight: "800" },
   scroll: { paddingHorizontal: spacing.lg, paddingBottom: spacing.xl },
   intro: { fontSize: 13, lineHeight: 19, marginBottom: spacing.md },
   empty: { alignItems: "center", gap: 12, marginTop: spacing.xxl },
@@ -116,6 +107,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14, borderRadius: radius.md, borderWidth: 1.5,
     borderStyle: "dashed", marginTop: spacing.sm,
   },
-  counterTxt: { fontSize: 14, fontWeight: "800" },
+  counterTxt: { fontSize: 14, fontWeight: "600" },
   error: { fontSize: 13, fontWeight: "700", marginTop: spacing.md },
 });
