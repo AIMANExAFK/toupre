@@ -2,8 +2,14 @@ const fs = require("fs");
 const http = require("http");
 const path = require("path");
 
-const PORT = 4174;
-const ROOT = path.join(__dirname, "frontend", "dist");
+// Par défaut : l'app (frontend/dist) sur 4174. `--port N --root dossier` sert
+// autre chose, par exemple le site vitrine (site/).
+const arg = (nom) => {
+  const i = process.argv.indexOf(`--${nom}`);
+  return i > -1 ? process.argv[i + 1] : undefined;
+};
+const PORT = Number(arg("port")) || 4174;
+const ROOT = arg("root") ? path.resolve(__dirname, arg("root")) : path.join(__dirname, "frontend", "dist");
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
