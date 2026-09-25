@@ -1,0 +1,43 @@
+# Blueprint Render — déploiement du backend Toupré (FastAPI + MongoDB Atlas).
+# Sur https://dashboard.render.com : New > Blueprint > connecter ce repo.
+# Render lit ce fichier, crée le service, et demande les secrets (sync:false).
+services:
+  - type: web
+    name: toupre-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    region: frankfurt          # proche des utilisateurs FR
+    buildCommand: "pip install -r requirements-prod.txt"
+    startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
+    healthCheckPath: /api/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: DB_NAME
+        value: locashare
+      # ─── Secrets : saisis dans le dashboard Render (jamais dans le repo) ───
+      - key: MONGO_URL          # URI de connexion MongoDB Atlas
+        sync: false
+      - key: JWT_SECRET         # openssl rand -hex 32
+        sync: false
+      # ─── Réglages bêta ───
+      - key: TOUPRE_REQUIRE_KYC
+        value: "true"
+      - key: TOUPRE_AUTO_VERIFY_KYC
+        value: "true"
+      - key: TOUPRE_ENABLE_LOCAL_PAYMENTS
+        value: "true"
+      - key: TOUPRE_RETURN_DEV_OTP   # code OTP affiché dans l'app (pratique testeurs)
+        value: "true"
+      # ─── Envoi email OTP (Resend) — optionnel en bêta grâce à RETURN_DEV_OTP ───
+      - key: SMTP_HOST
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        value: resend
+      - key: SMTP_PASSWORD      # clé API Resend (re_...)
+        sync: false
+      - key: SMTP_FROM
+        value: "Toupré <onboarding@resend.dev>"
