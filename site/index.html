@@ -1055,6 +1055,34 @@ nav.scrolled .nav-cta > button{color:var(--text-2) !important}
   .nav-cta > button{display:none}
 }
 
+/* ── Menu mobile ── */
+.hamburger{width:44px;height:44px;align-items:center;justify-content:center;padding:0;position:relative;z-index:101;border-radius:50%}
+nav.scrolled .hamburger span{background:#111111}
+.hamburger[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger[aria-expanded="true"] span:nth-child(2){opacity:0}
+.hamburger[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+nav.menu-ouvert{background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+nav.menu-ouvert .nav-logo{color:#FFFFFF}
+nav.menu-ouvert .logo-inner-trait{stroke:#0A0A0A}
+nav.menu-ouvert .logo-inner-point{fill:#0A0A0A}
+nav.menu-ouvert .hamburger span{background:#FFFFFF}
+.menu-mobile{
+  position:fixed;inset:0;z-index:99;background:#0A0A0A;
+  display:flex;flex-direction:column;justify-content:space-between;gap:32px;
+  padding:96px 28px calc(32px + env(safe-area-inset-bottom));overflow-y:auto;
+  transform:translateY(-100%);opacity:0;pointer-events:none;
+  transition:transform .45s cubic-bezier(.65,0,.35,1),opacity .3s ease;
+}
+.menu-mobile.ouvert{transform:none;opacity:1;pointer-events:auto}
+.menu-mobile-liens{list-style:none;display:flex;flex-direction:column}
+.menu-mobile-liens a{display:block;color:#FFFFFF;font-size:30px;font-weight:600;letter-spacing:-0.02em;padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.08)}
+.menu-mobile-actions{display:flex;flex-direction:column;gap:12px}
+.menu-mobile-connexion,.menu-mobile-cta{display:block;width:100%;border-radius:999px;padding:16px;font-size:16px;font-weight:600;text-align:center;font-family:inherit;cursor:pointer}
+.menu-mobile-connexion{background:transparent;border:1px solid rgba(255,255,255,0.22);color:#FFFFFF}
+.menu-mobile-cta{background:#FFFFFF;color:#0A0A0A}
+@media(min-width:641px){.menu-mobile{display:none}}
+@media(prefers-reduced-motion:reduce){.menu-mobile,.hamburger span{transition:none}}
+
 /* Focus clavier : bleu, lisible sur le noir comme sur le clair (≥ 3:1) */
 a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid #2563EB;outline-offset:2px}
 </style>
@@ -1083,11 +1111,29 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
       <button onclick="openAuth('login')" style="font-size:14px;font-weight:500;color:var(--text-2);padding:9px 16px;background:none;border:none;cursor:pointer;font-family:inherit">Se connecter</button>
       <a href="#download" class="btn-nav">Rejoindre la bêta</a>
     </div>
-    <button class="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <button class="hamburger" type="button" onclick="toggleMenu()" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="menu-mobile">
       <span></span><span></span><span></span>
     </button>
   </div>
 </nav>
+
+<!-- ══════ MENU MOBILE ══════
+     Panneau noir plein écran (le splash de l'app), sous 640 px uniquement.
+     Masqué par translation et non par visibility:hidden — un calque fixe plein
+     écran en visibility:hidden bloque les touchers sur iOS Safari. `inert` le
+     retire du parcours clavier et des lecteurs d'écran quand il est fermé. -->
+<div class="menu-mobile" id="menu-mobile" role="dialog" aria-modal="true" aria-label="Menu" inert>
+  <ul class="menu-mobile-liens">
+    <li><a href="#how">Comment ça marche</a></li>
+    <li><a href="#categories">Catégories</a></li>
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#faq">FAQ</a></li>
+  </ul>
+  <div class="menu-mobile-actions">
+    <button type="button" class="menu-mobile-connexion" onclick="fermerMenu(false); openAuth('login')">Se connecter</button>
+    <a href="#download" class="menu-mobile-cta">Rejoindre la bêta</a>
+  </div>
+</div>
 
 <!-- ══════ HERO ══════ -->
 <section id="hero">
@@ -1638,10 +1684,56 @@ function toggleFaq(btn) {
   if (!isOpen) item.classList.add('open');
 }
 
-// ── Mobile menu (placeholder)
-function toggleMenu() {
-  // TODO: mobile drawer
+// ── Menu mobile
+const boutonMenu = document.querySelector('.hamburger');
+const menuMobile = document.getElementById('menu-mobile');
+const focusablesMenu = () => [boutonMenu, ...menuMobile.querySelectorAll('a, button')];
+
+function ouvrirMenu() {
+  menuMobile.classList.add('ouvert');
+  menuMobile.removeAttribute('inert');
+  boutonMenu.setAttribute('aria-expanded', 'true');
+  boutonMenu.setAttribute('aria-label', 'Fermer le menu');
+  navbar.classList.add('menu-ouvert');
+  document.body.style.overflow = 'hidden';
+  menuMobile.querySelector('a').focus();
 }
+
+// retourFocus : rend le focus au bouton — sauf quand on quitte le menu pour
+// aller ailleurs (lien de section, fenêtre de connexion).
+function fermerMenu(retourFocus = true) {
+  if (!menuMobile.classList.contains('ouvert')) return;
+  menuMobile.classList.remove('ouvert');
+  menuMobile.setAttribute('inert', '');
+  boutonMenu.setAttribute('aria-expanded', 'false');
+  boutonMenu.setAttribute('aria-label', 'Ouvrir le menu');
+  navbar.classList.remove('menu-ouvert');
+  document.body.style.overflow = '';
+  if (retourFocus) boutonMenu.focus();
+}
+
+function toggleMenu() {
+  menuMobile.classList.contains('ouvert') ? fermerMenu() : ouvrirMenu();
+}
+
+// Un lien de section ferme le menu (phase de capture : avant le défilement doux)
+menuMobile.querySelectorAll('a').forEach((a) =>
+  a.addEventListener('click', () => fermerMenu(false), true));
+
+document.addEventListener('keydown', (e) => {
+  if (!menuMobile.classList.contains('ouvert')) return;
+  if (e.key === 'Escape') { e.preventDefault(); fermerMenu(); return; }
+  // Le focus reste dans le menu tant qu'il est ouvert
+  if (e.key === 'Tab') {
+    const els = focusablesMenu();
+    const i = els.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); els[els.length - 1].focus(); }
+    else if (!e.shiftKey && i === els.length - 1) { e.preventDefault(); els[0].focus(); }
+  }
+});
+
+// Passage en grand écran : le menu n'a plus lieu d'être
+window.matchMedia('(min-width: 641px)').addEventListener('change', (m) => { if (m.matches) fermerMenu(false); });
 
 // ── Smooth anchor scroll
 document.querySelectorAll('a[href^="#"]').forEach(a => {
