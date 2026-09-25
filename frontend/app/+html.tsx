@@ -85,6 +85,12 @@ export default function Root({ children }: PropsWithChildren) {
                 outline-offset: 2px !important;
                 border-radius: 4px;
               }
+              /* Champs qui dessinent eux-mêmes leur état de focus (bordure sombre
+                 de l'écran de connexion) : pas de second contour par-dessus. Le focus
+                 reste visible, il est simplement porté par le champ. */
+              #root input[data-focus-propre]:focus-visible {
+                outline: none !important;
+              }
               /* Sur fond corail, un contour corail serait invisible : on inverse. */
               #root button[style*="rgb(206, 66, 33)"]:focus-visible {
                 outline-color: #FFF8F3 !important;
