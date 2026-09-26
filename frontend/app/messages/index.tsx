@@ -27,7 +27,7 @@ type Conversation = {
 
 export default function MessagesScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const colors = useColors();
   const [convs, setConvs] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +35,7 @@ export default function MessagesScreen() {
 
   const load = async () => {
     try {
-      const data = await apiFetch("/api/conversations");
+      const data = await apiFetch("/api/conversations", {}, token);
       setConvs(data || []);
     } catch (e) {
       console.log("[messages]", e);

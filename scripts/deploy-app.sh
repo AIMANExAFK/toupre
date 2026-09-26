@@ -40,6 +40,18 @@ if [ -d assets/node_modules ]; then
   echo "✓ Polices déplacées node_modules → vendor"
 fi
 
-# 4. Déploiement
+# 4. Routing SPA : sans ça, tout lien profond / refresh (/profile, /listing/x…)
+#    renvoie un 404 Vercel. On sert index.html en fallback ; l'app affiche la
+#    bonne route côté client (les vrais fichiers/assets restent servis direct).
+cat > vercel.json <<'JSON'
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+JSON
+echo "✓ vercel.json (fallback SPA) écrit"
+
+# 5. Déploiement
 vercel deploy --prod --yes --name toupre-app
 echo "✓ Front déployé → https://toupre-app.vercel.app"

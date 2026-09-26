@@ -177,8 +177,15 @@ export default function ListingDetail() {
                 </Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.ownerName, { color: colors.textPrimary }]}>{listing.owner.name}</Text>
-                <Text style={[styles.ownerLabel, { color: colors.textSecondary }]}>Propriétaire vérifié</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Text style={[styles.ownerName, { color: colors.textPrimary }]}>{listing.owner.name}</Text>
+                  {listing.owner.verified && (
+                    <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                  )}
+                </View>
+                <Text style={[styles.ownerLabel, { color: colors.textSecondary }]}>
+                  {listing.owner.verified ? "Propriétaire vérifié" : "Propriétaire"}
+                </Text>
               </View>
               {!isOwner && (
                 <TouchableOpacity accessibilityRole="button"

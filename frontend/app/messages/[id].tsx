@@ -32,7 +32,7 @@ type Message = {
 export default function ChatScreen() {
   const { id, listingId } = useLocalSearchParams<{ id: string; listingId?: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const colors = useColors();
   const [peer, setPeer] = useState<{ id: string; name: string; avatar: string | null } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -45,14 +45,14 @@ export default function ChatScreen() {
 
   const load = useCallback(async () => {
     try {
-      const data = await apiFetch(`/api/conversations/${id}`);
+      const data = await apiFetch(`/api/conversations/${id}`, {}, token);
       setPeer(data.peer);
       setMessages(data.messages || []);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 100);
     } catch (e) {
       console.log("[chat]", e);
     }
-  }, [id]);
+  }, [id, token]);
 
   useEffect(() => {
     (async () => {
@@ -76,7 +76,7 @@ export default function ChatScreen() {
       await apiFetch("/api/messages", {
         method: "POST",
         body: JSON.stringify({ to_id: id, content, listing_id: listingId || null }),
-      });
+      }, token);
       setDraft("");
       await load();
     } catch (e: any) {
@@ -121,7 +121,7 @@ export default function ChatScreen() {
               <Text style={[styles.headerName, { color: colors.onInk }]} numberOfLines={1}>
                 {peer?.name || "Chargement..."}
               </Text>
-              <Text style={[styles.headerStatus, { color: "#4ADE80" }]}>● En ligne</Text>
+              <Text style={[styles.headerStatus, { color: colors.onInkMuted }]} numberOfLines={1}>Paiement en espèces à la remise</Text>
             </View>
           </View>
           <BoutonEnTete icone="flag-outline" libelle="Signaler" onPress={() => setReportOpen(true)} testID="report-user-btn" />

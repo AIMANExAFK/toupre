@@ -11,7 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { apiFetch } from "./auth";
+import { apiFetch, useAuth } from "./auth";
 import { useColors, spacing, radius, shadowStyle } from "./theme";
 
 export type ReportTargetType = "listing" | "user" | "message" | "review";
@@ -37,6 +37,7 @@ const CATEGORIES: { value: string; icon: any; label: string; desc: string }[] = 
 
 export function ReportModal({ visible, onClose, targetType, targetId, targetLabel, onSuccess }: Props) {
   const colors = useColors();
+  const { token } = useAuth();
   const [category, setCategory] = useState<string | null>(null);
   const [reason, setReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +67,7 @@ export function ReportModal({ visible, onClose, targetType, targetId, targetLabe
           category,
           reason: reason.trim(),
         }),
-      });
+      }, token);
       setDone(true);
       onSuccess?.();
       setTimeout(close, 2000);
