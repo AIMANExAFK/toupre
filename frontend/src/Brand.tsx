@@ -10,6 +10,8 @@ import { useColors } from "./theme";
 
 export const BRAND_NAME = "Toupré";
 export const BRAND_TAGLINE = "Tout se loue, tout près.";
+// Couleur d'accent de marque : portée par l'accent du « é » (Toupré = un accent… coloré).
+export const BRAND_ACCENT = "#0F7A5F";
 
 type MarkProps = {
   size?: number;
@@ -56,11 +58,11 @@ export function ToupreLogo({ size = 36, showWordmark = true, wordmarkColor, mark
       <ToupreMark size={size} color={markColor} />
       {showWordmark && (
         <Text
-          // data-brand-font : Fredoka via la CSS globale injectée (web)
+          // data-brand-font : Fraunces (serif chic) via la CSS globale injectée (web)
           dataSet={{ brandFont: "1" }}
-          style={[styles.wordmark, { fontSize: size * 0.72, color: wordmarkColor ?? colors.textPrimary }]}
+          style={[styles.wordmark, { fontSize: size * 0.82, color: wordmarkColor ?? colors.textPrimary }]}
         >
-          toupré
+          Toupr<Text style={{ color: BRAND_ACCENT }}>é</Text>
         </Text>
       )}
     </View>
@@ -69,5 +71,5 @@ export function ToupreLogo({ size = 36, showWordmark = true, wordmarkColor, mark
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 8 },
-  wordmark: { fontWeight: "600", letterSpacing: -0.5 },
+  wordmark: { fontWeight: "400", letterSpacing: -0.5 },
 });

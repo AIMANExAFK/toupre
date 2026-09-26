@@ -4,10 +4,11 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Toupré — Tout se loue, tout près.</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Crect%20width='100'%20height='100'%20rx='24'%20fill='%230A0A0A'/%3E%3Ctext%20x='50'%20y='73'%20text-anchor='middle'%20font-family='Georgia,serif'%20font-size='66'%20fill='white'%3Et%3C/text%3E%3Ccircle%20cx='67'%20cy='30'%20r='7'%20fill='%230F7A5F'/%3E%3C/svg%3E"/>
 <meta name="description" content="La plateforme française de location entre particuliers. Voitures, vélos, outils, tech et bien plus — entre voisins, en toute confiance."/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════
    RESET & BASE
@@ -1034,6 +1035,11 @@ footer .nav-logo,.footer-col h4{color:var(--sur-noir)}
 
 /* Logo : blanc sur le noir (hero, pied de page), noir sur le clair */
 .logo-pin{fill:currentColor}
+.wm{font-family:'Fraunces',Georgia,serif;font-weight:400;letter-spacing:-.01em;color:inherit}
+.wm-accent{color:#0F7A5F}
+.nav-logo .wm{font-size:26px;line-height:1}
+.footer-brand .wm{font-size:24px;line-height:1}
+.auth-logo-name.wm{font-size:24px;font-weight:400;letter-spacing:-.01em}
 nav:not(.scrolled) .nav-logo,footer .nav-logo,footer .footer-brand{color:#FFFFFF}
 nav.scrolled .nav-logo{color:#111111}
 nav:not(.scrolled) .logo-inner-trait,footer .logo-inner-trait{stroke:#0A0A0A}
@@ -1098,8 +1104,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
 <nav id="navbar">
   <div class="nav-inner">
     <a href="#" class="nav-logo">
-      <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" class="logo-pin" fill="currentColor"/><path d="M14.5 22.5 24 13.8l9.5 8.7" class="logo-inner-trait" stroke="#0A0A0A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" class="logo-inner-point" fill="#0A0A0A"/></svg>
-      toupré
+      <span class="wm">Toupr<span class="wm-accent">é</span></span>
     </a>
     <ul class="nav-links">
       <li><a href="#how">Comment ça marche</a></li>
@@ -1471,8 +1476,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
     <div class="footer-grid">
       <div>
         <div class="footer-brand">
-          <div class="logo-mark">L</div>
-          <span style="font-size:18px;font-weight:800">Toupré</span>
+          <span class="wm">Toupr<span class="wm-accent">é</span></span>
         </div>
         <p class="footer-desc">La plateforme française de location entre particuliers. Louez ce dont vous avez besoin, rentabilisez ce que vous possédez.</p>
         <div class="footer-socials">
@@ -1543,13 +1547,12 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
       </svg>
       <div class="auth-left-top">
         <div class="auth-logo-row">
-          <svg width="30" height="30" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0"><path d="M24 3.5C14.6 3.5 7 11 7 20.2c0 6.7 4.3 12.6 8.6 17 2.7 2.8 5.5 5.1 7.3 6.6.6.5 1.6.5 2.2 0 1.8-1.5 4.6-3.8 7.3-6.6 4.3-4.4 8.6-10.3 8.6-17C41 11 33.4 3.5 24 3.5Z" class="logo-pin" fill="currentColor"/><path d="M14.5 22.5 24 13.8l9.5 8.7" class="logo-inner-trait" stroke="#0A0A0A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="26.5" r="3.4" class="logo-inner-point" fill="#0A0A0A"/></svg>
-          <span class="auth-logo-name">toupré</span>
+          <span class="auth-logo-name wm" style="color:#fff">Toupr<span class="wm-accent">é</span></span>
         </div>
       </div>
       <div class="auth-left-bottom">
-        <p class="auth-quote" id="auth-quote">"Toupré m'a permis de louer ma voiture en quelques minutes. Un service incroyable !"</p>
-        <p class="auth-quote-author" id="auth-quote-author">~ Sophie M.</p>
+        <p class="auth-quote" id="auth-quote">Louer et prêter entre voisins, sans commission. Le paiement se fait en espèces, à la remise.</p>
+        <p class="auth-quote-author" id="auth-quote-author">Tout se loue, tout près.</p>
       </div>
     </div>
 
@@ -1559,8 +1562,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,[tabindex]:focus-visibl
 
       <!-- Logo (mobile only) -->
       <div class="auth-logo-mobile">
-        <div class="auth-logo-mark">L</div>
-        <span class="auth-logo-name" style="color:#fff">Toupré</span>
+        <span class="auth-logo-name wm" style="color:#fff">Toupr<span class="wm-accent">é</span></span>
       </div>
 
       <h2 class="auth-title" id="auth-title">Bon retour 👋</h2>
@@ -1742,8 +1744,8 @@ async function getSB() {
 let authMode = 'login'; // 'login' | 'register'
 
 const QUOTES = {
-  login:    { text: '"Toupré m\'a permis de louer ma voiture en quelques minutes. Un service incroyable !"', author: '~ Sophie M.' },
-  register: { text: '"J\'ai mis ma perceuse en location le jour même. Simple, rapide et rentable !"', author: '~ Thomas B.' },
+  login:    { text: 'Louer et prêter entre voisins, sans commission. Le paiement se fait en espèces, à la remise.', author: 'Tout se loue, tout près.' },
+  register: { text: 'Publie ton objet en 2 minutes. Tu fixes ton prix, tu gardes 100 % — Toupré ne prend aucune commission.', author: 'Tout se loue, tout près.' },
 };
 
 // ── Open / close ──────────────────────────────────────────────

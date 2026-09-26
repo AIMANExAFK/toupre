@@ -498,10 +498,11 @@ export default function OtpFlow() {
       {/* Nom et messages : centrés à l'ouverture, en haut à gauche ensuite. */}
       <Animated.View pointerEvents="none" style={[styles.titreBloc, { top: hautTitre }, styleTitre]}>
         <Text
+          dataSet={{ brandFont: "1" }}
           style={styles.marque}
           onLayout={(e) => setLargeurTitre(e.nativeEvent.layout.width)}
         >
-          TOUPRÉ
+          Toupr<Text style={styles.marqueAccent}>é</Text>
         </Text>
         <Animated.Text style={[styles.signature, { opacity: opaciteSignature }]}>
           {BRAND_TAGLINE}
@@ -534,7 +535,8 @@ const styles = StyleSheet.create({
   courbe: { position: "absolute", left: 0, right: 0, bottom: -CREUX + 1 },
 
   titreBloc: { position: "absolute", left: MARGE, alignSelf: "flex-start" },
-  marque: { color: "#FFFFFF", fontSize: 26, fontWeight: "500", letterSpacing: 7 },
+  marque: { color: "#FFFFFF", fontSize: 38, fontWeight: "400", letterSpacing: -0.5 },
+  marqueAccent: { color: "#0F7A5F" },
   // Centrée sur le nom quelle que soit sa longueur, sans retour à la ligne.
   signature: {
     position: "absolute", top: 40, left: -200, right: -200,
