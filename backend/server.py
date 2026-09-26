@@ -20,6 +20,7 @@ import requests
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, Request, Header, BackgroundTasks
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from starlette.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel, Field, EmailStr
 import unicodedata
@@ -560,12 +561,29 @@ def send_otp_email(email: str, code: str) -> bool:
     use_tls = os.environ.get("SMTP_USE_TLS", "true").lower() != "false"
 
     msg = EmailMessage()
-    msg["Subject"] = "Votre code Toupré"
+    msg["Subject"] = f"{code} — votre code de connexion Toupré"
     msg["From"] = smtp_from
     msg["To"] = email
     msg.set_content(
-        "Votre code de connexion Toupré est "
-        f"{code}. Il expire dans 10 minutes."
+        f"Votre code de connexion Toupré est {code}.\n"
+        "Il expire dans 10 minutes.\n\n"
+        "Si vous n'avez pas demandé ce code, ignorez cet email.\n\n"
+        "Toupré — Tout se loue, tout près."
+    )
+    msg.add_alternative(
+        f"""<!doctype html><html><body style="margin:0;background:#F4F3F0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:440px;margin:0 auto;padding:32px 24px;">
+    <div style="font-family:Georgia,'Times New Roman',serif;font-size:30px;color:#0A0A0A;margin-bottom:24px;">Toupr<span style="color:#0F7A5F;">é</span></div>
+    <div style="background:#FFFFFF;border-radius:16px;padding:32px 24px;text-align:center;">
+      <p style="margin:0 0 8px;color:#5E5E5E;font-size:14px;">Votre code de connexion</p>
+      <p style="margin:0;font-size:40px;font-weight:700;letter-spacing:8px;color:#0A0A0A;">{code}</p>
+      <p style="margin:16px 0 0;color:#8A8A8A;font-size:13px;">Il expire dans 10 minutes.</p>
+    </div>
+    <p style="color:#8A8A8A;font-size:12px;margin-top:20px;text-align:center;">Si vous n'avez pas demandé ce code, ignorez cet email.</p>
+    <p style="color:#6B6B6B;font-size:12px;margin-top:8px;text-align:center;">Toupré — Tout se loue, tout près.</p>
+  </div>
+</body></html>""",
+        subtype="html",
     )
 
     if use_ssl:
@@ -669,7 +687,14 @@ async def request_otp(payload: OTPRequest, background: BackgroundTasks):
             status_code=503,
             detail="Envoi du code indisponible. Configurez SMTP ou Twilio.",
         )
-    background.add_task(deliver_otp_code, email, phone, code)
+    if RETURN_DEV_OTP:
+        # Dev/E2E : tâche de fond (rapide, le code est de toute façon renvoyé).
+        background.add_task(deliver_otp_code, email, phone, code)
+    else:
+        # Production (serverless Vercel) : une tâche de fond ne s'exécute pas de
+        # façon fiable après la réponse → on ATTEND l'envoi pour garantir que le
+        # code part vraiment. Le SMTP bloquant tourne dans un threadpool.
+        await run_in_threadpool(deliver_otp_code, email, phone, code)
     delivery = {"queued": True, "dev_mode": RETURN_DEV_OTP}
 
     if RETURN_DEV_OTP:
