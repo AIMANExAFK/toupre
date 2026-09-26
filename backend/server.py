@@ -2010,6 +2010,46 @@ async def get_categories():
     ]
 
 
+# ---------- Retours des bêta-testeurs ----------
+# Formulaire public (testeurs non authentifiés) : POST libre, lecture protégée
+# par une clé simple (FEEDBACK_KEY) pour qu'Aïmane consulte sans compte.
+FEEDBACK_KEY = os.environ.get("FEEDBACK_KEY", "")
+
+
+class FeedbackIn(BaseModel):
+    rating: Optional[int] = None
+    liked: Optional[str] = ""
+    issues: Optional[str] = ""
+    suggestions: Optional[str] = ""
+    name: Optional[str] = ""
+    contact: Optional[str] = ""
+
+
+@api_router.post("/feedback")
+async def create_feedback(payload: FeedbackIn):
+    doc = {
+        "id": str(uuid.uuid4()),
+        "rating": payload.rating if (payload.rating and 1 <= payload.rating <= 5) else None,
+        "liked": (payload.liked or "").strip()[:2000],
+        "issues": (payload.issues or "").strip()[:2000],
+        "suggestions": (payload.suggestions or "").strip()[:2000],
+        "name": (payload.name or "").strip()[:80],
+        "contact": (payload.contact or "").strip()[:120],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.feedback.insert_one(doc)
+    doc.pop("_id", None)
+    return {"ok": True}
+
+
+@api_router.get("/feedback")
+async def list_feedback(key: str = ""):
+    if not FEEDBACK_KEY or key != FEEDBACK_KEY:
+        raise HTTPException(status_code=403, detail="Clé invalide")
+    items = await db.feedback.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {"count": len(items), "items": items}
+
+
 # ---------- Health ----------
 @api_router.get("/")
 async def root():
