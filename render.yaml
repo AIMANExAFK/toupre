@@ -8,7 +8,7 @@ services:
     rootDir: backend
     plan: free
     region: frankfurt          # proche des utilisateurs FR
-    buildCommand: "pip install -r requirements-prod.txt"
+    buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /api/
     envVars:

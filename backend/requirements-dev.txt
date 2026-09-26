@@ -1,0 +1,22 @@
+# Dépendances de DÉVELOPPEMENT (tests, lint, outils). NON installées en prod.
+# Le requirements.txt ne garde que le runtime (ce que server.py importe vraiment).
+-r requirements.txt
+
+# Outils de dev / CI
+pytest>=8.0.0
+black>=24.1.1
+isort>=5.13.2
+flake8>=7.0.0
+mypy>=1.8.0
+
+# Anciennes dépendances non importées par server.py (conservées au cas où
+# un script annexe en aurait besoin)
+boto3>=1.34.129
+requests-oauthlib>=2.0.0
+cryptography>=42.0.8
+passlib>=1.7.4
+python-jose>=3.3.0
+pandas>=2.2.0
+numpy>=1.26.0
+jq>=1.6.0
+typer>=0.9.0
