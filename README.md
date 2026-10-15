@@ -33,11 +33,38 @@ API et base de données, authentification, tests end-to-end, et **déploiement c
 
 ## Aperçu
 
-| Connexion (mobile) | Explorer (mobile) |
-|:---:|:---:|
-| ![Écran de connexion](docs/screenshots/01-connexion.png) | ![Écran Explorer](docs/screenshots/03-explorer.jpg) |
+<div align="center">
 
-![Site vitrine](docs/screenshots/02-site.png)
+<table>
+  <tr>
+    <td align="center"><b>Connexion</b></td>
+    <td align="center"><b>Explorer</b></td>
+    <td align="center"><b>Fiche annonce</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/01-connexion.png" width="230" alt="Écran de connexion"/></td>
+    <td><img src="docs/screenshots/04-explorer-connecte.png" width="230" alt="Écran Explorer"/></td>
+    <td><img src="docs/screenshots/05-annonce.png" width="230" alt="Fiche annonce"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Réservation</b></td>
+    <td align="center"><b>Publier un bien</b></td>
+    <td align="center"><b>Profil</b></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/06-reservation.png" width="230" alt="Réservation"/></td>
+    <td><img src="docs/screenshots/07-publier.png" width="230" alt="Publier un bien"/></td>
+    <td><img src="docs/screenshots/08-profil.png" width="230" alt="Profil"/></td>
+  </tr>
+</table>
+
+<br/>
+
+<img src="docs/screenshots/02-site.png" width="760" alt="Site vitrine"/>
+
+<sub><i>Site vitrine — toupre-tau.vercel.app</i></sub>
+
+</div>
 
 ## Fonctionnalités
 
