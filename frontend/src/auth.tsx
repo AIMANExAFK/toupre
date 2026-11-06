@@ -16,6 +16,10 @@ const IS_SUPABASE_CONFIGURED =
   !process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.includes("VOTRE");
 const LOCAL_DEMO_AUTH_ENABLED = process.env.EXPO_PUBLIC_ENABLE_LOCAL_DEMO_AUTH === "true";
 
+// Les connexions sociales (Google / Apple / Microsoft) passent par Supabase OAuth :
+// elles ne sont réellement disponibles que si Supabase est configuré.
+export const SOCIAL_AUTH_ENABLED = IS_SUPABASE_CONFIGURED;
+
 type User = {
   id: string;
   email: string;
@@ -42,6 +46,7 @@ type AuthCtx = {
   verifyOtp: (email: string, phone: string, code: string, name?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   loginWithApple: () => Promise<void>;
+  loginWithMicrosoft: () => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 };
@@ -300,23 +305,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     saveAuthSession(authToken, u);
   };
 
-  // ── Google OAuth ─────────────────────────────────────────────
-  const loginWithGoogle = async () => {
+  // ── OAuth générique (Google, Microsoft/Azure…) ───────────────
+  // Google et Microsoft partagent exactement le même flux : redirection web,
+  // ou navigateur système + échange du code côté natif. Seuls changent le
+  // « provider » Supabase et le libellé affiché à l'utilisateur.
+  const signInWithOAuthProvider = async (
+    provider: "google" | "azure",
+    label: string,
+    scopes?: string,
+  ) => {
     if (!IS_SUPABASE_CONFIGURED) {
-      throw new Error("Connexion Google non disponible en mode démo.");
+      throw new Error(`Connexion ${label} non disponible en mode démo.`);
     }
     if (Platform.OS === "web") {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: window.location.origin },
+        provider,
+        options: { redirectTo: window.location.origin, scopes },
       });
       if (error) throw new Error(error.message);
       return;
     }
     const redirectUrl = Linking.createURL("auth/callback");
     const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: redirectUrl, skipBrowserRedirect: true },
+      provider,
+      options: { redirectTo: redirectUrl, skipBrowserRedirect: true, scopes },
     });
     if (error) throw new Error(error.message);
     if (!data.url) return;
@@ -327,6 +339,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (params.code) await supabase.auth.exchangeCodeForSession(result.url);
     }
   };
+
+  // ── Google OAuth ─────────────────────────────────────────────
+  const loginWithGoogle = () => signInWithOAuthProvider("google", "Google");
+
+  // ── Microsoft OAuth (Azure AD) ───────────────────────────────
+  const loginWithMicrosoft = () => signInWithOAuthProvider("azure", "Microsoft", "email");
 
   // ── Apple Sign In ─────────────────────────────────────────────
   const loginWithApple = async () => {
@@ -394,7 +412,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <Ctx.Provider value={{ user, token, loading, login, register, requestOtp, verifyOtp, loginWithGoogle, loginWithApple, logout, refreshUser }}>
+    <Ctx.Provider value={{ user, token, loading, login, register, requestOtp, verifyOtp, loginWithGoogle, loginWithApple, loginWithMicrosoft, logout, refreshUser }}>
       {children}
     </Ctx.Provider>
   );
