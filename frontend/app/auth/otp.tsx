@@ -18,6 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import { useTheme, spacing, radius, shadowStyle } from "../../src/theme";
 import { useAuth } from "../../src/auth";
+import { SocialAuthButtons } from "../../src/SocialAuth";
 import { BRAND_TAGLINE } from "../../src/Brand";
 
 // Bouton tactile animable : permet un léger enfoncement à l'appui.
@@ -43,7 +44,14 @@ export default function OtpFlow() {
   const router = useRouter();
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const { requestOtp, verifyOtp } = useAuth();
+  const { requestOtp, verifyOtp, user } = useAuth();
+
+  // Connexion sociale (Google/Apple/Microsoft) : Supabase renseigne l'utilisateur
+  // de façon asynchrone via son écouteur de session. Dès qu'il est présent, on
+  // entre dans l'application — cela couvre aussi bien le flux natif que le web.
+  useEffect(() => {
+    if (user) router.replace("/(tabs)");
+  }, [user, router]);
 
   const [step, setStep] = useState<Step>("contact");
   const [email, setEmail] = useState("");
@@ -388,7 +396,11 @@ export default function OtpFlow() {
               {bouton(contactValid, requestOTP, "Recevoir mon code", "otp-send-btn", "arrow-forward")}
             </Animated.View>
 
-            <Animated.View style={[styles.pied, apparition(4)]}>
+            <Animated.View style={apparition(4)}>
+              <SocialAuthButtons onError={setError} />
+            </Animated.View>
+
+            <Animated.View style={[styles.pied, apparition(5)]}>
               <View style={[styles.trait, { backgroundColor: colors.border }]} />
               <Text style={[styles.piedTxt, { color: colors.textSecondary }]}>
                 Pas encore de compte ?{" "}
